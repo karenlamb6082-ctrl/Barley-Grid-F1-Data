@@ -38,10 +38,19 @@ export default function DriverDrawer({ driverId, data, onClose }) {
   let seasonDNFs = 0;
   let seasonPoints = driver?.points || 0;
 
+  // 冲刺赛数据按 round 索引
+  const sprintByRound = {};
+  (data?.allSprintRaces || []).forEach(sr => {
+    sprintByRound[sr.round] = sr.SprintResults || [];
+  });
+
   let history = [];
   if (driver && data?.allRaces) {
     history = data.allRaces.map(race => {
       const res = race.Results?.find(r => r.Driver.driverId === activeId);
+      const sprintResults = sprintByRound[race.round] || [];
+      const sprintRes = sprintResults.find(r => r.Driver.driverId === activeId);
+      const hasSprint = sprintResults.length > 0;
       
       let bgColor = 'bg-black/[0.04] text-f1-text-muted'; 
       if (res) {
@@ -51,6 +60,10 @@ export default function DriverDrawer({ driverId, data, onClose }) {
         else if (pos <= 10) bgColor = 'bg-[#36696A]/10 text-f1-cyan'; 
         if (res.status !== 'Finished' && !res.status.includes('Lap')) { bgColor = 'bg-[#C83232]/10 text-[#C83232]'; seasonDNFs++; }
       }
+
+      const racePts = res ? parseFloat(res.points) || 0 : 0;
+      const sprintPts = sprintRes ? parseFloat(sprintRes.points) || 0 : 0;
+      const sprintPos = sprintRes ? parseInt(sprintRes.position, 10) : null;
       
       return {
         round: race.round,
@@ -58,7 +71,11 @@ export default function DriverDrawer({ driverId, data, onClose }) {
         circuit: race.Circuit.circuitName,
         position: res ? res.position : 'DNS',
         status: res ? res.status : '未开始',
-        points: res ? res.points : 0,
+        racePts,
+        sprintPts,
+        sprintPos,
+        totalPts: racePts + sprintPts,
+        hasSprint,
         bgColor,
         isFinished: !!res,
         isPodium: res && parseInt(res.position, 10) <= 3
@@ -186,29 +203,47 @@ export default function DriverDrawer({ driverId, data, onClose }) {
                       <div className={`absolute -left-[40px] top-2 w-3 h-3 rounded-full ring-4 ring-white/80 z-10 transition-transform duration-300 group-hover:scale-125 shadow-sm ${h.isFinished ? (h.isPodium ? 'bg-[#A68224]' : 'bg-[#36696A]') : 'bg-black/20'}`}></div>
 
                       {/* 赛事卡片 */}
-                      <div className={`flex-1 min-w-0 p-5 rounded-2xl border transition-all duration-300 ${h.isPodium ? 'border-[#A68224]/20 hover:shadow-md' : 'border-white/70 hover:shadow-md'}`} style={{ backgroundColor: 'rgba(255,255,255,0.4)' }}>
-                        <div className="flex items-center justify-between mb-2">
-                           <h4 className="text-[15px] font-bold text-f1-text truncate leading-tight">{h.raceName}</h4>
-                           <div className={`px-2.5 py-1 rounded flex items-center justify-center font-bold text-[12px] tracking-tighter flex-shrink-0 shadow-sm ${h.bgColor}`}>
-                              <span className="opacity-50 font-medium text-[10px] mr-1">P</span>{h.isFinished ? h.position : 'Ret'}
-                           </div>
+                      <div className={`flex-1 min-w-0 rounded-2xl border transition-all duration-300 overflow-hidden ${h.isPodium ? 'border-[#A68224]/20 hover:shadow-md' : 'border-white/70 hover:shadow-md'}`} style={{ backgroundColor: 'rgba(255,255,255,0.4)' }}>
+                        <div className="p-5">
+                          <div className="flex items-center justify-between mb-2">
+                             <h4 className="text-[15px] font-bold text-f1-text truncate leading-tight">{h.raceName}</h4>
+                             <div className={`px-2.5 py-1 rounded flex items-center justify-center font-bold text-[12px] tracking-tighter flex-shrink-0 shadow-sm ${h.bgColor}`}>
+                                <span className="opacity-50 font-medium text-[10px] mr-1">P</span>{h.isFinished ? h.position : 'Ret'}
+                             </div>
+                          </div>
+                          
+                          <p className="text-[12px] text-f1-text-muted font-bold uppercase tracking-[0.05em] flex items-center gap-2">
+                            RND {String(h.round).padStart(2, '0')}
+                            {h.hasSprint && <span className="text-[#A68224]">冲刺周末</span>}
+                            {h.isFinished && h.racePts > 0 && (
+                              <>
+                                <span className="w-1 h-1 rounded-full bg-black/10"></span>
+                                <span className={h.isPodium ? 'text-[#A68224]' : 'text-[#36696A]'}>正赛 +{h.racePts}</span>
+                              </>
+                            )}
+                            {(h.status !== 'Finished' && !h.status.includes('Lap') && h.status !== '未开始') && (
+                               <>
+                                <span className="w-1 h-1 rounded-full bg-black/10"></span>
+                                <span className="text-[#C83232] truncate">{h.status}</span>
+                               </>
+                            )}
+                          </p>
                         </div>
-                        
-                        <p className="text-[12px] text-f1-text-muted font-bold uppercase tracking-[0.05em] flex items-center gap-2">
-                          RND 0{h.round} 
-                          {h.isFinished && h.points > 0 && (
-                            <>
-                              <span className="w-1 h-1 rounded-full bg-black/10"></span>
-                              <span className={h.isPodium ? 'text-[#A68224]' : 'text-[#36696A]'}>+{h.points} PTS</span>
-                            </>
-                          )}
-                          {(h.status !== 'Finished' && !h.status.includes('Lap') && h.status !== '未开始') && (
-                             <>
-                              <span className="w-1 h-1 rounded-full bg-black/10"></span>
-                              <span className="text-[#C83232] truncate">{h.status}</span>
-                             </>
-                          )}
-                        </p>
+
+                        {/* 冲刺赛子行 */}
+                        {h.hasSprint && h.sprintPos && (
+                          <div className="px-5 py-2.5 bg-black/[0.02] border-t border-black/[0.04] flex items-center justify-between">
+                            <span className="text-[11px] text-[#A68224] font-bold">↳ 冲刺赛</span>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[12px] font-bold ${h.sprintPos <= 3 ? 'text-[#A68224]' : 'text-f1-text/70'}`}>
+                                P{h.sprintPos}
+                              </span>
+                              {h.sprintPts > 0 && (
+                                <span className="text-[11px] text-f1-text-muted">+{h.sprintPts} PTS</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
