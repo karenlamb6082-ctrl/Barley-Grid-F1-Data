@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { lockScroll, unlockScroll } from '../utils/scrollLock';
 import { getTeamColor, getDriverImage } from '../services/f1api';
 
 export default function DriverDrawer({ driverId, data, onClose }) {
@@ -8,7 +9,7 @@ export default function DriverDrawer({ driverId, data, onClose }) {
   useEffect(() => {
     if (driverId) {
       setActiveId(driverId);
-      document.body.style.overflow = 'hidden';
+      lockScroll();
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setIsOpen(true);
@@ -16,7 +17,7 @@ export default function DriverDrawer({ driverId, data, onClose }) {
       });
     } else {
       setIsOpen(false);
-      document.body.style.overflow = '';
+      unlockScroll();
       const timer = setTimeout(() => {
         setActiveId(null);
       }, 450);

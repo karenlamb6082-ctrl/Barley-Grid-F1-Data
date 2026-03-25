@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { lockScroll, unlockScroll } from '../utils/scrollLock';
 import { getTeamColor, fetchRaceWeekend, getRaceNameCN, getCountryNameCN, getCircuitNameCN } from '../services/f1api';
 
 export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) {
@@ -15,7 +16,7 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
       const hasResults = data?.allRaces?.find(r => r.round === String(raceRound));
       setActiveTab(hasResults ? 'race' : 'schedule');
       setWeekendData({ qualifying: null, sprint: null, sprintQualifying: null });
-      document.body.style.overflow = 'hidden';
+      lockScroll();
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setIsOpen(true);
@@ -23,7 +24,7 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
       });
     } else {
       setIsOpen(false);
-      document.body.style.overflow = '';
+      unlockScroll();
       const timer = setTimeout(() => {
         setActiveRound(null);
       }, 450);

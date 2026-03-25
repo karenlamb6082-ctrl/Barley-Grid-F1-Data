@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { lockScroll, unlockScroll } from '../utils/scrollLock';
 import { getDriverImage, getTeamAbbr, getRaceNameCN } from '../services/f1api';
 
 export default function TeamDrawer({ teamId, data, onClose }) {
@@ -8,7 +9,7 @@ export default function TeamDrawer({ teamId, data, onClose }) {
   useEffect(() => {
     if (teamId) {
       setActiveId(teamId);
-      document.body.style.overflow = 'hidden';
+      lockScroll();
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setIsOpen(true);
@@ -16,7 +17,7 @@ export default function TeamDrawer({ teamId, data, onClose }) {
       });
     } else {
       setIsOpen(false);
-      document.body.style.overflow = '';
+      unlockScroll();
       const timer = setTimeout(() => {
         setActiveId(null);
       }, 450);

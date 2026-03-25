@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { getSavedScrollY } from "./utils/scrollLock";
 import Header from "./components/Header"
 import Footer from "./components/Footer"
 import Home from "./pages/Home"
@@ -44,12 +45,8 @@ function App() {
 
     const handlePopState = (e) => {
       const view = e.state?.view || 'home';
-      const scrollY = e.state?.scrollY || 0;
       setCurrentViewRaw(view);
-      // 恢复之前保存的滚动位置（延迟等 React 渲染完）
-      setTimeout(() => {
-        window.scrollTo({ top: scrollY, behavior: 'instant' });
-      }, 150);
+      // 滚动恢复由 unlockScroll() 自动处理，无需手动 scrollTo
       // 关闭所有 Drawer
       setSelectedDriverId(null);
       setSelectedTeamId(null);
@@ -63,7 +60,7 @@ function App() {
   // Drawer 打开时：先保存当前滚动位置，再推入历史
   const saveScrollAndPush = (stateObj) => {
     const cur = window.history.state || {};
-    window.history.replaceState({ ...cur, scrollY: window.scrollY }, '');
+    window.history.replaceState({ ...cur, scrollY: getSavedScrollY() }, '');
     window.history.pushState(stateObj, '');
   };
 
