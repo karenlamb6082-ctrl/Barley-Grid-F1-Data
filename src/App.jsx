@@ -60,20 +60,26 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Drawer 打开时也推入历史，关闭时回退
+  // Drawer 打开时：先保存当前滚动位置，再推入历史
+  const saveScrollAndPush = (stateObj) => {
+    const cur = window.history.state || {};
+    window.history.replaceState({ ...cur, scrollY: window.scrollY }, '');
+    window.history.pushState(stateObj, '');
+  };
+
   const openDriver = useCallback((id) => {
     setSelectedDriverId(id);
-    window.history.pushState({ view: 'driver', id }, '');
+    saveScrollAndPush({ view: 'driver', id });
   }, []);
 
   const openTeam = useCallback((id) => {
     setSelectedTeamId(id);
-    window.history.pushState({ view: 'team', id }, '');
+    saveScrollAndPush({ view: 'team', id });
   }, []);
 
   const openRace = useCallback((round) => {
     setSelectedRaceRound(round);
-    window.history.pushState({ view: 'race', round }, '');
+    saveScrollAndPush({ view: 'race', round });
   }, []);
 
   const closeDriver = useCallback(() => {
