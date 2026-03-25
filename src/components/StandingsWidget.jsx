@@ -36,7 +36,7 @@ export default function StandingsWidget({ title, data, type, maxPoints, onViewAl
                       className="h-full rounded-full transition-all duration-700 ease-out" 
                       style={{ 
                         width: `${fillPercentage}%`,
-                        backgroundColor: index === 0 ? '#D32F2F' : (item.teamColor || '#376b6d')
+                        backgroundColor: item.teamColor || '#376b6d'
                       }}
                     ></div>
                   </div>

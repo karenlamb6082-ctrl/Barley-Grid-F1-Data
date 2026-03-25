@@ -33,7 +33,7 @@ export default function Standings({ driverData = [], teamData = [], onDriverClic
                          <div className="font-bold text-[16px] sm:text-[18px] text-f1-text tracking-tight flex-shrink-0">{driver.points} pts</div>
                       </div>
                       <div className="h-[4px] w-full bg-black/5 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${percent}%`, backgroundColor: index === 0 ? '#D32F2F' : (driver.teamColor || '#376b6d') }}></div>
+                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${percent}%`, backgroundColor: driver.teamColor || '#376b6d' }}></div>
                       </div>
                     </div>
                   </div>
@@ -67,7 +67,7 @@ export default function Standings({ driverData = [], teamData = [], onDriverClic
                          <div className="font-bold text-[18px] text-f1-text tracking-tight">{team.points} pts</div>
                       </div>
                       <div className="h-[4px] w-full bg-black/5 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${percent}%`, backgroundColor: index === 0 ? '#D32F2F' : (team.teamColor || '#376b6d') }}></div>
+                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${percent}%`, backgroundColor: team.teamColor || '#376b6d' }}></div>
                       </div>
                     </div>
                   </div>
