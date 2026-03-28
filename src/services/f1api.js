@@ -226,39 +226,12 @@ export async function fetchAllData() {
       })) : []
     })).reverse();
 
-    // 5. Live News Feed (Decoupled & Fallback)
-    let news = [
-      { id: 'mock1', title: 'FIA宣布将对地效赛车底板灵活性开展新一轮突击筛查', source: '围场内幕', link: '#' },
-      { id: 'mock2', title: '倍耐力公布下半赛季配方组合：最软胎 C5 将面临空前衰减考验', source: '技术前瞻', link: '#' },
-      { id: 'mock3', title: '引擎研发被冻结状态下的微小极限：各队 MGU-H 映射升级之争', source: '赛事分析', link: '#' }
-    ];
-    
-    try {
-      const newsRes = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fnews.google.com%2Frss%2Fsearch%3Fq%3DF1%2Bwhen%3A7d%26hl%3Dzh-CN%26gl%3DCN%26ceid%3DCN%3Azh-Hans`);
-      const newsData = await newsRes.json();
-      if (newsData && newsData.status === "ok" && newsData.items && newsData.items.length > 0) {
-        news = newsData.items.slice(0, 3).map(item => {
-          const parts = item.title.split(' - ');
-          const source = parts.length > 1 ? parts.pop() : "赛车网";
-          return {
-            id: item.guid || item.link,
-            title: parts.join(' - '),
-            source: source,
-            link: item.link
-          };
-        });
-      }
-    } catch (e) {
-      console.warn("Non-fatal: RSS feed sync failed, using intelligence fallbacks.", e);
-    }
-
     return {
       driverStandings,
       teamStandings,
       schedule,
       nextRace,
       recentResults,
-      news,
       allRaces: allResultsData.MRData.RaceTable.Races || [],
       allSprintRaces: sprintData.MRData?.RaceTable?.Races || []
     };
@@ -342,3 +315,177 @@ export async function fetchRaceWeekend(round) {
     return { qualifying: null, sprint: null, sprintQualifying: null };
   }
 }
+
+// ========== F1 Official LiveTiming 练习赛数据 ==========
+// 数据源: https://livetiming.formula1.com/static/
+// 通过 Vite 代理 /f1timing 访问，绕过 CORS
+
+// 车号 → 车手信息映射（2026 赛季固定阵容）
+const DRIVER_BY_NUMBER = {
+  '1': { firstName: 'Max', lastName: 'Verstappen', code: 'VER', team: 'Red Bull Racing', teamColor: '#3671C6' },
+  '3': { firstName: 'Daniel', lastName: 'Ricciardo', code: 'RIC', team: 'Cadillac', teamColor: '#1C3D2A' },
+  '4': { firstName: 'Lando', lastName: 'Norris', code: 'NOR', team: 'McLaren', teamColor: '#FF8000' },
+  '5': { firstName: 'Gabriel', lastName: 'Bortoleto', code: 'BOR', team: 'Audi', teamColor: '#52E252' },
+  '6': { firstName: 'Isack', lastName: 'Hadjar', code: 'HAD', team: 'Racing Bulls', teamColor: '#6692FF' },
+  '10': { firstName: 'Pierre', lastName: 'Gasly', code: 'GAS', team: 'Alpine', teamColor: '#FF87BC' },
+  '11': { firstName: 'Sergio', lastName: 'Perez', code: 'PER', team: 'Red Bull Racing', teamColor: '#3671C6' },
+  '12': { firstName: 'Kimi', lastName: 'Antonelli', code: 'ANT', team: 'Mercedes', teamColor: '#27F4D2' },
+  '14': { firstName: 'Fernando', lastName: 'Alonso', code: 'ALO', team: 'Aston Martin', teamColor: '#229971' },
+  '16': { firstName: 'Charles', lastName: 'Leclerc', code: 'LEC', team: 'Ferrari', teamColor: '#E8002D' },
+  '18': { firstName: 'Lance', lastName: 'Stroll', code: 'STR', team: 'Aston Martin', teamColor: '#229971' },
+  '23': { firstName: 'Alexander', lastName: 'Albon', code: 'ALB', team: 'Williams', teamColor: '#00A0ED' },
+  '27': { firstName: 'Nico', lastName: 'Hulkenberg', code: 'HUL', team: 'Audi', teamColor: '#52E252' },
+  '30': { firstName: 'Liam', lastName: 'Lawson', code: 'LAW', team: 'Red Bull Racing', teamColor: '#3671C6' },
+  '31': { firstName: 'Esteban', lastName: 'Ocon', code: 'OCO', team: 'Haas', teamColor: '#B6BABD' },
+  '41': { firstName: 'Arvid', lastName: 'Lindblad', code: 'LIN', team: 'Racing Bulls', teamColor: '#6692FF' },
+  '43': { firstName: 'Franco', lastName: 'Colapinto', code: 'COL', team: 'Alpine', teamColor: '#FF87BC' },
+  '44': { firstName: 'Lewis', lastName: 'Hamilton', code: 'HAM', team: 'Ferrari', teamColor: '#E8002D' },
+  '55': { firstName: 'Carlos', lastName: 'Sainz', code: 'SAI', team: 'Williams', teamColor: '#00A0ED' },
+  '63': { firstName: 'George', lastName: 'Russell', code: 'RUS', team: 'Mercedes', teamColor: '#27F4D2' },
+  '77': { firstName: 'Valtteri', lastName: 'Bottas', code: 'BOT', team: 'Cadillac', teamColor: '#1C3D2A' },
+  '81': { firstName: 'Oscar', lastName: 'Piastri', code: 'PIA', team: 'McLaren', teamColor: '#FF8000' },
+  '87': { firstName: 'Oliver', lastName: 'Bearman', code: 'BEA', team: 'Haas', teamColor: '#B6BABD' },
+};
+
+// Ergast 比赛名 → LiveTiming 路径名映射
+const RACE_PATH_NAMES = {
+  'Australian Grand Prix': 'Australian_Grand_Prix',
+  'Chinese Grand Prix': 'Chinese_Grand_Prix',
+  'Japanese Grand Prix': 'Japanese_Grand_Prix',
+  'Bahrain Grand Prix': 'Bahrain_Grand_Prix',
+  'Saudi Arabian Grand Prix': 'Saudi_Arabian_Grand_Prix',
+  'Miami Grand Prix': 'Miami_Grand_Prix',
+  'Emilia Romagna Grand Prix': 'Emilia_Romagna_Grand_Prix',
+  'Monaco Grand Prix': 'Monaco_Grand_Prix',
+  'Spanish Grand Prix': 'Spanish_Grand_Prix',
+  'Barcelona Grand Prix': 'Barcelona_Grand_Prix',
+  'Canadian Grand Prix': 'Canadian_Grand_Prix',
+  'Austrian Grand Prix': 'Austrian_Grand_Prix',
+  'British Grand Prix': 'British_Grand_Prix',
+  'Belgian Grand Prix': 'Belgian_Grand_Prix',
+  'Hungarian Grand Prix': 'Hungarian_Grand_Prix',
+  'Dutch Grand Prix': 'Dutch_Grand_Prix',
+  'Italian Grand Prix': 'Italian_Grand_Prix',
+  'Azerbaijan Grand Prix': 'Azerbaijan_Grand_Prix',
+  'Singapore Grand Prix': 'Singapore_Grand_Prix',
+  'United States Grand Prix': 'United_States_Grand_Prix',
+  'Mexico City Grand Prix': 'Mexico_City_Grand_Prix',
+  'São Paulo Grand Prix': 'São_Paulo_Grand_Prix',
+  'Las Vegas Grand Prix': 'Las_Vegas_Grand_Prix',
+  'Qatar Grand Prix': 'Qatar_Grand_Prix',
+  'Abu Dhabi Grand Prix': 'Abu_Dhabi_Grand_Prix',
+};
+
+// 将比赛名转为路径（优先查映射表，兜底用下划线替换空格）
+function getRacePathName(raceName) {
+  return RACE_PATH_NAMES[raceName] || raceName.replace(/\s+/g, '_');
+}
+
+// 构建 LiveTiming URL
+// 格式: /f1timing/{year}/{raceDate}_{RaceName}/{sessionDate}_Practice_{N}/TimingData.json
+function buildTimingUrl(raceDate, raceName, sessionDate, sessionNumber) {
+  const year = raceDate.slice(0, 4);
+  const racePathName = getRacePathName(raceName);
+  return `/f1timing/${year}/${raceDate}_${racePathName}/${sessionDate}_Practice_${sessionNumber}/TimingData.json`;
+}
+
+// 解析 LiveTiming TimingData.json → 排名数组
+function parseTimingData(data) {
+  if (!data?.Lines) return null;
+
+  const results = Object.entries(data.Lines)
+    .filter(([_, d]) => d.BestLapTime?.Value && d.BestLapTime.Value !== '')
+    .map(([num, d]) => {
+      const driverInfo = DRIVER_BY_NUMBER[num] || {
+        firstName: '', lastName: `#${num}`, code: num, team: '未知', teamColor: '#999'
+      };
+      return {
+        position: parseInt(d.Position) || 99,
+        driverNumber: parseInt(num),
+        firstName: driverInfo.firstName,
+        lastName: driverInfo.lastName,
+        code: driverInfo.code,
+        teamName: driverInfo.team,
+        teamColor: driverInfo.teamColor,
+        bestLapFormatted: d.BestLapTime.Value,
+        gap: d.TimeDiffToFastest || null,
+        laps: d.NumberOfLaps || 0,
+      };
+    })
+    .sort((a, b) => a.position - b.position);
+
+  // P1 不需要显示差距
+  if (results.length > 0) {
+    results[0].gap = null;
+  }
+
+  return results.length > 0 ? results : null;
+}
+
+// 获取单个练习赛 session 数据
+// 返回值: Array（成功）| 'generating'（归档中）| null（无数据）
+async function fetchLiveTimingSession(url) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (res.status === 403) return 'generating'; // 数据正在归档中
+    if (!res.ok) return null;
+    const data = await res.json();
+    return parseTimingData(data);
+  } catch (e) {
+    console.warn('LiveTiming 数据获取失败:', url, e.message);
+    return null;
+  }
+}
+
+/**
+ * 获取指定分站的练习赛数据（使用 F1 官方 LiveTiming API）
+ * @param {string|number} round - 分站轮次
+ * @param {Array} schedule - 赛程数据（含 sessions.fp1 等时间信息）
+ * @returns {Promise<{fp1: Array|null, fp2: Array|null, fp3: Array|null, error: string|null}>}
+ */
+export async function fetchPracticeResults(round, schedule) {
+  try {
+    const raceInfo = schedule?.find(s => String(s.round) === String(round));
+    if (!raceInfo) return { fp1: null, fp2: null, fp3: null, error: null };
+
+    const raceName = raceInfo.name;
+    const raceDate = raceInfo.sessions?.race?.slice(0, 10); // 'YYYY-MM-DD'
+    if (!raceDate) return { fp1: null, fp2: null, fp3: null, error: null };
+
+    const now = new Date();
+    const results = { fp1: null, fp2: null, fp3: null, error: null };
+
+    // 构建每个 FP 的 URL 并并行获取
+    const fpConfigs = [
+      { key: 'fp1', sessionKey: 'fp1', number: 1 },
+      { key: 'fp2', sessionKey: 'fp2', number: 2 },
+      { key: 'fp3', sessionKey: 'fp3', number: 3 },
+    ];
+
+    const fetches = fpConfigs.map(async ({ key, sessionKey, number }) => {
+      const sessionTime = raceInfo.sessions?.[sessionKey];
+      if (!sessionTime) return; // 冲刺周末可能没有 FP2/FP3
+
+      // session 持续约 60 分钟，结束后立即尝试获取（可能返回 'generating'）
+      const sessionDate = new Date(sessionTime);
+      const sessionEndEstimate = new Date(sessionDate.getTime() + 60 * 60 * 1000);
+      if (sessionEndEstimate > now) return; // session 还在进行中，跳过
+
+      const fpDate = sessionTime.slice(0, 10);
+      const url = buildTimingUrl(raceDate, raceName, fpDate, number);
+      results[key] = await fetchLiveTimingSession(url);
+    });
+
+    await Promise.all(fetches);
+    return results;
+  } catch (error) {
+    console.error('练习赛数据获取失败:', error);
+    return { fp1: null, fp2: null, fp3: null, error: 'network' };
+  }
+}
+
+
+

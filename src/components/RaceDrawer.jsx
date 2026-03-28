@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { lockScroll, unlockScroll } from '../utils/scrollLock';
-import { getTeamColor, fetchRaceWeekend, getRaceNameCN, getCountryNameCN, getCircuitNameCN } from '../services/f1api';
+import { getTeamColor, fetchRaceWeekend, fetchPracticeResults, getRaceNameCN, getCountryNameCN, getCircuitNameCN } from '../services/f1api';
 
 export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -8,6 +8,9 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
   const [activeTab, setActiveTab] = useState('race');
   const [weekendData, setWeekendData] = useState({ qualifying: null, sprint: null, sprintQualifying: null });
   const [loadingWeekend, setLoadingWeekend] = useState(false);
+  const [practiceData, setPracticeData] = useState({ fp1: null, fp2: null, fp3: null });
+  const [practiceError, setPracticeError] = useState(null);
+  const [loadingPractice, setLoadingPractice] = useState(false);
   
   useEffect(() => {
     if (raceRound) {
@@ -16,6 +19,8 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
       const hasResults = data?.allRaces?.find(r => r.round === String(raceRound));
       setActiveTab(hasResults ? 'race' : 'schedule');
       setWeekendData({ qualifying: null, sprint: null, sprintQualifying: null });
+      setPracticeData({ fp1: null, fp2: null, fp3: null });
+      setPracticeError(null);
       lockScroll();
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -39,6 +44,13 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
     fetchRaceWeekend(activeRound).then(d => {
       setWeekendData(d);
       setLoadingWeekend(false);
+    });
+    // 并行加载练习赛数据
+    setLoadingPractice(true);
+    fetchPracticeResults(activeRound, data?.schedule).then(d => {
+      setPracticeData({ fp1: d.fp1, fp2: d.fp2, fp3: d.fp3 });
+      setPracticeError(d.error || null);
+      setLoadingPractice(false);
     });
   }, [activeRound]);
 
@@ -70,9 +82,19 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
   });
   const teamPoints = Object.values(teamPointsMap).sort((a, b) => b.points - a.points);
 
-  // 可用 Tab 列表（冲刺周末顺序：时间表 → 冲刺排位 → 冲刺赛 → 排位赛 → 正赛）
+  // 可用 Tab 列表
   const availableTabs = [];
   availableTabs.push({ key: 'schedule', label: '时间表' });
+  // 练习赛 Tab：有数据时显示，或者 session 已过但 API 受限也显示（让用户知道状态）
+  const now = new Date();
+  const fpSessionPast = (sessionKey) => {
+    const time = scheduleInfo?.sessions?.[sessionKey];
+    return time && new Date(time) < now;
+  };
+  if (practiceData.fp1 || (fpSessionPast('fp1') && practiceError)) availableTabs.push({ key: 'fp1', label: 'FP1' });
+  if (practiceData.fp2 || (fpSessionPast('fp2') && practiceError)) availableTabs.push({ key: 'fp2', label: 'FP2' });
+  if (practiceData.fp3 || (fpSessionPast('fp3') && practiceError)) availableTabs.push({ key: 'fp3', label: 'FP3' });
+  // 冲刺周末
   if (weekendData.sprintQualifying && isSprint) availableTabs.push({ key: 'sprintQual', label: '冲刺排位' });
   if (weekendData.sprint && isSprint) availableTabs.push({ key: 'sprint', label: '冲刺赛' });
   if (weekendData.qualifying) availableTabs.push({ key: 'qualifying', label: '排位赛' });
@@ -289,6 +311,71 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
     );
   };
 
+  // ========== 练习赛结果渲染 ==========
+  const renderPractice = (sessionData, label) => {
+    // 数据正在归档中（Session 刚结束，F1 服务器还在生成）
+    if (sessionData === 'generating') {
+      return (
+        <div className="rounded-2xl p-8 border border-amber-200/60 text-center" style={{ backgroundColor: 'rgba(255,251,235,0.5)' }}>
+          <div className="text-[36px] mb-4">⏳</div>
+          <div className="text-[15px] font-bold text-f1-text mb-2">数据归档中</div>
+          <div className="text-[13px] text-f1-text-muted leading-relaxed">
+            {label}刚刚结束，F1 官方正在生成数据<br/>
+            通常需要 10~30 分钟，请稍后刷新
+          </div>
+        </div>
+      );
+    }
+    if (!sessionData || sessionData.length === 0) {
+      if (practiceError === 'network') {
+        return (
+          <div className="rounded-2xl p-8 border border-white/60 text-center" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
+            <div className="text-[36px] mb-4">📡</div>
+            <div className="text-[15px] font-bold text-f1-text mb-2">网络连接异常</div>
+            <div className="text-[13px] text-f1-text-muted">请稍后再试</div>
+          </div>
+        );
+      }
+      return <div className="text-center text-f1-text-muted py-12">暂无{label}数据</div>;
+    }
+    return (
+      <div className="space-y-2">
+        {sessionData.map(r => {
+          let posStyle = 'text-f1-text-muted';
+          if (r.position === 1) posStyle = 'text-[#A68224] font-black';
+          else if (r.position <= 3) posStyle = 'text-f1-text font-bold';
+          else if (r.position <= 10) posStyle = 'text-f1-cyan font-bold';
+
+          return (
+            <div
+              key={r.driverNumber}
+              className="flex items-center p-3.5 rounded-xl border border-white/60 transition-all hover:bg-white/30"
+              style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}
+            >
+              <span className={`w-8 text-center text-[16px] flex-shrink-0 mr-3 ${posStyle}`}>{r.position}</span>
+              <div className="w-1.5 h-8 rounded-full mr-3 flex-shrink-0" style={{ backgroundColor: r.teamColor }} />
+              <div className="flex-1 min-w-0">
+                <div className="text-[14px] font-bold text-f1-text truncate">
+                  {r.firstName} <span className="uppercase">{r.lastName}</span>
+                </div>
+                <div className="text-[11px] text-f1-text-muted font-medium truncate mt-0.5">{r.teamName}</div>
+              </div>
+              <div className="text-right flex-shrink-0 ml-2">
+                <div className="text-[13px] font-medium text-f1-text">
+                  {r.position === 1 ? r.bestLapFormatted : (r.gap || r.bestLapFormatted)}
+                </div>
+                {r.position === 1 && (
+                  <div className="text-[10px] text-f1-text-muted mt-0.5">最快圈速</div>
+                )}
+                <div className="text-[10px] text-f1-text-muted/60 mt-0.5">{r.laps} 圈</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   // ========== 正赛结果渲染（保持原有逻辑） ==========
   const renderRace = () => (
     <>
@@ -499,7 +586,9 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
 
             {/* 正文滚动区 */}
             <div className="flex-1 overflow-y-auto px-8 py-6 overscroll-contain relative z-10 custom-scrollbar">
-              {loadingWeekend && activeTab !== 'schedule' && activeTab !== 'race' && (
+              {/* 加载状态 */}
+              {((loadingWeekend && ['qualifying', 'sprintQual', 'sprint'].includes(activeTab)) ||
+                (loadingPractice && ['fp1', 'fp2', 'fp3'].includes(activeTab))) && (
                 <div className="text-center text-f1-text-muted py-12">
                   <div className="inline-block w-5 h-5 border-2 border-f1-cyan/30 border-t-f1-cyan rounded-full animate-spin mb-3" />
                   <div className="text-[13px]">加载数据中...</div>
@@ -507,6 +596,9 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
               )}
               
               {activeTab === 'schedule' && renderSchedule()}
+              {activeTab === 'fp1' && !loadingPractice && renderPractice(practiceData.fp1, 'FP1')}
+              {activeTab === 'fp2' && !loadingPractice && renderPractice(practiceData.fp2, 'FP2')}
+              {activeTab === 'fp3' && !loadingPractice && renderPractice(practiceData.fp3, 'FP3')}
               {activeTab === 'qualifying' && !loadingWeekend && renderQualifying()}
               {activeTab === 'sprintQual' && !loadingWeekend && renderSprintQualifying()}
               {activeTab === 'sprint' && !loadingWeekend && renderSprint()}

@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/f1timing/:path*",
+      "destination": "https://livetiming.formula1.com/static/:path*"
+    }
+  ]
+}

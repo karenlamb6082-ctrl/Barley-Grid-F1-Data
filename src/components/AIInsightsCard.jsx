@@ -16,7 +16,11 @@ export default function AIInsightsCard({ news = [] }) {
     setIsRefreshing(true);
     setErrorMsg('');
     try {
-      const newsRes = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fnews.google.com%2Frss%2Fsearch%3Fq%3DF1%2Bwhen%3A7d%26hl%3Dzh-CN%26gl%3DCN%26ceid%3DCN%3Azh-Hans`);
+      // 5秒超时，避免在网络环境差时长时间挂起
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const newsRes = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fnews.google.com%2Frss%2Fsearch%3Fq%3DF1%2Bwhen%3A7d%26hl%3Dzh-CN%26gl%3DCN%26ceid%3DCN%3Azh-Hans`, { signal: controller.signal });
+      clearTimeout(timeoutId);
       const newsData = await newsRes.json();
       if (newsData?.status === "ok" && newsData.items?.length > 0) {
         const freshNews = newsData.items.slice(0, 15).map((item) => {

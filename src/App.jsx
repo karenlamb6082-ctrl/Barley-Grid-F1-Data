@@ -105,7 +105,7 @@ function App() {
     };
     
     loadData();
-    const intervalId = setInterval(loadData, 60000);
+    const intervalId = setInterval(loadData, 300000);
     
     return () => {
       isMounted = false;
