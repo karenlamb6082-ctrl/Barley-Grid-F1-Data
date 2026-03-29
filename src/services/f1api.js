@@ -1,4 +1,4 @@
-const API_BASE = "https://api.jolpi.ca/ergast/f1/current";
+﻿const API_BASE = "https://api.jolpi.ca/ergast/f1/current";
 
 const TEAM_COLORS = {
   ferrari: "#E8002D",
@@ -316,157 +316,129 @@ export async function fetchRaceWeekend(round) {
   }
 }
 
-// ========== OpenF1 API 练习赛数据 ==========
-// 数据源: https://api.openf1.org/v1/ （原生支持 CORS，无需代理）
-const OPENF1_BASE = 'https://api.openf1.org/v1';
 
-// ---- OpenF1 Sessions 缓存 ----
-let _practiceSessionsCache = null;
+// ========== F1 LiveTiming API 缁冧範璧涙暟鎹?==========
+// 鏈湴閫氳繃 Vite 浠ｇ悊锛岀敓浜ч€氳繃 Vercel Serverless Function 浠ｇ悊
+const DRIVER_BY_NUMBER = {
+  '1': { firstName: 'Max', lastName: 'Verstappen', team: 'Red Bull Racing', teamColor: '#3671C6' },
+  '3': { firstName: 'Daniel', lastName: 'Ricciardo', team: 'Cadillac', teamColor: '#1C3D2A' },
+  '4': { firstName: 'Lando', lastName: 'Norris', team: 'McLaren', teamColor: '#FF8000' },
+  '5': { firstName: 'Gabriel', lastName: 'Bortoleto', team: 'Audi', teamColor: '#52E252' },
+  '6': { firstName: 'Isack', lastName: 'Hadjar', team: 'Racing Bulls', teamColor: '#6692FF' },
+  '10': { firstName: 'Pierre', lastName: 'Gasly', team: 'Alpine', teamColor: '#FF87BC' },
+  '11': { firstName: 'Sergio', lastName: 'Perez', team: 'Red Bull Racing', teamColor: '#3671C6' },
+  '12': { firstName: 'Kimi', lastName: 'Antonelli', team: 'Mercedes', teamColor: '#27F4D2' },
+  '14': { firstName: 'Fernando', lastName: 'Alonso', team: 'Aston Martin', teamColor: '#229971' },
+  '16': { firstName: 'Charles', lastName: 'Leclerc', team: 'Ferrari', teamColor: '#E8002D' },
+  '18': { firstName: 'Lance', lastName: 'Stroll', team: 'Aston Martin', teamColor: '#229971' },
+  '23': { firstName: 'Alexander', lastName: 'Albon', team: 'Williams', teamColor: '#00A0ED' },
+  '27': { firstName: 'Nico', lastName: 'Hulkenberg', team: 'Audi', teamColor: '#52E252' },
+  '30': { firstName: 'Liam', lastName: 'Lawson', team: 'Red Bull Racing', teamColor: '#3671C6' },
+  '31': { firstName: 'Esteban', lastName: 'Ocon', team: 'Haas', teamColor: '#B6BABD' },
+  '41': { firstName: 'Arvid', lastName: 'Lindblad', team: 'Racing Bulls', teamColor: '#6692FF' },
+  '43': { firstName: 'Franco', lastName: 'Colapinto', team: 'Alpine', teamColor: '#FF87BC' },
+  '44': { firstName: 'Lewis', lastName: 'Hamilton', team: 'Ferrari', teamColor: '#E8002D' },
+  '55': { firstName: 'Carlos', lastName: 'Sainz', team: 'Williams', teamColor: '#00A0ED' },
+  '63': { firstName: 'George', lastName: 'Russell', team: 'Mercedes', teamColor: '#27F4D2' },
+  '77': { firstName: 'Valtteri', lastName: 'Bottas', team: 'Cadillac', teamColor: '#1C3D2A' },
+  '81': { firstName: 'Oscar', lastName: 'Piastri', team: 'McLaren', teamColor: '#FF8000' },
+  '87': { firstName: 'Oliver', lastName: 'Bearman', team: 'Haas', teamColor: '#B6BABD' },
+};
 
-async function getOpenF1PracticeSessions() {
-  if (_practiceSessionsCache) return _practiceSessionsCache;
+let _indexCache = null;
+let _indexCacheTime = 0;
+
+async function getLiveTimingIndex() {
+  if (_indexCache && (Date.now() - _indexCacheTime) < 30 * 60 * 1000) return _indexCache;
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(`${OPENF1_BASE}/sessions?year=2026&session_type=Practice`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+    const c = new AbortController();
+    setTimeout(() => c.abort(), 8000);
+    const res = await fetch('/f1timing/2026/Index.json', { signal: c.signal });
+    if (!res.ok) throw new Error(res.status);
     const data = await res.json();
-    // 只保留正式练习赛（Practice 1/2/3），排除测试赛（Day 1/2/3）
-    _practiceSessionsCache = data.filter(s => s.session_name.startsWith('Practice'));
-    return _practiceSessionsCache;
+    _indexCache = data;
+    _indexCacheTime = Date.now();
+    return data;
   } catch (e) {
-    console.warn('OpenF1 sessions 获取失败:', e);
-    return [];
-  }
-}
-
-// 格式化圈速秒数为 M:SS.xxx
-function formatLapTime(seconds) {
-  if (!seconds || seconds <= 0) return null;
-  const mins = Math.floor(seconds / 60);
-  const secs = (seconds % 60).toFixed(3);
-  return mins > 0 ? `${mins}:${secs.padStart(6, '0')}` : secs;
-}
-
-// ---- 单 Session 结果缓存 ----
-const _sessionResultsCache = {};
-
-// 获取单个练习赛 session 的排名结果
-async function fetchSinglePracticeSession(sessionKey) {
-  // 检查缓存
-  if (_sessionResultsCache[sessionKey]) return _sessionResultsCache[sessionKey];
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-    const [lapsRes, driversRes] = await Promise.all([
-      fetch(`${OPENF1_BASE}/laps?session_key=${sessionKey}`, { signal: controller.signal }),
-      fetch(`${OPENF1_BASE}/drivers?session_key=${sessionKey}`, { signal: controller.signal }),
-    ]);
-    clearTimeout(timeoutId);
-    const laps = await lapsRes.json();
-    const drivers = await driversRes.json();
-
-    // 构建车手信息映射
-    const driverMap = {};
-    drivers.forEach(d => { driverMap[d.driver_number] = d; });
-
-    // 找每位车手的最快有效圈速（排除进站出站圈）
-    const bestLaps = {};
-    laps.forEach(lap => {
-      if (lap.is_pit_out_lap) return;
-      if (!lap.lap_duration || lap.lap_duration <= 0) return;
-      const num = lap.driver_number;
-      if (!bestLaps[num] || lap.lap_duration < bestLaps[num].lap_duration) {
-        bestLaps[num] = lap;
-      }
-    });
-
-    // 转换为排名数组并排序
-    const results = Object.entries(bestLaps)
-      .map(([driverNum, lap]) => {
-        const driver = driverMap[parseInt(driverNum)] || {};
-        return {
-          driverNumber: parseInt(driverNum),
-          firstName: driver.first_name || '',
-          lastName: driver.last_name || '',
-          code: driver.name_acronym || '',
-          teamName: driver.team_name || '',
-          teamColor: driver.team_colour ? `#${driver.team_colour}` : '#999',
-          bestLapTime: lap.lap_duration,
-          bestLapFormatted: formatLapTime(lap.lap_duration),
-          laps: laps.filter(l => l.driver_number === parseInt(driverNum) && !l.is_pit_out_lap && l.lap_duration > 0).length,
-        };
-      })
-      .sort((a, b) => a.bestLapTime - b.bestLapTime)
-      .map((r, idx) => ({ ...r, position: idx + 1 }));
-
-    // 计算与第一名的差距
-    if (results.length > 0) {
-      const fastestTime = results[0].bestLapTime;
-      results.forEach(r => {
-        const gap = r.bestLapTime - fastestTime;
-        r.gap = gap > 0 ? `+${gap.toFixed(3)}` : null;
-      });
-    }
-
-    const finalResults = results.length > 0 ? results : null;
-    // 写入缓存
-    if (finalResults) _sessionResultsCache[sessionKey] = finalResults;
-    return finalResults;
-  } catch (e) {
-    console.warn('练习赛圈速数据获取失败:', e);
+    console.warn('LiveTiming Index 鑾峰彇澶辫触:', e.message);
     return null;
   }
 }
 
-/**
- * 获取指定分站的练习赛数据（使用 OpenF1 API，原生 CORS 支持）
- * @param {string|number} round - 分站轮次
- * @param {Array} schedule - 赛程数据
- * @returns {Promise<{fp1: Array|null, fp2: Array|null, fp3: Array|null, error: string|null}>}
- */
-export async function fetchPracticeResults(round, schedule) {
+function findPracticeSessionPaths(indexData, raceName) {
+  if (!indexData?.Meetings) return {};
+  const meeting = indexData.Meetings.find(m =>
+    m.Name === raceName || m.OfficialName?.includes(raceName.replace(' Grand Prix', '').toUpperCase())
+  );
+  if (!meeting?.Sessions) return {};
+  const paths = {};
+  meeting.Sessions.forEach(s => {
+    if (s.Type === 'Practice' && s.Name?.startsWith('Practice') && s.Path) {
+      if (s.Number >= 1 && s.Number <= 3) paths[`fp${s.Number}`] = s.Path;
+    }
+  });
+  return paths;
+}
+
+function parseTimingData(data) {
+  if (!data?.Lines) return null;
+  const results = Object.entries(data.Lines)
+    .filter(([_, d]) => d.BestLapTime?.Value && d.BestLapTime.Value !== '')
+    .map(([num, d]) => {
+      const info = DRIVER_BY_NUMBER[num] || { firstName: '', lastName: `#${num}`, team: '鏈煡', teamColor: '#999' };
+      return {
+        position: parseInt(d.Position) || 99,
+        driverNumber: parseInt(num),
+        firstName: info.firstName,
+        lastName: info.lastName,
+        teamName: info.team,
+        teamColor: info.teamColor,
+        bestLapFormatted: d.BestLapTime.Value,
+        gap: d.TimeDiffToFastest || null,
+        laps: d.NumberOfLaps || 0,
+      };
+    })
+    .sort((a, b) => a.position - b.position);
+  if (results.length > 0) results[0].gap = null;
+  return results.length > 0 ? results : null;
+}
+
+const _fpCache = {};
+
+async function fetchLiveTimingSession(sessionPath) {
+  if (_fpCache[sessionPath]) return _fpCache[sessionPath];
   try {
-    const raceInfo = schedule?.find(s => String(s.round) === String(round));
-    if (!raceInfo?.sessions?.fp1) return { fp1: null, fp2: null, fp3: null, error: null };
-
-    // 获取赛季所有练习赛 sessions
-    const allSessions = await getOpenF1PracticeSessions();
-    if (!allSessions.length) return { fp1: null, fp2: null, fp3: null, error: null };
-
-    // 通过 FP1 的日期匹配对应站点的 OpenF1 sessions
-    const fp1Date = raceInfo.sessions.fp1?.slice(0, 10); // 'YYYY-MM-DD'
-    if (!fp1Date) return { fp1: null, fp2: null, fp3: null, error: null };
-
-    const matchedFP1 = allSessions.find(s =>
-      s.session_name === 'Practice 1' &&
-      s.date_start.slice(0, 10) === fp1Date
-    );
-    if (!matchedFP1) return { fp1: null, fp2: null, fp3: null, error: null };
-
-    const meetingKey = matchedFP1.meeting_key;
-    const stationSessions = allSessions.filter(s => s.meeting_key === meetingKey);
-    const fp1Session = stationSessions.find(s => s.session_name === 'Practice 1');
-    const fp2Session = stationSessions.find(s => s.session_name === 'Practice 2');
-    const fp3Session = stationSessions.find(s => s.session_name === 'Practice 3');
-
-    // 只获取已经结束的 session
-    const now = new Date();
-    const shouldFetch = (session) => session && new Date(session.date_end) < now;
-
-    const [fp1, fp2, fp3] = await Promise.all([
-      shouldFetch(fp1Session) ? fetchSinglePracticeSession(fp1Session.session_key) : Promise.resolve(null),
-      shouldFetch(fp2Session) ? fetchSinglePracticeSession(fp2Session.session_key) : Promise.resolve(null),
-      shouldFetch(fp3Session) ? fetchSinglePracticeSession(fp3Session.session_key) : Promise.resolve(null),
-    ]);
-
-    return { fp1, fp2, fp3, error: null };
-  } catch (error) {
-    console.error('练习赛数据获取失败:', error);
-    return { fp1: null, fp2: null, fp3: null, error: 'network' };
+    const c = new AbortController();
+    setTimeout(() => c.abort(), 8000);
+    const res = await fetch(`/f1timing/${sessionPath}TimingData.json`, { signal: c.signal });
+    if (!res.ok) return null;
+    const parsed = parseTimingData(await res.json());
+    if (parsed) _fpCache[sessionPath] = parsed;
+    return parsed;
+  } catch (e) {
+    console.warn('FP session 鑾峰彇澶辫触:', e.message);
+    return null;
   }
 }
 
+export async function fetchPracticeResults(round, schedule) {
+  try {
+    const raceInfo = schedule?.find(s => String(s.round) === String(round));
+    if (!raceInfo) return { fp1: null, fp2: null, fp3: null, error: null };
+    const now = new Date();
+    const results = { fp1: null, fp2: null, fp3: null, error: null };
+    const indexData = await getLiveTimingIndex();
+    const paths = indexData ? findPracticeSessionPaths(indexData, raceInfo.name) : {};
+    const fetches = ['fp1', 'fp2', 'fp3'].map(async key => {
+      const t = raceInfo.sessions?.[key];
+      if (!t) return;
+      if (new Date(new Date(t).getTime() + 3600000) > now) return;
+      if (paths[key]) results[key] = await fetchLiveTimingSession(paths[key]);
+    });
+    await Promise.all(fetches);
+    return results;
+  } catch (error) {
+    console.error('缁冧範璧涙暟鎹幏鍙栧け璐?', error);
+    return { fp1: null, fp2: null, fp3: null, error: 'network' };
+  }
+}

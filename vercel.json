@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/f1timing/:path*",
-      "destination": "/api/f1timing/:path*"
+      "source": "/f1timing/(.*)",
+      "destination": "/api/f1timing/$1"
     }
   ]
 }
