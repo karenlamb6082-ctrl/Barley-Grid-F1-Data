@@ -1,22 +1,25 @@
-export default function RecentResultsCard({ results, onRaceClick }) {
+export default function RecentResultsCard({ results, onRaceClick, onViewAll }) {
   if (!results || results.length === 0) return null;
 
   return (
     <div className="apple-card h-full flex flex-col">
       <div className="px-8 py-6 border-b border-black/5 flex justify-between items-center">
         <h3 className="text-[19px] font-semibold text-f1-text tracking-tight">分站结果总览</h3>
-        <button className="text-[14px] font-medium text-f1-cyan hover:text-f1-text transition-colors">
+        <button 
+          className="text-[14px] font-medium text-f1-cyan hover:text-f1-text transition-colors"
+          onClick={(e) => { e.stopPropagation(); onViewAll && onViewAll(); }}
+        >
           查看全部
         </button>
       </div>
       
       <div className="flex-1 divide-y divide-black/5">
-        {results.map((race) => (
+        {results.slice(0, 2).map((race) => (
           <div key={race.id} className="p-8 hover:bg-[#FDFDFD] transition-colors cursor-pointer group" onClick={() => onRaceClick && onRaceClick(race.round)}>
             <div className="mb-6 flex justify-between items-end">
               <div>
                 <div className="text-[11px] font-bold text-f1-text-muted uppercase tracking-[0.15em] mb-2">
-                  Round 0{race.round}
+                  Round {String(race.round).padStart(2, '0')}
                 </div>
                 <div className="text-[20px] font-bold text-f1-text tracking-tight">
                   {race.name}
