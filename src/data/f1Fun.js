@@ -1,0 +1,85 @@
+// F1 趣味元素数据
+
+// ========== 加载页面随机无线电台词 ==========
+export const LOADING_QUOTES = [
+  { text: '"Bono, 我的轮胎没了"', sub: '—— Hamilton（然后跑出最快圈）' },
+  { text: '"不要跟我说话，我知道我在做什么"', sub: '—— Kimi Räikkönen' },
+  { text: '"We are checking..."', sub: '—— Ferrari 工程师（然后就没然后了）' },
+  { text: '"I am stupid, I am stupid"', sub: '—— Leclerc 巴库撞墙后' },
+  { text: '"No Michael, No No No!"', sub: '—— Toto Wolff 的绝望呐喊' },
+  { text: '"GP2 Engine! GP2!"', sub: '—— Alonso 嫌弃本田引擎' },
+  { text: '"To whom it may concern..."', sub: '—— Bottas 的经典回击' },
+  { text: '"FOR WHAT?!"', sub: '—— Kimi 被罚后的灵魂发问' },
+  { text: '"Box Box Box!"', sub: '进站进站进站！' },
+  { text: '"Smooth Operator~"', sub: '—— Sainz 赢了比赛车队就放歌' },
+  { text: '"是 Glock 吗?!"', sub: '—— 2008 巴西站最后一弯' },
+  { text: '"窝法氦镁烷！"', sub: '—— 法拉利车迷的日常' },
+  { text: '"如果你不再去争取每一个缝隙..."', sub: '—— Ayrton Senna' },
+  { text: '"Get in there, Lewis!"', sub: '—— Bono 的经典庆祝' },
+  { text: '"Grazie Ragazzi!"', sub: '—— Vettel 的经典庆祝' },
+];
+
+// ========== 车手人设标签 ==========
+export const DRIVER_TAGS = {
+  max_verstappen: { emoji: '🦁', tag: '潘子 · 四冠王', desc: '2021-2024 四连冠' },
+  hamilton: { emoji: '👑', tag: '老汉 · 七冠传奇', desc: '转会法拉利的传奇' },
+  norris: { emoji: '🏆', tag: '诺宝 · 2025 新科冠军', desc: '阿布扎比绝杀夺冠' },
+  leclerc: { emoji: '🎰', tag: '乐扣 · "下次一定"', desc: '摩纳哥王子' },
+  piastri: { emoji: '😐', tag: '冷面杀手', desc: '"我不被告知这件事"' },
+  russell: { emoji: '📊', tag: '拉叔 · Mr. Saturday', desc: '排位赛之王' },
+  alonso: { emoji: '🐐', tag: '头哥 · 永不退休', desc: 'El Plan 进行中' },
+  sainz: { emoji: '🎵', tag: 'Smooth Operator', desc: '赢了比赛车队就放歌' },
+  bottas: { emoji: '🍑', tag: '"To whom it may concern"', desc: '经典回击宣言' },
+  perez: { emoji: '🇲🇽', tag: 'Checo · 防守之王', desc: '墨西哥传奇' },
+  stroll: { emoji: '💰', tag: '大少爷', desc: '我爸买了车队' },
+  gasly: { emoji: '✨', tag: '蒙扎奇迹', desc: '2020 蒙扎站神奇夺冠' },
+  hulkenberg: { emoji: '0️⃣', tag: '领奖台？不存在的', desc: '200+ 场 0 次登台' },
+  ocon: { emoji: '💪', tag: '内斗专家', desc: '和队友永远火花四溅' },
+  albon: { emoji: '🎨', tag: '画家车手', desc: '场外是个艺术家' },
+  bearman: { emoji: '🐻', tag: '救火小将', desc: '替补出场即拿分' },
+  antonelli: { emoji: '⭐', tag: '天选之子', desc: '18 岁的梅奔接班人' },
+  hadjar: { emoji: '🚀', tag: '红牛新星', desc: '一路从 F2 杀上来' },
+  lawson: { emoji: '🇳🇿', tag: '新西兰闪电', desc: '永远准备好的替补' },
+  colapinto: { emoji: '🇦🇷', tag: '阿根廷旋风', desc: '南美速度新星' },
+  bortoleto: { emoji: '🇧🇷', tag: '巴西未来之星', desc: 'F2 冠军' },
+  arvid_lindblad: { emoji: '🇬🇧', tag: '英伦新锐', desc: '红牛青训最年轻毕业生' },
+};
+
+// ========== Footer 随机冷知识 ==========
+export const FUN_FACTS = [
+  '🏎️ F1 赛车产生的下压力理论上可以让它倒着开在天花板上',
+  '⏱️ 最快进站换四条轮胎：1.80 秒（McLaren, 2023 卡塔尔站）',
+  '💨 F1 赛车 0-100km/h 只需约 2.5 秒，比超跑还快一倍',
+  '🔥 F1 碳纤维刹车盘温度可达 1000°C，比火山岩浆还热',
+  '🥾 Ricciardo 每次赢比赛都要用赛车鞋喝香槟，队友也被迫喝',
+  '💤 Kimi 排位赛间隙回房间睡觉，被叫醒后照样跑最快',
+  '🏁 2005 美国站只有 6 辆车出发，因为米其林轮胎不安全',
+  '💰 一个 F1 方向盘价值约 5 万美元，比很多新车还贵',
+  '🏋️ F1 车手刹车时要承受约 5G 的减速力',
+  '🫀 车手比赛时心率平均 170bpm，相当于一直在冲刺跑',
+  '🎮 Leclerc 在虚拟大奖赛中忘接线缆直接退赛',
+  '🌡️ 驾驶舱温度可达 50°C，车手一场比赛要流 3 公斤汗',
+  '📏 F1 赛车底盘离地间隙约 10mm，比你手机还薄',
+  '🎵 Sainz 赢了比赛后，McLaren 车队会在无线电放 Smooth Operator',
+  '👀 F1 车手在弯道中承受的 G 力会让视野变窄',
+];
+
+// ========== 比赛状态趣味文案 ==========
+export const SESSION_FUN_STATUS = {
+  race_live: '🏁 灯灭了！比赛正在进行！',
+  qualifying_live: '⏱️ 飞驰圈 ing... 谁是最快的人？',
+  practice_live: '🔧 调校中... 工程师在疯狂看数据',
+  sprint_live: '🏃 冲刺赛！短兵相接！',
+  sprintQualifying_live: '⚡ 冲刺排位 ing...',
+  all_done: '🏁 格子旗挥下！本站比赛全部结束',
+};
+
+// ========== 空状态趣味提示 ==========
+export const EMPTY_STATE_MESSAGES = {
+  practice: '🔧 工程师还在分析数据... 或者在喝咖啡 ☕',
+  qualifying: '⏱️ 排位赛还没跑呢，别急',
+  race: '🏁 灯还没灭，再等等',
+  sprint: '🏃 冲刺赛还没开始呢',
+  sprintQualifying: '⚡ 冲刺排位还没到',
+  network: '📡 无线电故障！请检查你的网络连接',
+};

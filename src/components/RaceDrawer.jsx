@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { lockScroll, unlockScroll } from '../utils/scrollLock';
 import { getTeamColor, fetchRaceWeekend, fetchPracticeResults, getRaceNameCN, getCountryNameCN, getCircuitNameCN } from '../services/f1api';
+import { EMPTY_STATE_MESSAGES } from '../data/f1Fun';
 
 export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -111,7 +112,7 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
 
   // ========== 排位赛结果渲染 ==========
   const renderQualifying = () => {
-    if (!weekendData.qualifying) return <div className="text-center text-f1-text-muted py-12">暂无排位赛数据</div>;
+    if (!weekendData.qualifying) return <div className="text-center text-f1-text-muted py-12">{EMPTY_STATE_MESSAGES.qualifying}</div>;
     return (
       <div className="space-y-2">
         {weekendData.qualifying.map(r => {
@@ -160,7 +161,7 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
 
   // ========== 冲刺排位赛结果渲染 ==========
   const renderSprintQualifying = () => {
-    if (!weekendData.sprintQualifying) return <div className="text-center text-f1-text-muted py-12">暂无冲刺排位赛数据</div>;
+    if (!weekendData.sprintQualifying) return <div className="text-center text-f1-text-muted py-12">{EMPTY_STATE_MESSAGES.sprintQualifying}</div>;
     return (
       <div className="space-y-2">
         {weekendData.sprintQualifying.map(r => {
@@ -194,7 +195,7 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
 
   // ========== 冲刺赛结果渲染 ==========
   const renderSprint = () => {
-    if (!weekendData.sprint) return <div className="text-center text-f1-text-muted py-12">暂无冲刺赛数据</div>;
+    if (!weekendData.sprint) return <div className="text-center text-f1-text-muted py-12">{EMPTY_STATE_MESSAGES.sprint}</div>;
     return (
       <div className="space-y-2">
         {weekendData.sprint.map(r => {
@@ -331,12 +332,12 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
         return (
           <div className="rounded-2xl p-8 border border-white/60 text-center" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
             <div className="text-[36px] mb-4">📡</div>
-            <div className="text-[15px] font-bold text-f1-text mb-2">网络连接异常</div>
-            <div className="text-[13px] text-f1-text-muted">请稍后再试</div>
+            <div className="text-[15px] font-bold text-f1-text mb-2">📡 无线电故障！</div>
+            <div className="text-[13px] text-f1-text-muted">请检查你的网络连接</div>
           </div>
         );
       }
-      return <div className="text-center text-f1-text-muted py-12">暂无{label}数据</div>;
+      return <div className="text-center text-f1-text-muted py-12">{EMPTY_STATE_MESSAGES.practice}</div>;
     }
     return (
       <div className="space-y-2">

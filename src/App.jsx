@@ -9,7 +9,18 @@ import DriverDrawer from "./components/DriverDrawer"
 import TeamDrawer from "./components/TeamDrawer"
 import RaceDrawer from "./components/RaceDrawer"
 import { fetchAllData } from "./services/f1api"
+import { LOADING_QUOTES } from "./data/f1Fun"
 
+// 加载页随机无线电台词
+function LoadingQuote() {
+  const q = LOADING_QUOTES[Math.floor(Math.random() * LOADING_QUOTES.length)];
+  return (
+    <div className="text-center max-w-xs">
+      <p className="text-[15px] font-medium text-f1-text/60 italic leading-relaxed">{q.text}</p>
+      <p className="text-[11px] text-f1-text-muted mt-1.5">{q.sub}</p>
+    </div>
+  );
+}
 function App() {
   const [currentView, setCurrentViewRaw] = useState("home");
   const [data, setData] = useState(null);
@@ -123,12 +134,14 @@ function App() {
         <Header currentView={currentView} setCurrentView={setCurrentView} />
         <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-14">
           {loading ? (
-             <div className="h-96 flex items-center justify-center animate-pulse">
-                <span className="text-[14px] font-semibold tracking-widest uppercase text-f1-text-muted">Syncing Data</span>
+             <div className="h-96 flex flex-col items-center justify-center animate-pulse">
+                <span className="text-[14px] font-semibold tracking-widest uppercase text-f1-text-muted mb-3">数据同步中</span>
+                <LoadingQuote />
              </div>
           ) : data === null ? (
-             <div className="h-96 flex items-center justify-center">
-                <span className="text-[14px] font-medium text-f1-red">无法连接赛事网络</span>
+             <div className="h-96 flex flex-col items-center justify-center">
+                <span className="text-[22px] mb-2">📡</span>
+                <span className="text-[14px] font-medium text-f1-red">无线电故障！请检查网络连接</span>
              </div>
           ) : (
             <div className="animate-in fade-in duration-700">

@@ -1,7 +1,19 @@
+import { useState } from 'react';
+import { FUN_FACTS } from '../data/f1Fun';
+
 export default function Footer() {
+  // 每次组件挂载随机取一条冷知识
+  const [fact] = useState(() => FUN_FACTS[Math.floor(Math.random() * FUN_FACTS.length)]);
+
   return (
     <footer className="mt-16 bg-white border-t border-gray-100 py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* 冷知识 */}
+        <div className="mb-8 py-4 px-5 bg-black/[0.02] rounded-xl border border-black/[0.04]">
+          <div className="text-[10px] font-bold text-f1-text-muted uppercase tracking-[0.15em] mb-1.5">F1 冷知识</div>
+          <p className="text-[13px] text-f1-text/70 leading-relaxed">{fact}</p>
+        </div>
+
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           {/* 品牌信息 */}
           <div>

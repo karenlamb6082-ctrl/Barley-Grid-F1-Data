@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { getRaceNameCN, getCountryNameCN, getCircuitNameCN } from '../services/f1api';
+import { SESSION_FUN_STATUS } from '../data/f1Fun';
 
 // Session 中文名映射
 const SESSION_LABELS = {
@@ -129,7 +130,9 @@ export default function NextRaceCard({ race, onClick }) {
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-2 h-2 rounded-full bg-f1-red animate-pulse"></div>
                 <span className="text-[12px] font-bold text-f1-red">{nextSession.label}</span>
-                <span className="text-[12px] font-bold text-f1-red px-2 py-0.5 bg-f1-red/10 rounded-full">进行中</span>
+                <span className="text-[12px] font-bold text-f1-red px-2 py-0.5 bg-f1-red/10 rounded-full">
+                  {nextSession.key === 'race' ? '🏁 灯灭了！' : nextSession.key === 'qualifying' ? '⚓️ 飞驰圈 ing' : nextSession.key.includes('sprint') ? '⚡ 冲刺！' : '🔧 调校中'}
+                </span>
               </div>
               <div className="flex gap-3">
                 <div className="flex-1 bg-f1-red/5 rounded-xl py-4 text-center border border-f1-red/10">
@@ -175,7 +178,7 @@ export default function NextRaceCard({ race, onClick }) {
       {/* 所有 Session 都结束时不展示倒计时 */}
       {!nextSession && (
         <div className="mb-8 py-3 text-center">
-          <span className="text-[13px] font-bold text-f1-cyan">本站比赛已全部结束</span>
+          <span className="text-[13px] font-bold text-f1-cyan">🏁 格子旗挥下！本站比赛全部结束</span>
         </div>
       )}
 
