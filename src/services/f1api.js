@@ -203,7 +203,8 @@ export async function fetchAllData() {
           qualifying: parseSessionTime(r.Qualifying),
           race: raceDate.toISOString(),
         },
-        status: raceDate < now ? "completed" : "upcoming"
+        // 正赛持续约 2 小时，结束后才标记为 completed
+        status: new Date(raceDate.getTime() + 2 * 60 * 60 * 1000) < now ? "completed" : "upcoming"
       };
     });
 
