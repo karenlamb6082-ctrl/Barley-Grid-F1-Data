@@ -316,232 +316,157 @@ export async function fetchRaceWeekend(round) {
   }
 }
 
-// ========== F1 Official LiveTiming 练习赛数据 ==========
-// 数据源: https://livetiming.formula1.com/static/
-// 本地通过 Vite 代理 /f1timing 访问，生产环境通过 Vercel API Route 代理
+// ========== OpenF1 API 练习赛数据 ==========
+// 数据源: https://api.openf1.org/v1/ （原生支持 CORS，无需代理）
+const OPENF1_BASE = 'https://api.openf1.org/v1';
 
-// 车号 → 车手信息映射（2026 赛季固定阵容）
-const DRIVER_BY_NUMBER = {
-  '1': { firstName: 'Max', lastName: 'Verstappen', code: 'VER', team: 'Red Bull Racing', teamColor: '#3671C6' },
-  '3': { firstName: 'Daniel', lastName: 'Ricciardo', code: 'RIC', team: 'Cadillac', teamColor: '#1C3D2A' },
-  '4': { firstName: 'Lando', lastName: 'Norris', code: 'NOR', team: 'McLaren', teamColor: '#FF8000' },
-  '5': { firstName: 'Gabriel', lastName: 'Bortoleto', code: 'BOR', team: 'Audi', teamColor: '#52E252' },
-  '6': { firstName: 'Isack', lastName: 'Hadjar', code: 'HAD', team: 'Racing Bulls', teamColor: '#6692FF' },
-  '10': { firstName: 'Pierre', lastName: 'Gasly', code: 'GAS', team: 'Alpine', teamColor: '#FF87BC' },
-  '11': { firstName: 'Sergio', lastName: 'Perez', code: 'PER', team: 'Red Bull Racing', teamColor: '#3671C6' },
-  '12': { firstName: 'Kimi', lastName: 'Antonelli', code: 'ANT', team: 'Mercedes', teamColor: '#27F4D2' },
-  '14': { firstName: 'Fernando', lastName: 'Alonso', code: 'ALO', team: 'Aston Martin', teamColor: '#229971' },
-  '16': { firstName: 'Charles', lastName: 'Leclerc', code: 'LEC', team: 'Ferrari', teamColor: '#E8002D' },
-  '18': { firstName: 'Lance', lastName: 'Stroll', code: 'STR', team: 'Aston Martin', teamColor: '#229971' },
-  '23': { firstName: 'Alexander', lastName: 'Albon', code: 'ALB', team: 'Williams', teamColor: '#00A0ED' },
-  '27': { firstName: 'Nico', lastName: 'Hulkenberg', code: 'HUL', team: 'Audi', teamColor: '#52E252' },
-  '30': { firstName: 'Liam', lastName: 'Lawson', code: 'LAW', team: 'Red Bull Racing', teamColor: '#3671C6' },
-  '31': { firstName: 'Esteban', lastName: 'Ocon', code: 'OCO', team: 'Haas', teamColor: '#B6BABD' },
-  '41': { firstName: 'Arvid', lastName: 'Lindblad', code: 'LIN', team: 'Racing Bulls', teamColor: '#6692FF' },
-  '43': { firstName: 'Franco', lastName: 'Colapinto', code: 'COL', team: 'Alpine', teamColor: '#FF87BC' },
-  '44': { firstName: 'Lewis', lastName: 'Hamilton', code: 'HAM', team: 'Ferrari', teamColor: '#E8002D' },
-  '55': { firstName: 'Carlos', lastName: 'Sainz', code: 'SAI', team: 'Williams', teamColor: '#00A0ED' },
-  '63': { firstName: 'George', lastName: 'Russell', code: 'RUS', team: 'Mercedes', teamColor: '#27F4D2' },
-  '77': { firstName: 'Valtteri', lastName: 'Bottas', code: 'BOT', team: 'Cadillac', teamColor: '#1C3D2A' },
-  '81': { firstName: 'Oscar', lastName: 'Piastri', code: 'PIA', team: 'McLaren', teamColor: '#FF8000' },
-  '87': { firstName: 'Oliver', lastName: 'Bearman', code: 'BEA', team: 'Haas', teamColor: '#B6BABD' },
-};
+// ---- OpenF1 Sessions 缓存 ----
+let _practiceSessionsCache = null;
 
-// ---- LiveTiming Index.json 缓存 ----
-let _indexCache = null;
-let _indexCacheTime = 0;
-const INDEX_CACHE_TTL = 30 * 60 * 1000; // 30 分钟缓存
-
-// 获取 LiveTiming Index.json（包含所有 session 的准确路径）
-async function getLiveTimingIndex() {
-  const now = Date.now();
-  if (_indexCache && (now - _indexCacheTime) < INDEX_CACHE_TTL) {
-    return _indexCache;
+async function getOpenF1PracticeSessions() {
+  if (_practiceSessionsCache) return _practiceSessionsCache;
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(`${OPENF1_BASE}/sessions?year=2026&session_type=Practice`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    const data = await res.json();
+    // 只保留正式练习赛（Practice 1/2/3），排除测试赛（Day 1/2/3）
+    _practiceSessionsCache = data.filter(s => s.session_name.startsWith('Practice'));
+    return _practiceSessionsCache;
+  } catch (e) {
+    console.warn('OpenF1 sessions 获取失败:', e);
+    return [];
   }
+}
+
+// 格式化圈速秒数为 M:SS.xxx
+function formatLapTime(seconds) {
+  if (!seconds || seconds <= 0) return null;
+  const mins = Math.floor(seconds / 60);
+  const secs = (seconds % 60).toFixed(3);
+  return mins > 0 ? `${mins}:${secs.padStart(6, '0')}` : secs;
+}
+
+// ---- 单 Session 结果缓存 ----
+const _sessionResultsCache = {};
+
+// 获取单个练习赛 session 的排名结果
+async function fetchSinglePracticeSession(sessionKey) {
+  // 检查缓存
+  if (_sessionResultsCache[sessionKey]) return _sessionResultsCache[sessionKey];
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
-    // 同时尝试代理路径和直接路径
-    const url = '/f1timing/2026/Index.json';
-    const res = await fetch(url, { signal: controller.signal });
+    const [lapsRes, driversRes] = await Promise.all([
+      fetch(`${OPENF1_BASE}/laps?session_key=${sessionKey}`, { signal: controller.signal }),
+      fetch(`${OPENF1_BASE}/drivers?session_key=${sessionKey}`, { signal: controller.signal }),
+    ]);
     clearTimeout(timeoutId);
-    if (!res.ok) throw new Error(`Index.json 请求失败: ${res.status}`);
-    const data = await res.json();
-    _indexCache = data;
-    _indexCacheTime = now;
-    return data;
-  } catch (e) {
-    console.warn('LiveTiming Index.json 获取失败（代理路径），尝试直接访问...', e.message);
-    // 代理路径失败时，尝试直接访问（本地开发不需要，但作为兜底）
-    try {
-      const controller2 = new AbortController();
-      const timeoutId2 = setTimeout(() => controller2.abort(), 10000);
-      const res2 = await fetch('https://livetiming.formula1.com/static/2026/Index.json', {
-        signal: controller2.signal,
-        mode: 'cors',
-      });
-      clearTimeout(timeoutId2);
-      if (res2.ok) {
-        const data = await res2.json();
-        _indexCache = data;
-        _indexCacheTime = now;
-        return data;
+    const laps = await lapsRes.json();
+    const drivers = await driversRes.json();
+
+    // 构建车手信息映射
+    const driverMap = {};
+    drivers.forEach(d => { driverMap[d.driver_number] = d; });
+
+    // 找每位车手的最快有效圈速（排除进站出站圈）
+    const bestLaps = {};
+    laps.forEach(lap => {
+      if (lap.is_pit_out_lap) return;
+      if (!lap.lap_duration || lap.lap_duration <= 0) return;
+      const num = lap.driver_number;
+      if (!bestLaps[num] || lap.lap_duration < bestLaps[num].lap_duration) {
+        bestLaps[num] = lap;
       }
-    } catch (e2) {
-      console.warn('直接访问也失败:', e2.message);
+    });
+
+    // 转换为排名数组并排序
+    const results = Object.entries(bestLaps)
+      .map(([driverNum, lap]) => {
+        const driver = driverMap[parseInt(driverNum)] || {};
+        return {
+          driverNumber: parseInt(driverNum),
+          firstName: driver.first_name || '',
+          lastName: driver.last_name || '',
+          code: driver.name_acronym || '',
+          teamName: driver.team_name || '',
+          teamColor: driver.team_colour ? `#${driver.team_colour}` : '#999',
+          bestLapTime: lap.lap_duration,
+          bestLapFormatted: formatLapTime(lap.lap_duration),
+          laps: laps.filter(l => l.driver_number === parseInt(driverNum) && !l.is_pit_out_lap && l.lap_duration > 0).length,
+        };
+      })
+      .sort((a, b) => a.bestLapTime - b.bestLapTime)
+      .map((r, idx) => ({ ...r, position: idx + 1 }));
+
+    // 计算与第一名的差距
+    if (results.length > 0) {
+      const fastestTime = results[0].bestLapTime;
+      results.forEach(r => {
+        const gap = r.bestLapTime - fastestTime;
+        r.gap = gap > 0 ? `+${gap.toFixed(3)}` : null;
+      });
     }
+
+    const finalResults = results.length > 0 ? results : null;
+    // 写入缓存
+    if (finalResults) _sessionResultsCache[sessionKey] = finalResults;
+    return finalResults;
+  } catch (e) {
+    console.warn('练习赛圈速数据获取失败:', e);
     return null;
   }
 }
 
-// 从 Index.json 中根据比赛名匹配 Meeting，返回练习赛 session 的路径
-function findPracticeSessionPaths(indexData, raceName) {
-  if (!indexData?.Meetings) return {};
-  
-  // 根据比赛名匹配（优先精确匹配 Name 字段）
-  const meeting = indexData.Meetings.find(m => 
-    m.Name === raceName || 
-    m.OfficialName?.includes(raceName.replace(' Grand Prix', '').toUpperCase())
-  );
-  
-  if (!meeting?.Sessions) return {};
-  
-  const paths = {};
-  meeting.Sessions.forEach(session => {
-    if (session.Type === 'Practice' && session.Path) {
-      const num = session.Number;
-      if (num >= 1 && num <= 3) {
-        paths[`fp${num}`] = session.Path;
-      }
-    }
-  });
-  
-  return paths;
-}
-
-// 解析 LiveTiming TimingData.json → 排名数组
-function parseTimingData(data) {
-  if (!data?.Lines) return null;
-
-  const results = Object.entries(data.Lines)
-    .filter(([_, d]) => d.BestLapTime?.Value && d.BestLapTime.Value !== '')
-    .map(([num, d]) => {
-      const driverInfo = DRIVER_BY_NUMBER[num] || {
-        firstName: '', lastName: `#${num}`, code: num, team: '未知', teamColor: '#999'
-      };
-      return {
-        position: parseInt(d.Position) || 99,
-        driverNumber: parseInt(num),
-        firstName: driverInfo.firstName,
-        lastName: driverInfo.lastName,
-        code: driverInfo.code,
-        teamName: driverInfo.team,
-        teamColor: driverInfo.teamColor,
-        bestLapFormatted: d.BestLapTime.Value,
-        gap: d.TimeDiffToFastest || null,
-        laps: d.NumberOfLaps || 0,
-      };
-    })
-    .sort((a, b) => a.position - b.position);
-
-  // P1 不需要显示差距
-  if (results.length > 0) {
-    results[0].gap = null;
-  }
-
-  return results.length > 0 ? results : null;
-}
-
-// 获取单个练习赛 session 数据（兼容代理和直接请求）
-// 返回值: Array（成功）| 'generating'（归档中）| null（无数据）
-async function fetchLiveTimingSession(sessionPath) {
-  // 构建代理 URL 和直接 URL
-  const proxyUrl = `/f1timing/${sessionPath}TimingData.json`;
-  const directUrl = `https://livetiming.formula1.com/static/${sessionPath}TimingData.json`;
-
-  // 先尝试代理路径
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(proxyUrl, { signal: controller.signal });
-    clearTimeout(timeoutId);
-    if (res.status === 403) return 'generating';
-    if (res.ok) {
-      const data = await res.json();
-      return parseTimingData(data);
-    }
-  } catch (e) {
-    console.warn('代理路径获取失败:', proxyUrl, e.message);
-  }
-
-  // 代理失败时尝试直接请求（可能被 CORS 阻止，但某些环境下可用）
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(directUrl, { signal: controller.signal, mode: 'cors' });
-    clearTimeout(timeoutId);
-    if (res.status === 403) return 'generating';
-    if (res.ok) {
-      const data = await res.json();
-      return parseTimingData(data);
-    }
-  } catch (e) {
-    console.warn('直接请求也失败:', directUrl, e.message);
-  }
-
-  return null;
-}
-
 /**
- * 获取指定分站的练习赛数据（使用 F1 官方 LiveTiming API）
- * 优先从 Index.json 获取准确的 session 路径，避免 URL 拼接猜测
+ * 获取指定分站的练习赛数据（使用 OpenF1 API，原生 CORS 支持）
  * @param {string|number} round - 分站轮次
- * @param {Array} schedule - 赛程数据（含 sessions.fp1 等时间信息）
+ * @param {Array} schedule - 赛程数据
  * @returns {Promise<{fp1: Array|null, fp2: Array|null, fp3: Array|null, error: string|null}>}
  */
 export async function fetchPracticeResults(round, schedule) {
   try {
     const raceInfo = schedule?.find(s => String(s.round) === String(round));
-    if (!raceInfo) return { fp1: null, fp2: null, fp3: null, error: null };
+    if (!raceInfo?.sessions?.fp1) return { fp1: null, fp2: null, fp3: null, error: null };
 
-    const raceName = raceInfo.name;
+    // 获取赛季所有练习赛 sessions
+    const allSessions = await getOpenF1PracticeSessions();
+    if (!allSessions.length) return { fp1: null, fp2: null, fp3: null, error: null };
+
+    // 通过 FP1 的日期匹配对应站点的 OpenF1 sessions
+    const fp1Date = raceInfo.sessions.fp1?.slice(0, 10); // 'YYYY-MM-DD'
+    if (!fp1Date) return { fp1: null, fp2: null, fp3: null, error: null };
+
+    const matchedFP1 = allSessions.find(s =>
+      s.session_name === 'Practice 1' &&
+      s.date_start.slice(0, 10) === fp1Date
+    );
+    if (!matchedFP1) return { fp1: null, fp2: null, fp3: null, error: null };
+
+    const meetingKey = matchedFP1.meeting_key;
+    const stationSessions = allSessions.filter(s => s.meeting_key === meetingKey);
+    const fp1Session = stationSessions.find(s => s.session_name === 'Practice 1');
+    const fp2Session = stationSessions.find(s => s.session_name === 'Practice 2');
+    const fp3Session = stationSessions.find(s => s.session_name === 'Practice 3');
+
+    // 只获取已经结束的 session
     const now = new Date();
-    const results = { fp1: null, fp2: null, fp3: null, error: null };
+    const shouldFetch = (session) => session && new Date(session.date_end) < now;
 
-    // 从 LiveTiming Index.json 获取准确路径
-    const indexData = await getLiveTimingIndex();
-    const sessionPaths = indexData ? findPracticeSessionPaths(indexData, raceName) : {};
+    const [fp1, fp2, fp3] = await Promise.all([
+      shouldFetch(fp1Session) ? fetchSinglePracticeSession(fp1Session.session_key) : Promise.resolve(null),
+      shouldFetch(fp2Session) ? fetchSinglePracticeSession(fp2Session.session_key) : Promise.resolve(null),
+      shouldFetch(fp3Session) ? fetchSinglePracticeSession(fp3Session.session_key) : Promise.resolve(null),
+    ]);
 
-    // 获取每个 FP 的数据
-    const fpConfigs = [
-      { key: 'fp1', sessionKey: 'fp1' },
-      { key: 'fp2', sessionKey: 'fp2' },
-      { key: 'fp3', sessionKey: 'fp3' },
-    ];
-
-    const fetches = fpConfigs.map(async ({ key, sessionKey }) => {
-      const sessionTime = raceInfo.sessions?.[sessionKey];
-      if (!sessionTime) return; // 冲刺周末可能没有 FP2/FP3
-
-      // session 持续约 60 分钟，结束后立即尝试获取
-      const sessionDate = new Date(sessionTime);
-      const sessionEndEstimate = new Date(sessionDate.getTime() + 60 * 60 * 1000);
-      if (sessionEndEstimate > now) return; // session 还在进行中，跳过
-
-      // 优先使用 Index.json 中的路径
-      const path = sessionPaths[key];
-      if (path) {
-        results[key] = await fetchLiveTimingSession(path);
-      }
-    });
-
-    await Promise.all(fetches);
-    return results;
+    return { fp1, fp2, fp3, error: null };
   } catch (error) {
     console.error('练习赛数据获取失败:', error);
     return { fp1: null, fp2: null, fp3: null, error: 'network' };
   }
 }
-
-
 
