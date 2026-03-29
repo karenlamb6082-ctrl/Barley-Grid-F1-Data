@@ -1,4 +1,4 @@
-﻿const API_BASE = "https://api.jolpi.ca/ergast/f1/current";
+const API_BASE = "https://api.jolpi.ca/ergast/f1/current";
 
 const TEAM_COLORS = {
   ferrari: "#E8002D",
@@ -345,6 +345,14 @@ const DRIVER_BY_NUMBER = {
   '87': { firstName: 'Oliver', lastName: 'Bearman', team: 'Haas', teamColor: '#B6BABD' },
 };
 
+// 构建 LiveTiming 请求 URL（本地走 Vite 代理，线上走 Vercel API route）
+function buildTimingUrl(path) {
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return `/f1timing/${path}`;
+  }
+  return `/api/f1proxy?path=${encodeURIComponent(path)}`;
+}
+
 let _indexCache = null;
 let _indexCacheTime = 0;
 
@@ -353,14 +361,14 @@ async function getLiveTimingIndex() {
   try {
     const c = new AbortController();
     setTimeout(() => c.abort(), 8000);
-    const res = await fetch('/f1timing/2026/Index.json', { signal: c.signal });
+    const res = await fetch(buildTimingUrl('2026/Index.json'), { signal: c.signal });
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
     _indexCache = data;
     _indexCacheTime = Date.now();
     return data;
   } catch (e) {
-    console.warn('LiveTiming Index 鑾峰彇澶辫触:', e.message);
+    console.warn('LiveTiming Index 获取失败:', e.message);
     return null;
   }
 }
@@ -385,7 +393,7 @@ function parseTimingData(data) {
   const results = Object.entries(data.Lines)
     .filter(([_, d]) => d.BestLapTime?.Value && d.BestLapTime.Value !== '')
     .map(([num, d]) => {
-      const info = DRIVER_BY_NUMBER[num] || { firstName: '', lastName: `#${num}`, team: '鏈煡', teamColor: '#999' };
+      const info = DRIVER_BY_NUMBER[num] || { firstName: '', lastName: `#${num}`, team: 'Unknown', teamColor: '#999' };
       return {
         position: parseInt(d.Position) || 99,
         driverNumber: parseInt(num),
@@ -410,13 +418,13 @@ async function fetchLiveTimingSession(sessionPath) {
   try {
     const c = new AbortController();
     setTimeout(() => c.abort(), 8000);
-    const res = await fetch(`/f1timing/${sessionPath}TimingData.json`, { signal: c.signal });
+    const res = await fetch(buildTimingUrl(`${sessionPath}TimingData.json`), { signal: c.signal });
     if (!res.ok) return null;
     const parsed = parseTimingData(await res.json());
     if (parsed) _fpCache[sessionPath] = parsed;
     return parsed;
   } catch (e) {
-    console.warn('FP session 鑾峰彇澶辫触:', e.message);
+    console.warn('FP session 获取失败:', e.message);
     return null;
   }
 }
