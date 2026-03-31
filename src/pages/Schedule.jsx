@@ -56,7 +56,7 @@ export default function Schedule({ scheduleData = [], allRaces = [], onRaceClick
                
                <div className="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
                  {hasResults ? (
-                   <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-f1-cyan/10 text-[13px] font-semibold text-f1-cyan border border-f1-cyan/20 hover:bg-f1-cyan/20 transition-colors">
+                   <span className="btn-bounce inline-flex items-center px-4 py-1.5 rounded-full bg-f1-cyan/10 text-[13px] font-semibold text-f1-cyan border border-f1-cyan/20 hover:bg-f1-cyan/20">
                      查看结果 →
                    </span>
                  ) : isCompleted ? (

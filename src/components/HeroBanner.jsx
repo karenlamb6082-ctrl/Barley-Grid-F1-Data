@@ -28,13 +28,13 @@ export default function HeroBanner({ setCurrentView }) {
         <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3">
           <button 
             onClick={() => setCurrentView('schedule')}
-            className="bg-[#1C1C1E] text-white px-7 py-3 rounded-full font-semibold text-[14px] shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.15)] hover:bg-black transition-all active:scale-[0.98]"
+            className="btn-bounce bg-[#1C1C1E] text-white px-7 py-3 rounded-full font-semibold text-[14px] shadow-[0_4px_14px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.15)] hover:bg-black"
           >
             赛历追踪
           </button>
           <button 
             onClick={() => setCurrentView('standings')}
-            className="bg-black/[0.04] text-f1-text px-7 py-3 rounded-full font-semibold text-[14px] hover:bg-black/[0.08] transition-all active:scale-[0.98]"
+            className="btn-bounce bg-black/[0.04] text-f1-text px-7 py-3 rounded-full font-semibold text-[14px] hover:bg-black/[0.08]"
           >
             积分榜单
           </button>

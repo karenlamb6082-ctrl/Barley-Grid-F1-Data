@@ -19,7 +19,7 @@ export default function Standings({ driverData = [], teamData = [], onDriverClic
                 return (
                   <div 
                     key={driver.id} 
-                    className="py-6 flex items-center group -mx-6 px-6 hover:bg-[#FAF9F7] transition-colors rounded-2xl cursor-pointer"
+                    className="py-6 flex items-center group -mx-6 px-6 tap-row hover:bg-[#FAF9F7] rounded-2xl cursor-pointer"
                     onClick={() => onDriverClick && onDriverClick(driver.id)}
                   >
                     <span className={`w-8 sm:w-10 text-center text-[18px] sm:text-[20px] font-bold mr-3 sm:mr-5 flex-shrink-0 ${index === 0 ? 'text-f1-text' : index < 3 ? 'text-f1-text/80' : 'text-f1-text-muted'}`}>
@@ -53,7 +53,7 @@ export default function Standings({ driverData = [], teamData = [], onDriverClic
               {teamData.map((team, index) => {
                 const percent = Math.max(2, (team.points / maxTeamPoints) * 100);
                 return (
-                  <div key={team.id} className="py-6 flex items-center group -mx-6 px-6 hover:bg-[#FAF9F7] transition-colors rounded-2xl cursor-pointer"
+                  <div key={team.id} className="py-6 flex items-center group -mx-6 px-6 tap-row hover:bg-[#FAF9F7] rounded-2xl cursor-pointer"
                     onClick={() => onTeamClick && onTeamClick(team.id)}
                   >
                     <span className={`w-10 text-center text-[20px] font-bold mr-5 ${index === 0 ? 'text-f1-text' : index < 3 ? 'text-f1-text/80' : 'text-f1-text-muted'}`}>

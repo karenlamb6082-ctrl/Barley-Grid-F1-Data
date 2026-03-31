@@ -31,7 +31,7 @@ export default function Header({ currentView, setCurrentView }) {
             <button
               key={tab.id}
               onClick={() => handleNav(tab.id)}
-              className={`px-5 py-1.5 rounded-full text-[13px] font-semibold transition-all duration-300 ${
+              className={`btn-bounce px-5 py-1.5 rounded-full text-[13px] font-semibold ${
                 currentView === tab.id 
                   ? 'bg-white text-f1-text shadow-sm' 
                   : 'text-f1-text-muted hover:text-f1-text'

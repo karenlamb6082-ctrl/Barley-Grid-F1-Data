@@ -15,7 +15,7 @@ export default function RecentResultsCard({ results, onRaceClick, onViewAll }) {
       
       <div className="flex-1 divide-y divide-black/5">
         {results.slice(0, 2).map((race) => (
-          <div key={race.id} className="p-8 hover:bg-[#FDFDFD] transition-colors cursor-pointer group" onClick={() => onRaceClick && onRaceClick(race.round)}>
+          <div key={race.id} className="p-8 hover:bg-[#FDFDFD] tap-row cursor-pointer group" onClick={() => onRaceClick && onRaceClick(race.round)}>
             <div className="mb-6 flex justify-between items-end">
               <div>
                 <div className="text-[11px] font-bold text-f1-text-muted uppercase tracking-[0.15em] mb-2">

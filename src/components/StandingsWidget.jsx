@@ -15,7 +15,7 @@ export default function StandingsWidget({ title, data, type, maxPoints, onViewAl
             return (
               <div 
                 key={item.id} 
-                className="py-3.5 flex items-center cursor-pointer hover:bg-black/[0.02] transition-colors rounded-xl px-2 -mx-2"
+                className="py-3.5 flex items-center cursor-pointer tap-row hover:bg-black/[0.02] rounded-xl px-2 -mx-2"
                 onClick={() => onItemClick && onItemClick(item.id)}
               >
                 <span className={`w-6 text-center text-[15px] font-medium mr-3 flex-shrink-0 ${index === 0 ? 'text-f1-text font-bold' : 'text-f1-text-muted'}`}>

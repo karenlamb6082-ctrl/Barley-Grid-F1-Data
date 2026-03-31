@@ -51,7 +51,7 @@ export default function SchedulePreview({ schedule = [], allRaces = [], onRaceCl
           return (
             <div
               key={race.id}
-              className={`px-8 py-5 flex items-center gap-5 cursor-pointer transition-all hover:bg-black/[0.02] ${isCompleted ? 'opacity-60 hover:opacity-90' : ''}`}
+              className={`px-8 py-5 flex items-center gap-5 cursor-pointer tap-row hover:bg-black/[0.02] ${isCompleted ? 'opacity-60 hover:opacity-90' : ''}`}
               onClick={() => onRaceClick && onRaceClick(race.round)}
             >
               {/* 日期 */}
