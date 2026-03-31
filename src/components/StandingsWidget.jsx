@@ -1,3 +1,5 @@
+import { getDriverImage } from '../services/f1api';
+
 export default function StandingsWidget({ title, data, type, maxPoints, onViewAll, onItemClick }) {
   if (!data || data.length === 0) return null;
   return (
@@ -16,19 +18,37 @@ export default function StandingsWidget({ title, data, type, maxPoints, onViewAl
                 className="py-3.5 flex items-center cursor-pointer hover:bg-black/[0.02] transition-colors rounded-xl px-2 -mx-2"
                 onClick={() => onItemClick && onItemClick(item.id)}
               >
-                <span className={`w-6 text-center text-[15px] font-medium mr-3 ${index === 0 ? 'text-f1-text font-bold' : 'text-f1-text-muted'}`}>
+                <span className={`w-6 text-center text-[15px] font-medium mr-3 flex-shrink-0 ${index === 0 ? 'text-f1-text font-bold' : 'text-f1-text-muted'}`}>
                   {item.rank}
                 </span>
+
+                {/* 车手头像 */}
+                {type === "driver" && (
+                  <div className="w-8 h-8 rounded-full mr-3 flex-shrink-0 overflow-hidden bg-black/[0.03] border border-black/[0.04]">
+                    <img 
+                      src={getDriverImage(item.id) || `https://api.dicebear.com/9.x/micah/svg?seed=${item.id}&backgroundColor=transparent`} 
+                      alt={item.lastName}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+
+                {/* 车队色块 */}
+                {type === "team" && (
+                  <div 
+                    className="w-8 h-8 rounded-lg mr-3 flex-shrink-0 flex items-center justify-center"
+                    style={{ backgroundColor: `${item.teamColor}18` || '#E6E5E318' }}
+                  >
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.teamColor || '#E6E5E3' }}></div>
+                  </div>
+                )}
                 
                 <div className="flex-1 min-w-0 pr-4">
-                  <div className="flex items-center space-x-2.5 mb-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.teamColor || '#E6E5E3' }}></div>
+                  <div className="flex items-center space-x-2 mb-1.5">
                     <span className="font-semibold text-f1-text text-[14px] truncate">
                       {type === "driver" ? `${item.firstName} ${item.lastName}` : item.name}
                     </span>
-                    {type === "driver" && (
-                      <span className="text-[11px] text-f1-text-muted uppercase tracking-wider font-medium truncate">{item.team}</span>
-                    )}
                   </div>
                   
                   <div className="h-[4px] w-full bg-black/5 rounded-full overflow-hidden">

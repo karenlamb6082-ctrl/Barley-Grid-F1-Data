@@ -15,8 +15,9 @@ import { LOADING_QUOTES } from "./data/f1Fun"
 function LoadingQuote() {
   const q = LOADING_QUOTES[Math.floor(Math.random() * LOADING_QUOTES.length)];
   return (
-    <div className="text-center max-w-xs">
-      <p className="text-[15px] font-medium text-f1-text/60 italic leading-relaxed">{q.text}</p>
+    <div className="text-center max-w-xs animate-in fade-in duration-700">
+      <div className="w-8 h-[2px] bg-f1-red/40 mx-auto mb-6 rounded-full"></div>
+      <p className="text-[15px] font-medium text-f1-text/60 italic leading-relaxed mb-1.5">📻 {q.text}</p>
       <p className="text-[11px] text-f1-text-muted mt-1.5">{q.sub}</p>
     </div>
   );
@@ -108,7 +109,10 @@ function App() {
   useEffect(() => {
     let isMounted = true;
     const loadData = async () => {
-      const res = await fetchAllData();
+      // 最低加载展示时间 1.8 秒（让用户看完 TR）
+      const minDelay = new Promise(r => setTimeout(r, 1800));
+      const dataPromise = fetchAllData();
+      const [res] = await Promise.all([dataPromise, minDelay]);
       if (isMounted && res) {
         setData(res);
         setLoading(false);
@@ -116,7 +120,12 @@ function App() {
     };
     
     loadData();
-    const intervalId = setInterval(loadData, 300000);
+    // 后续轮询不需要延迟
+    const poll = async () => {
+      const res = await fetchAllData();
+      if (isMounted && res) setData(res);
+    };
+    const intervalId = setInterval(poll, 300000);
     
     return () => {
       isMounted = false;

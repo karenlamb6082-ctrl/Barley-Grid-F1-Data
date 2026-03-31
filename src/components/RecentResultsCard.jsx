@@ -29,15 +29,22 @@ export default function RecentResultsCard({ results, onRaceClick, onViewAll }) {
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {race.podium.map((pod) => (
-                <div key={pod.position} className="flex items-center space-x-3.5 bg-white border border-black/5 group-hover:border-black/10 group-hover:shadow-[0_2px_12px_rgba(0,0,0,0.02)] rounded-2xl p-3.5 transition-all">
-                  <div className={`text-[18px] font-bold w-6 text-center flex-shrink-0 ${
-                    pod.position === 1 ? 'text-f1-red' : 
-                    pod.position === 2 ? 'text-f1-text' : 
-                    'text-f1-cyan'
-                  }`}>{pod.position}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[14px] font-semibold text-f1-text truncate">{pod.name}</div>
-                    <div className="text-[11px] text-f1-text-muted uppercase tracking-[0.05em] font-medium truncate mt-0.5">{pod.team}</div>
+                <div key={pod.position} className="flex items-center bg-white border border-black/5 group-hover:border-black/10 group-hover:shadow-[0_2px_12px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden transition-all">
+                  {/* 车队色竖条 */}
+                  <div 
+                    className="w-1 self-stretch flex-shrink-0 rounded-l-2xl" 
+                    style={{ backgroundColor: pod.teamColor || '#E6E5E3' }}
+                  ></div>
+                  <div className="flex items-center space-x-3 p-3.5 flex-1 min-w-0">
+                    <div className={`text-[18px] font-bold w-6 text-center flex-shrink-0 ${
+                      pod.position === 1 ? 'text-f1-red' : 
+                      pod.position === 2 ? 'text-f1-text' : 
+                      'text-f1-cyan'
+                    }`}>{pod.position}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[14px] font-semibold text-f1-text truncate">{pod.name}</div>
+                      <div className="text-[11px] text-f1-text-muted uppercase tracking-[0.05em] font-medium truncate mt-0.5">{pod.team}</div>
+                    </div>
                   </div>
                 </div>
               ))}

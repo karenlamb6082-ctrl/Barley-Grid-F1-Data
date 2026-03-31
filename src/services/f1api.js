@@ -223,6 +223,7 @@ export async function fetchAllData() {
         driverId: res.Driver.driverId,
         name: `${res.Driver.givenName[0]}. ${res.Driver.familyName}`,
         team: res.Constructor.name,
+        teamColor: getTeamColor(res.Constructor.constructorId),
         time: res.position === '1' ? res.Time?.time || "Finished" : res.Time?.time || "Finished"
       })) : []
     })).reverse();
