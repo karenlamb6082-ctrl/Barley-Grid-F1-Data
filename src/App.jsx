@@ -164,7 +164,7 @@ function App() {
       </div>
       <DriverDrawer driverId={selectedDriverId} data={data} onClose={closeDriver} />
       <TeamDrawer teamId={selectedTeamId} data={data} onClose={closeTeam} />
-      <RaceDrawer raceRound={selectedRaceRound} data={data} onClose={closeRace} onDriverClick={(id) => { setSelectedRaceRound(null); setTimeout(() => openDriver(id), 300); }} />
+      <RaceDrawer raceRound={selectedRaceRound} data={data} onClose={closeRace} onDriverClick={(id) => { setSelectedRaceRound(null); setTimeout(() => openDriver(id), 550); }} />
     </div>
   )
 }

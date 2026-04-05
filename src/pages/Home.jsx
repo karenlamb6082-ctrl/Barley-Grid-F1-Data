@@ -29,12 +29,12 @@ export default function Home({ setCurrentView, data, onDriverClick, onTeamClick,
       </FadeInSection>
 
       {/* 下一场比赛 - 全宽 */}
-      <FadeInSection delay={100}>
+      <FadeInSection delay={180}>
         <NextRaceCard race={nextRace} onClick={onRaceClick} />
       </FadeInSection>
 
       {/* 分站结果 + 赛季日程 */}
-      <FadeInSection delay={200}>
+      <FadeInSection delay={380}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <RecentResultsCard 
             results={recentResults} 
@@ -51,7 +51,7 @@ export default function Home({ setCurrentView, data, onDriverClick, onTeamClick,
       </FadeInSection>
 
       {/* 积分榜 */}
-      <FadeInSection delay={300}>
+      <FadeInSection delay={580}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <StandingsWidget 
             title="车手积分榜" 

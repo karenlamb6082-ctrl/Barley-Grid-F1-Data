@@ -97,12 +97,12 @@ export default function TeamDrawer({ teamId, data, onClose }) {
     <div className={`fixed inset-0 z-[100] ${isVisible ? 'pointer-events-auto' : 'pointer-events-none'}`}>
       
       <div 
-        className={`absolute inset-0 bg-black/40 transition-opacity duration-400 ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 bg-black/40 transition-opacity duration-[550ms] ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
         onClick={handleClose}
       />
 
       <div 
-        className={`absolute top-0 right-0 w-full max-w-[480px] h-full transition-opacity duration-400 ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute top-0 right-0 w-full max-w-[480px] h-full transition-opacity duration-[550ms] ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
         style={{ 
           backdropFilter: 'blur(40px) saturate(180%)',
           WebkitBackdropFilter: 'blur(40px) saturate(180%)',
@@ -110,7 +110,7 @@ export default function TeamDrawer({ teamId, data, onClose }) {
       />
 
       <div 
-        className={`absolute top-0 right-0 w-full max-w-[480px] h-full flex flex-col transform-gpu transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`absolute top-0 right-0 w-full max-w-[480px] h-full flex flex-col transform-gpu transition-transform duration-[550ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
         style={{ 
           backgroundColor: 'rgba(255,255,255,0.72)',
           borderLeft: '1px solid rgba(255,255,255,0.5)',
