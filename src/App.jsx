@@ -12,6 +12,18 @@ import { fetchAllData, getCachedAllData } from "./services/f1api"
 import { LOADING_QUOTES } from "./data/f1Fun"
 
 const APP_VIEWS = new Set(["home", "schedule", "standings"]);
+const LIVE_REFRESH_INTERVAL = 60 * 1000;
+const RACE_WEEK_REFRESH_INTERVAL = 2 * 60 * 1000;
+const DEFAULT_REFRESH_INTERVAL = 15 * 60 * 1000;
+const SESSION_DURATION_MINUTES = {
+  fp1: 60,
+  fp2: 60,
+  fp3: 60,
+  sprintQualifying: 45,
+  sprint: 60,
+  qualifying: 60,
+  race: 120,
+};
 
 function getViewFromLocation() {
   if (typeof window === "undefined") return "home";
@@ -22,6 +34,28 @@ function getViewFromLocation() {
 
 function getPathForView(view) {
   return view === "home" ? "/" : `/${view}`;
+}
+
+function getDataRefreshInterval(data) {
+  const sessions = data?.nextRace?.sessions;
+  if (!sessions) return DEFAULT_REFRESH_INTERVAL;
+
+  const now = Date.now();
+  const sessionTimes = Object.entries(sessions)
+    .filter(([, value]) => value)
+    .map(([key, value]) => ({
+      key,
+      start: new Date(value).getTime(),
+      duration: (SESSION_DURATION_MINUTES[key] || 60) * 60 * 1000,
+    }));
+
+  const isLiveWindow = sessionTimes.some(({ start, duration }) => (
+    now >= start - 30 * 60 * 1000 && now <= start + duration + 2 * 60 * 60 * 1000
+  ));
+  if (isLiveWindow) return LIVE_REFRESH_INTERVAL;
+
+  const isRaceWeekWindow = sessionTimes.some(({ start }) => Math.abs(start - now) <= 24 * 60 * 60 * 1000);
+  return isRaceWeekWindow ? RACE_WEEK_REFRESH_INTERVAL : DEFAULT_REFRESH_INTERVAL;
 }
 
 // 加载页随机无线电台词
@@ -129,6 +163,12 @@ function App() {
         setLoading(false);
       }
 
+      const shouldRefreshNow = !cached?.data || !cached.isFresh || getDataRefreshInterval(cached.data) <= RACE_WEEK_REFRESH_INTERVAL;
+      if (!shouldRefreshNow) {
+        if (isMounted) setLoading(false);
+        return;
+      }
+
       const res = await fetchAllData();
       if (isMounted && res) {
         setData(res);
@@ -140,17 +180,25 @@ function App() {
     
     loadData();
     // 后续轮询不需要延迟
-    const poll = async () => {
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!data) return;
+    let isMounted = true;
+    const interval = getDataRefreshInterval(data);
+    const intervalId = setInterval(async () => {
       const res = await fetchAllData();
       if (isMounted && res) setData(res);
-    };
-    const intervalId = setInterval(poll, 300000);
-    
+    }, interval);
+
     return () => {
       isMounted = false;
       clearInterval(intervalId);
     };
-  }, []);
+  }, [data?.nextRace?.round, data?.nextRace?.date]);
 
   return (
     <div className="min-h-screen flex flex-col relative bg-f1-bg z-0 text-f1-text font-sans antialiased overflow-x-hidden">

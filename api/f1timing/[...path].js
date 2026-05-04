@@ -1,13 +1,11 @@
-// Vercel Serverless Function — 代理 F1 LiveTiming API 请求
-// 路径格式: /api/f1timing/{任意路径} → https://livetiming.formula1.com/static/{任意路径}
+// Vercel serverless proxy for F1 LiveTiming static JSON.
+// /api/f1timing/{path} -> https://livetiming.formula1.com/static/{path}
 
 export default async function handler(req, res) {
-  // 从请求路径中提取目标路径
   const { path } = req.query;
   const targetPath = Array.isArray(path) ? path.join('/') : path;
   const targetUrl = `https://livetiming.formula1.com/static/${targetPath}`;
 
-  // 设置 CORS 头
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -24,19 +22,27 @@ export default async function handler(req, res) {
       },
     });
 
-    // 透传状态码
     if (!response.ok) {
-      return res.status(response.status).json({ error: `上游返回 ${response.status}` });
+      return res.status(response.status).json({ error: `Upstream returned ${response.status}` });
     }
 
     const data = await response.text();
-    
-    // 设置缓存头（练习赛数据不会频繁变化，可以缓存 5 分钟）
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
+    res.setHeader('Cache-Control', getCacheControl(targetPath));
     res.setHeader('Content-Type', 'application/json');
     return res.status(200).send(data);
   } catch (error) {
-    console.error('代理请求失败:', error);
-    return res.status(502).json({ error: '代理请求失败', message: error.message });
+    console.error('LiveTiming proxy failed:', error);
+    return res.status(502).json({ error: 'Proxy request failed', message: error.message });
   }
+}
+
+function getCacheControl(path) {
+  const value = String(path);
+  if (value.endsWith('TimingData.json')) {
+    return 's-maxage=30, stale-while-revalidate=30';
+  }
+  if (value.endsWith('Index.json')) {
+    return 's-maxage=300, stale-while-revalidate=120';
+  }
+  return 's-maxage=120, stale-while-revalidate=60';
 }

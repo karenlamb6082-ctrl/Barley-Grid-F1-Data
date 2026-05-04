@@ -184,6 +184,9 @@ export const getDriverImage = (driverId) => {
   return filename ? `/drivers/${filename}` : null;
 };
 
+const _raceWeekendCache = {};
+const RACE_WEEKEND_CACHE_TTL = 10 * 60 * 1000;
+
 export async function fetchAllData() {
   try {
     const [driversData, teamsData, calendarData, allResultsData, sprintData] = await Promise.all([
@@ -289,6 +292,10 @@ export async function fetchAllData() {
 
 // 按需获取某轮分站的排位赛和冲刺赛数据
 export async function fetchRaceWeekend(round) {
+  const cacheKey = String(round);
+  const cached = _raceWeekendCache[cacheKey];
+  if (cached && Date.now() - cached.time < RACE_WEEKEND_CACHE_TTL) return cached.data;
+
   try {
     const [qualRes, sprintRes] = await Promise.allSettled([
       fetch(`${API_BASE}/${round}/qualifying.json`),
@@ -355,7 +362,9 @@ export async function fetchRaceWeekend(round) {
       }
     }
 
-    return { qualifying, sprint, sprintQualifying };
+    const data = { qualifying, sprint, sprintQualifying };
+    _raceWeekendCache[cacheKey] = { time: Date.now(), data };
+    return data;
   } catch (error) {
     console.error('Failed to fetch race weekend data:', error);
     return { qualifying: null, sprint: null, sprintQualifying: null };

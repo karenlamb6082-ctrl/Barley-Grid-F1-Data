@@ -26,11 +26,22 @@ export default async function handler(req, res) {
     }
 
     const data = await response.text();
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
+    res.setHeader('Cache-Control', getCacheControl(targetPath));
     res.setHeader('Content-Type', 'application/json');
     return res.status(200).send(data);
   } catch (error) {
     console.error('代理请求失败:', error);
     return res.status(502).json({ error: '代理请求失败', message: error.message });
   }
+}
+
+function getCacheControl(path) {
+  const value = String(path);
+  if (value.endsWith('TimingData.json')) {
+    return 's-maxage=30, stale-while-revalidate=30';
+  }
+  if (value.endsWith('Index.json')) {
+    return 's-maxage=300, stale-while-revalidate=120';
+  }
+  return 's-maxage=120, stale-while-revalidate=60';
 }
