@@ -1,4 +1,52 @@
 const API_BASE = "https://api.jolpi.ca/ergast/f1/current";
+const ALL_DATA_CACHE_KEY = "barley-grid:f1-data:v1";
+const ALL_DATA_CACHE_MAX_AGE = 30 * 60 * 1000;
+
+function canUseStorage() {
+  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
+
+export function getCachedAllData(maxAge = ALL_DATA_CACHE_MAX_AGE) {
+  if (!canUseStorage()) return null;
+  try {
+    const raw = window.localStorage.getItem(ALL_DATA_CACHE_KEY);
+    if (!raw) return null;
+    const cached = JSON.parse(raw);
+    if (!cached?.data || !cached?.cachedAt) return null;
+    return {
+      data: cached.data,
+      cachedAt: cached.cachedAt,
+      isFresh: Date.now() - cached.cachedAt < maxAge,
+    };
+  } catch (error) {
+    console.warn("Failed to read F1 cache:", error);
+    return null;
+  }
+}
+
+export function setCachedAllData(data) {
+  if (!canUseStorage() || !data) return;
+  try {
+    window.localStorage.setItem(
+      ALL_DATA_CACHE_KEY,
+      JSON.stringify({ cachedAt: Date.now(), data })
+    );
+  } catch (error) {
+    console.warn("Failed to write F1 cache:", error);
+  }
+}
+
+async function fetchJson(url, timeout = 12000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 const TEAM_COLORS = {
   ferrari: "#E8002D",
@@ -138,19 +186,13 @@ export const getDriverImage = (driverId) => {
 
 export async function fetchAllData() {
   try {
-    const [driversRes, teamsRes, calendarRes, allResultsRes, sprintRes] = await Promise.all([
-      fetch(`${API_BASE}/driverStandings.json`),
-      fetch(`${API_BASE}/constructorStandings.json`),
-      fetch(`${API_BASE}.json`),
-      fetch(`${API_BASE}/results.json?limit=100`),
-      fetch(`${API_BASE}/sprint.json?limit=100`)
+    const [driversData, teamsData, calendarData, allResultsData, sprintData] = await Promise.all([
+      fetchJson(`${API_BASE}/driverStandings.json`),
+      fetchJson(`${API_BASE}/constructorStandings.json`),
+      fetchJson(`${API_BASE}.json`),
+      fetchJson(`${API_BASE}/results.json?limit=100`),
+      fetchJson(`${API_BASE}/sprint.json?limit=100`)
     ]);
-
-    const driversData = await driversRes.json();
-    const teamsData = await teamsRes.json();
-    const calendarData = await calendarRes.json();
-    const allResultsData = await allResultsRes.json();
-    const sprintData = await sprintRes.json();
 
     // 1. Driver Standings
     const rawDrivers = driversData.MRData.StandingsTable.StandingsLists[0]?.DriverStandings || [];
@@ -228,7 +270,7 @@ export async function fetchAllData() {
       })) : []
     })).reverse();
 
-    return {
+    const data = {
       driverStandings,
       teamStandings,
       schedule,
@@ -237,9 +279,11 @@ export async function fetchAllData() {
       allRaces: allResultsData.MRData.RaceTable.Races || [],
       allSprintRaces: sprintData.MRData?.RaceTable?.Races || []
     };
+    setCachedAllData(data);
+    return data;
   } catch (error) {
     console.error("F1 API Fetch Failed:", error);
-    return null;
+    return getCachedAllData(Infinity)?.data || null;
   }
 }
 

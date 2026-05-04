@@ -8,8 +8,21 @@ import Standings from "./pages/Standings"
 import DriverDrawer from "./components/DriverDrawer"
 import TeamDrawer from "./components/TeamDrawer"
 import RaceDrawer from "./components/RaceDrawer"
-import { fetchAllData } from "./services/f1api"
+import { fetchAllData, getCachedAllData } from "./services/f1api"
 import { LOADING_QUOTES } from "./data/f1Fun"
+
+const APP_VIEWS = new Set(["home", "schedule", "standings"]);
+
+function getViewFromLocation() {
+  if (typeof window === "undefined") return "home";
+  const path = window.location.pathname.replace(/^\/+|\/+$/g, "");
+  if (!path) return "home";
+  return APP_VIEWS.has(path) ? path : "home";
+}
+
+function getPathForView(view) {
+  return view === "home" ? "/" : `/${view}`;
+}
 
 // 加载页随机无线电台词
 function LoadingQuote() {
@@ -23,7 +36,7 @@ function LoadingQuote() {
   );
 }
 function App() {
-  const [currentView, setCurrentViewRaw] = useState("home");
+  const [currentView, setCurrentViewRaw] = useState(() => getViewFromLocation());
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedDriverId, setSelectedDriverId] = useState(null);
@@ -38,8 +51,8 @@ function App() {
     
     setCurrentViewRaw(view);
     window.scrollTo({ top: 0, behavior: 'instant' });
-    if (window.history.state?.view !== view) {
-      window.history.pushState({ view, scrollY: 0 }, '', `/${view === 'home' ? '' : view}`);
+    if (window.history.state?.view !== view || window.location.pathname !== getPathForView(view)) {
+      window.history.pushState({ view, scrollY: 0 }, '', getPathForView(view));
     }
     // 如果指定了滚动目标，等渲染完后滚动到对应位置
     if (scrollTarget) {
@@ -52,11 +65,12 @@ function App() {
 
   // 监听浏览器返回/前进按钮（手机返回键）
   useEffect(() => {
-    // 初始化：替换当前历史条目
-    window.history.replaceState({ view: 'home' }, '', '/');
+    const initialView = getViewFromLocation();
+    setCurrentViewRaw(initialView);
+    window.history.replaceState({ view: initialView, scrollY: window.scrollY }, '', getPathForView(initialView));
 
     const handlePopState = (e) => {
-      const view = e.state?.view || 'home';
+      const view = e.state?.view || getViewFromLocation();
       setCurrentViewRaw(view);
       // 滚动恢复由 unlockScroll() 自动处理，无需手动 scrollTo
       // 关闭所有 Drawer
@@ -109,12 +123,17 @@ function App() {
   useEffect(() => {
     let isMounted = true;
     const loadData = async () => {
-      // 最低加载展示时间 1.8 秒（让用户看完 TR）
-      const minDelay = new Promise(r => setTimeout(r, 1800));
-      const dataPromise = fetchAllData();
-      const [res] = await Promise.all([dataPromise, minDelay]);
+      const cached = getCachedAllData();
+      if (cached?.data && isMounted) {
+        setData(cached.data);
+        setLoading(false);
+      }
+
+      const res = await fetchAllData();
       if (isMounted && res) {
         setData(res);
+        setLoading(false);
+      } else if (isMounted) {
         setLoading(false);
       }
     };
