@@ -102,14 +102,14 @@ export default function NextRaceCard({ race, onClick }) {
 
   return (
     <div 
-      className="apple-card p-8 lg:p-10 flex flex-col justify-between bg-gradient-to-br from-white to-[#FAFAFA] cursor-pointer group transition-all hover:shadow-lg hover:scale-[1.002]"
+      className="apple-card p-4 sm:p-8 lg:p-10 flex flex-col justify-between bg-white cursor-pointer group transition-all hover:scale-[1.002] border-l-[6px] border-l-f1-red"
       onClick={() => onClick && onClick(race.round)}
     >
       <div className="flex justify-between items-start mb-8">
         <div>
           <div className="flex items-center space-x-2.5 mb-3.5">
-             <div className="w-1.5 h-1.5 rounded-full bg-f1-red animate-pulse"></div>
-             <span className="text-[11px] font-bold text-f1-red tracking-[0.15em] uppercase">Next Grand Prix</span>
+             <div className="w-8 h-1 bg-f1-lime -skew-x-12"></div>
+             <span className="text-[11px] font-black text-f1-red tracking-[0.15em] uppercase">Next Grand Prix</span>
           </div>
           <h2 className="text-3xl font-bold text-f1-text tracking-tight mb-1 leading-tight">{race.name}</h2>
           {getRaceNameCN(race.name) && (
@@ -130,12 +130,12 @@ export default function NextRaceCard({ race, onClick }) {
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-2 h-2 rounded-full bg-f1-red animate-pulse"></div>
                 <span className="text-[12px] font-bold text-f1-red">{nextSession.label}</span>
-                <span className="text-[12px] font-bold text-f1-red px-2 py-0.5 bg-f1-red/10 rounded-full">
+                <span className="text-[12px] font-bold text-f1-red px-2 py-0.5 bg-f1-red/10 rounded-md">
                   {nextSession.key === 'race' ? '🏁 灯灭了！' : nextSession.key === 'qualifying' ? '⚓️ 飞驰圈 ing' : nextSession.key.includes('sprint') ? '⚡ 冲刺！' : '🔧 调校中'}
                 </span>
               </div>
-              <div className="flex gap-3">
-                <div className="flex-1 bg-f1-red/5 rounded-xl py-4 text-center border border-f1-red/10">
+              <div className="grid grid-cols-2 sm:flex gap-2 sm:gap-3 max-w-[320px] sm:max-w-none">
+                <div className="flex-1 bg-f1-red/5 rounded-lg py-4 text-center border border-f1-red/15">
                   <div className="text-[15px] font-bold text-f1-red tracking-tight">
                     {format(nextSession.time, "HH:mm")} ~ {format(nextSession.endTime, "HH:mm")}
                   </div>
@@ -150,23 +150,23 @@ export default function NextRaceCard({ race, onClick }) {
             <>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-[11px] font-bold text-f1-text-muted tracking-[0.08em] uppercase">距离</span>
-                <span className="text-[12px] font-bold text-f1-red px-2 py-0.5 bg-f1-red/8 rounded">{nextSession.label}</span>
+                <span className="text-[12px] font-bold text-f1-red px-2 py-0.5 bg-f1-red/10 rounded-md">{nextSession.label}</span>
                 <span className="text-[11px] text-f1-text-muted">
                   {format(nextSession.time, "MM/dd HH:mm")}
                 </span>
               </div>
-              <div className="flex gap-3">
+              <div className="grid grid-cols-2 sm:flex gap-3">
                 {[
                   { value: countdown.days, label: '天' },
                   { value: countdown.hours, label: '时' },
                   { value: countdown.minutes, label: '分' },
                   { value: countdown.seconds, label: '秒' },
                 ].map((item) => (
-                  <div key={item.label} className="flex-1 bg-black/[0.03] rounded-xl py-3 text-center border border-black/[0.03]">
-                    <div className="text-[24px] sm:text-[28px] font-bold text-f1-text tracking-tighter leading-none tabular-nums">
+                  <div key={item.label} className="min-w-0 sm:flex-1 bg-f1-graphite text-white rounded-lg py-3 text-center border border-black/10">
+                    <div className="text-[22px] sm:text-[28px] font-black text-white tracking-tighter leading-none tabular-nums">
                       {String(item.value).padStart(2, '0')}
                     </div>
-                    <div className="text-[11px] font-bold text-f1-text-muted mt-1">{item.label}</div>
+                    <div className="text-[11px] font-bold text-f1-lime mt-1">{item.label}</div>
                   </div>
                 ))}
               </div>
@@ -182,7 +182,7 @@ export default function NextRaceCard({ race, onClick }) {
         </div>
       )}
 
-      <div className="pt-6 border-t border-black/5 flex justify-between items-end">
+      <div className="pt-6 border-t border-black/5 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
         <div className="space-y-4">
           <div>
             <div className="text-[11px] font-bold text-f1-text-muted tracking-[0.1em] uppercase mb-1">练习赛 FP1</div>
@@ -201,8 +201,8 @@ export default function NextRaceCard({ race, onClick }) {
           </div>
         </div>
         
-        <div className="text-right flex flex-col items-end">
-          <div className="text-[72px] font-bold text-f1-text tracking-tighter leading-none -mr-1.5 mb-1.5">
+        <div className="text-right flex flex-col items-end self-end">
+          <div className="text-[52px] sm:text-[72px] font-bold text-f1-text tracking-tighter leading-none -mr-1.5 mb-1.5">
             {format(raceDate, "dd")}
           </div>
           <div className="text-[16px] font-bold text-f1-cyan tracking-[0.2em] uppercase">

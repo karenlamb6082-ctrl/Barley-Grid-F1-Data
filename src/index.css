@@ -4,11 +4,14 @@
 
 @layer base {
   body {
-    background-color: #F5F4F0;
-    color: #1C1C1E;
+    background:
+      linear-gradient(135deg, rgba(255, 45, 45, 0.045) 0%, transparent 28%),
+      linear-gradient(315deg, rgba(215, 255, 56, 0.055) 0%, transparent 24%),
+      #F7F4EE;
+    color: #101010;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
-    letter-spacing: -0.015em;
+    letter-spacing: 0;
   }
 
   /* 全局可点击元素的触感反馈 */
@@ -19,10 +22,12 @@
 
 @layer utilities {
   .apple-card {
-    background-color: #FFFFFF;
-    border-radius: 1.5rem;
-    border: 1px solid rgba(0, 0, 0, 0.03);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.01);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.92)),
+      #FFFFFF;
+    border-radius: 14px;
+    border: 1px solid rgba(16, 16, 16, 0.10);
+    box-shadow: 0 10px 30px rgba(16, 16, 16, 0.06), 0 1px 0 rgba(255,255,255,0.75) inset;
     transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
                 box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
@@ -30,14 +35,14 @@
   }
   
   .apple-card:hover {
-    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.02);
-    transform: translateY(-3px);
+    box-shadow: 0 18px 42px rgba(16, 16, 16, 0.10), 0 1px 0 rgba(255,255,255,0.75) inset;
+    transform: translateY(-2px);
   }
 
   /* 按下时的物理回弹感 —— 手指离开后弹回 */
   .apple-card:active {
     transform: scale(0.985) translateY(0px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 6px 18px rgba(16, 16, 16, 0.07);
     transition-duration: 0.1s;
   }
 
@@ -63,6 +68,17 @@
   .btn-bounce:active {
     transform: scale(0.95) translateY(0px);
     transition-duration: 0.08s;
+  }
+
+  .race-cut {
+    clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+  }
+
+  .timing-grid {
+    background-image:
+      linear-gradient(rgba(16,16,16,0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(16,16,16,0.045) 1px, transparent 1px);
+    background-size: 28px 28px;
   }
 
   /* 抽屉内的纤细滚动条 */

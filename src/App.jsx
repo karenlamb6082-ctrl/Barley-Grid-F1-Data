@@ -203,8 +203,9 @@ function App() {
   return (
     <div className="min-h-screen flex flex-col relative bg-f1-bg z-0 text-f1-text font-sans antialiased overflow-x-hidden">
       {/* 极弱的光影层次，营造网页空气感 */}
-      <div className="absolute top-[-15%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-f1-cyan/[0.04] blur-[120px] pointer-events-none"></div>
-      <div className="absolute top-[20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-f1-red/[0.03] blur-[100px] pointer-events-none"></div>
+      <div className="absolute inset-0 timing-grid opacity-50 pointer-events-none"></div>
+      <div className="hidden sm:block absolute top-20 right-0 w-[36vw] h-3 bg-f1-red -skew-x-12 opacity-90 pointer-events-none"></div>
+      <div className="hidden sm:block absolute top-24 right-0 w-[24vw] h-1 bg-f1-lime -skew-x-12 opacity-90 pointer-events-none"></div>
 
       <div className="relative z-10 flex flex-col min-h-screen">
         <Header currentView={currentView} setCurrentView={setCurrentView} />
