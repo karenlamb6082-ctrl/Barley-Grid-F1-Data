@@ -1,57 +1,50 @@
 export default function RecentResultsCard({ results, onRaceClick, onViewAll }) {
   if (!results || results.length === 0) return null;
+  const race = results[0];
 
   return (
-    <div className="apple-card h-full flex flex-col">
-      <div className="px-8 py-6 border-b border-black/5 flex justify-between items-center">
-        <h3 className="text-[19px] font-semibold text-f1-text tracking-tight">分站结果总览</h3>
-        <button 
-          className="text-[14px] font-medium text-f1-cyan hover:text-f1-text transition-colors"
-          onClick={(e) => { e.stopPropagation(); onViewAll && onViewAll(); }}
+    <div className="apple-card h-full overflow-hidden">
+      <div className="px-6 py-4 bg-f1-red text-white flex justify-between items-center">
+        <h3 className="text-[18px] font-black tracking-tight">🏆 最近结果</h3>
+        <button
+          className="text-[13px] font-black text-white hover:text-f1-lime transition-colors"
+          onClick={(event) => {
+            event.stopPropagation();
+            onViewAll?.();
+          }}
         >
-          查看全部
+          查看完整结果 →
         </button>
       </div>
-      
-      <div className="flex-1 divide-y divide-black/5">
-        {results.slice(0, 2).map((race) => (
-          <div key={race.id} className="p-8 hover:bg-[#FDFDFD] tap-row cursor-pointer group" onClick={() => onRaceClick && onRaceClick(race.round)}>
-            <div className="mb-6 flex justify-between items-end">
-              <div>
-                <div className="text-[11px] font-bold text-f1-text-muted uppercase tracking-[0.15em] mb-2">
-                  Round {String(race.round).padStart(2, '0')}
-                </div>
-                <div className="text-[20px] font-bold text-f1-text tracking-tight">
-                  {race.name}
-                </div>
-              </div>
+
+      <button className="block w-full p-6 text-left" onClick={() => onRaceClick?.(race.round)}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-[12px] font-black text-f1-text-muted uppercase tracking-[0.16em]">
+              Round {String(race.round).padStart(2, "0")}
             </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {race.podium.map((pod) => (
-                <div key={pod.position} className="flex items-center bg-white border border-black/5 group-hover:border-black/10 group-hover:shadow-[0_2px_12px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden transition-all">
-                  {/* 车队色竖条 */}
-                  <div 
-                    className="w-1 self-stretch flex-shrink-0 rounded-l-2xl" 
-                    style={{ backgroundColor: pod.teamColor || '#E6E5E3' }}
-                  ></div>
-                  <div className="flex items-center space-x-3 p-3.5 flex-1 min-w-0">
-                    <div className={`text-[18px] font-bold w-6 text-center flex-shrink-0 ${
-                      pod.position === 1 ? 'text-f1-red' : 
-                      pod.position === 2 ? 'text-f1-text' : 
-                      'text-f1-cyan'
-                    }`}>{pod.position}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[14px] font-semibold text-f1-text truncate">{pod.name}</div>
-                      <div className="text-[11px] text-f1-text-muted uppercase tracking-[0.05em] font-medium truncate mt-0.5">{pod.team}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <div className="mt-2 text-[22px] font-black text-f1-text leading-tight">{race.name}</div>
+            <div className="mt-1 text-[14px] font-semibold text-f1-text-muted">{race.country}</div>
           </div>
-        ))}
-      </div>
+          <span className="rounded bg-f1-red px-2 py-1 text-[11px] font-black text-white">完成</span>
+        </div>
+
+        <div className="mt-8 grid grid-cols-3 divide-x divide-black/10">
+          {race.podium.map((pod) => (
+            <div key={pod.position} className="min-w-0 px-3 first:pl-0 last:pr-0">
+              <div
+                className="mb-4 inline-flex h-8 w-8 items-center justify-center race-cut text-[18px] font-black text-f1-text"
+                style={{ backgroundColor: pod.position === 1 ? "#D7FF38" : pod.teamColor }}
+              >
+                {pod.position}
+              </div>
+              <div className="truncate text-[16px] font-black text-f1-text">{pod.name}</div>
+              <div className="mt-1 truncate text-[12px] font-bold uppercase tracking-wide text-f1-text-muted">{pod.team}</div>
+              <div className="mt-4 text-[18px] font-black text-f1-text tabular-nums">{pod.time}</div>
+            </div>
+          ))}
+        </div>
+      </button>
     </div>
-  )
+  );
 }
