@@ -111,7 +111,7 @@ export default function FavoriteDriverCard({ data, onDriverClick }) {
           </div>
         </button>
 
-        <div className="p-5 sm:p-6">
+        <div className="min-w-0 p-5 sm:p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="text-[12px] font-black uppercase tracking-[0.18em] text-f1-text-muted">Favorite Driver</div>
@@ -137,25 +137,30 @@ export default function FavoriteDriverCard({ data, onDriverClick }) {
           </div>
 
           {selectorOpen && (
-            <div className="mt-4 rounded-lg border border-black/10 bg-white p-2 shadow-[0_12px_30px_rgba(16,16,16,0.08)]">
-              {drivers.slice(0, 8).map((driver) => (
+            <div className="mt-4 max-h-[320px] overflow-y-auto rounded-lg border border-black/10 bg-white p-2 shadow-[0_12px_30px_rgba(16,16,16,0.08)] custom-scrollbar">
+              <div className="px-3 pb-2 pt-1 text-[11px] font-black uppercase tracking-[0.16em] text-f1-text-muted">
+                选择关注车手 · {drivers.length}
+              </div>
+              {drivers.map((driver) => (
                 <button
                   key={driver.id}
                   onClick={() => handleSelect(driver.id)}
-                  className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left hover:bg-black/[0.04]"
+                  className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left hover:bg-black/[0.04] ${
+                    driver.id === selectedDriver.id ? "bg-f1-lime/25" : ""
+                  }`}
                 >
                   <span className="flex min-w-0 items-center gap-3">
                     <span className="h-7 w-1.5 rounded-full" style={{ backgroundColor: driver.teamColor }}></span>
                     <span className="truncate text-[14px] font-black text-f1-text">{getDriverShortName(driver)}</span>
                   </span>
-                  <span className="text-[13px] font-black text-f1-text-muted">{driver.points} pts</span>
+                  <span className="ml-3 whitespace-nowrap text-[13px] font-black text-f1-text-muted">{driver.points} pts</span>
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        <div className="border-t border-black/10 p-5 sm:p-6 lg:border-l lg:border-t-0">
+        <div className="min-w-0 border-t border-black/10 p-5 sm:p-6 lg:border-l lg:border-t-0">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-[15px] font-black text-f1-text">最近表现</h3>
             <span className="rounded bg-black/[0.05] px-2 py-1 text-[11px] font-black text-f1-text-muted">

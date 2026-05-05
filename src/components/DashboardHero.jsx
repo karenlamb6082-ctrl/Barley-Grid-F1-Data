@@ -57,16 +57,18 @@ function CountdownStrip({ targetDate }) {
   const countdown = getCountdown(targetDate, now);
 
   return (
-    <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2 rounded-lg bg-f1-lime p-3">
+    <div className="mt-5 grid grid-cols-2 gap-2 rounded-lg bg-f1-lime p-2.5 sm:grid-cols-4 xl:grid-cols-2">
       {[
         [countdown.days, "天"],
         [countdown.hours, "时"],
         [countdown.minutes, "分"],
         [countdown.seconds, "秒"],
       ].map(([value, label]) => (
-        <div key={label} className="rounded-md bg-white p-2 text-center">
-          <div className="text-[24px] font-black leading-none tabular-nums text-f1-text">{String(value).padStart(2, "0")}</div>
-          <div className="mt-1 text-[11px] font-black text-f1-text-muted">{label}</div>
+        <div key={label} className="flex min-h-[58px] flex-col items-center justify-center rounded-md bg-white px-2 text-center">
+          <span className="text-[24px] font-black leading-none tabular-nums text-f1-text">
+            {String(value).padStart(2, "0")}
+          </span>
+          <span className="mt-1 text-[11px] font-black text-f1-text-muted">{label}</span>
         </div>
       ))}
     </div>
