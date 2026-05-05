@@ -1,15 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
+import { lazy, Suspense, useState, useEffect, useCallback } from "react";
 import { getSavedScrollY } from "./utils/scrollLock";
 import Header from "./components/Header"
 import Footer from "./components/Footer"
 import Home from "./pages/Home"
-import Schedule from "./pages/Schedule"
-import Standings from "./pages/Standings"
-import DriverDrawer from "./components/DriverDrawer"
-import TeamDrawer from "./components/TeamDrawer"
-import RaceDrawer from "./components/RaceDrawer"
 import { fetchAllData, getCachedAllData } from "./services/f1api"
 import { LOADING_QUOTES } from "./data/f1Fun"
+
+const Schedule = lazy(() => import("./pages/Schedule"));
+const Standings = lazy(() => import("./pages/Standings"));
+const DriverDrawer = lazy(() => import("./components/DriverDrawer"));
+const TeamDrawer = lazy(() => import("./components/TeamDrawer"));
+const RaceDrawer = lazy(() => import("./components/RaceDrawer"));
 
 const APP_VIEWS = new Set(["home", "schedule", "standings"]);
 const LIVE_REFRESH_INTERVAL = 60 * 1000;
@@ -60,7 +61,7 @@ function getDataRefreshInterval(data) {
 
 // 加载页随机无线电台词
 function LoadingQuote() {
-  const q = LOADING_QUOTES[Math.floor(Math.random() * LOADING_QUOTES.length)];
+  const [q] = useState(() => LOADING_QUOTES[Math.floor(Math.random() * LOADING_QUOTES.length)]);
   return (
     <div className="text-center max-w-xs animate-in fade-in duration-700">
       <div className="w-8 h-[2px] bg-f1-red/40 mx-auto mb-6 rounded-full"></div>
@@ -69,6 +70,11 @@ function LoadingQuote() {
     </div>
   );
 }
+
+function ViewFallback() {
+  return <div className="min-h-64" />;
+}
+
 function App() {
   const [currentView, setCurrentViewRaw] = useState(() => getViewFromLocation());
   const [data, setData] = useState(null);
@@ -100,7 +106,6 @@ function App() {
   // 监听浏览器返回/前进按钮（手机返回键）
   useEffect(() => {
     const initialView = getViewFromLocation();
-    setCurrentViewRaw(initialView);
     window.history.replaceState({ view: initialView, scrollY: window.scrollY }, '', getPathForView(initialView));
 
     const handlePopState = (e) => {
@@ -198,7 +203,7 @@ function App() {
       isMounted = false;
       clearInterval(intervalId);
     };
-  }, [data?.nextRace?.round, data?.nextRace?.date]);
+  }, [data]);
 
   return (
     <div className="min-h-screen flex flex-col relative bg-f1-bg z-0 text-f1-text font-sans antialiased overflow-x-hidden">
@@ -223,16 +228,31 @@ function App() {
           ) : (
             <div className="animate-in fade-in duration-700">
               {currentView === "home" && <Home setCurrentView={setCurrentView} data={data} onDriverClick={openDriver} onTeamClick={openTeam} onRaceClick={openRace} />}
-              {currentView === "schedule" && <Schedule scheduleData={data.schedule} allRaces={data.allRaces} onRaceClick={openRace} />}
-              {currentView === "standings" && <Standings driverData={data.driverStandings} teamData={data.teamStandings} onDriverClick={openDriver} onTeamClick={openTeam} />}
+              <Suspense fallback={<ViewFallback />}>
+                {currentView === "schedule" && <Schedule scheduleData={data.schedule} allRaces={data.allRaces} onRaceClick={openRace} />}
+                {currentView === "standings" && <Standings driverData={data.driverStandings} teamData={data.teamStandings} onDriverClick={openDriver} onTeamClick={openTeam} />}
+              </Suspense>
             </div>
           )}
         </main>
         <Footer />
       </div>
-      <DriverDrawer driverId={selectedDriverId} data={data} onClose={closeDriver} />
-      <TeamDrawer teamId={selectedTeamId} data={data} onClose={closeTeam} />
-      <RaceDrawer raceRound={selectedRaceRound} data={data} onClose={closeRace} onDriverClick={(id) => { setSelectedRaceRound(null); setTimeout(() => openDriver(id), 550); }} />
+      <Suspense fallback={null}>
+        {selectedDriverId && <DriverDrawer driverId={selectedDriverId} data={data} onClose={closeDriver} />}
+        {selectedTeamId && <TeamDrawer teamId={selectedTeamId} data={data} onClose={closeTeam} />}
+        {selectedRaceRound && (
+          <RaceDrawer
+            key={selectedRaceRound}
+            raceRound={selectedRaceRound}
+            data={data}
+            onClose={closeRace}
+            onDriverClick={(id) => {
+              setSelectedRaceRound(null);
+              setTimeout(() => openDriver(id), 550);
+            }}
+          />
+        )}
+      </Suspense>
     </div>
   )
 }

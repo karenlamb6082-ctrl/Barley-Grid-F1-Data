@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { lockScroll, unlockScroll } from '../utils/scrollLock';
-import { getTeamColor, getDriverImage } from '../services/f1api';
+import { getDriverImage } from '../services/f1api';
 import { DRIVER_TAGS } from '../data/f1Fun';
 
 export default function DriverDrawer({ driverId, data, onClose }) {
@@ -28,7 +28,7 @@ export default function DriverDrawer({ driverId, data, onClose }) {
 
   const handleClose = () => {
     setIsOpen(false);
-    setTimeout(onClose, 450); 
+    setTimeout(onClose, 320);
   };
 
   const isVisible = isOpen || activeId;
@@ -92,26 +92,26 @@ export default function DriverDrawer({ driverId, data, onClose }) {
       
       {/* 第一层：暗色遮罩 — 仅 opacity 动画，GPU 零成本 */}
       <div 
-        className={`absolute inset-0 bg-black/40 transition-opacity duration-[550ms] ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 bg-black/36 transition-opacity duration-300 ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
         onClick={handleClose}
       />
 
       {/* 第二层：毛玻璃层 — 固定定位，仅 opacity 动画，不做 transform → 60fps */}
       <div 
-        className={`absolute top-0 right-0 w-full max-w-[480px] h-full transition-opacity duration-[550ms] ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute top-0 right-0 w-full max-w-[480px] h-full transition-opacity duration-300 ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
         style={{ 
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+          backdropFilter: 'blur(14px) saturate(135%)',
+          WebkitBackdropFilter: 'blur(14px) saturate(135%)',
         }}
       />
 
       {/* 第三层：内容面板 — transform 滑入 + 半透明底色，本身不做 blur */}
       <div 
-        className={`absolute top-0 right-0 w-full max-w-[480px] h-full flex flex-col transform-gpu transition-transform duration-[550ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`absolute top-0 right-0 w-full max-w-[480px] h-full flex flex-col transform-gpu transition-transform duration-300 ease-out will-change-transform ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
         style={{ 
-          backgroundColor: 'rgba(255,255,255,0.72)',
+          backgroundColor: 'rgba(255,255,255,0.88)',
           borderLeft: '1px solid rgba(255,255,255,0.5)',
-          boxShadow: '0 0 80px rgba(0,0,0,0.12)',
+          boxShadow: '0 0 36px rgba(0,0,0,0.10)',
         }}
       >
         {driver && (

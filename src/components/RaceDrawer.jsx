@@ -5,59 +5,48 @@ import { EMPTY_STATE_MESSAGES } from '../data/f1Fun';
 
 export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeRound, setActiveRound] = useState(null);
-  const [activeTab, setActiveTab] = useState('race');
+  const activeRound = raceRound;
+  const [activeTab, setActiveTab] = useState(() => {
+    const hasResults = data?.allRaces?.find(r => r.round === String(raceRound));
+    return hasResults ? 'race' : 'schedule';
+  });
   const [weekendData, setWeekendData] = useState({ qualifying: null, sprint: null, sprintQualifying: null });
-  const [loadingWeekend, setLoadingWeekend] = useState(false);
+  const [loadingWeekend, setLoadingWeekend] = useState(true);
   const [practiceData, setPracticeData] = useState({ fp1: null, fp2: null, fp3: null });
   const [practiceError, setPracticeError] = useState(null);
-  const [loadingPractice, setLoadingPractice] = useState(false);
+  const [loadingPractice, setLoadingPractice] = useState(true);
   
   useEffect(() => {
     if (raceRound) {
-      setActiveRound(raceRound);
       // 智能默认 tab：有正赛结果的显示正赛，否则显示时间表
-      const hasResults = data?.allRaces?.find(r => r.round === String(raceRound));
-      setActiveTab(hasResults ? 'race' : 'schedule');
-      setWeekendData({ qualifying: null, sprint: null, sprintQualifying: null });
-      setPracticeData({ fp1: null, fp2: null, fp3: null });
-      setPracticeError(null);
       lockScroll();
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setIsOpen(true);
         });
       });
-    } else {
-      setIsOpen(false);
-      unlockScroll();
-      const timer = setTimeout(() => {
-        setActiveRound(null);
-      }, 450);
-      return () => clearTimeout(timer);
+      return () => unlockScroll();
     }
   }, [raceRound]);
 
   // 打开 Drawer 时按需加载排位赛和冲刺赛数据
   useEffect(() => {
     if (!activeRound) return;
-    setLoadingWeekend(true);
     fetchRaceWeekend(activeRound).then(d => {
       setWeekendData(d);
       setLoadingWeekend(false);
     });
     // 并行加载练习赛数据
-    setLoadingPractice(true);
     fetchPracticeResults(activeRound, data?.schedule).then(d => {
       setPracticeData({ fp1: d.fp1, fp2: d.fp2, fp3: d.fp3 });
       setPracticeError(d.error || null);
       setLoadingPractice(false);
     });
-  }, [activeRound]);
+  }, [activeRound, data?.schedule]);
 
   const handleClose = () => {
     setIsOpen(false);
-    setTimeout(onClose, 450); 
+    setTimeout(onClose, 320);
   };
 
   const isVisible = isOpen || activeRound;
@@ -501,26 +490,26 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
       
       {/* 第一层：暗色遮罩 */}
       <div 
-        className={`absolute inset-0 bg-black/40 transition-opacity duration-[550ms] ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 bg-black/36 transition-opacity duration-300 ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
         onClick={handleClose}
       />
 
       {/* 第二层：毛玻璃层 */}
       <div 
-        className={`absolute top-0 right-0 w-full max-w-[520px] h-full transition-opacity duration-[550ms] ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute top-0 right-0 w-full max-w-[520px] h-full transition-opacity duration-300 ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
         style={{ 
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+          backdropFilter: 'blur(14px) saturate(135%)',
+          WebkitBackdropFilter: 'blur(14px) saturate(135%)',
         }}
       />
 
       {/* 第三层：内容面板 */}
       <div 
-        className={`absolute top-0 right-0 w-full max-w-[520px] h-full flex flex-col transform-gpu transition-transform duration-[550ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`absolute top-0 right-0 w-full max-w-[520px] h-full flex flex-col transform-gpu transition-transform duration-300 ease-out will-change-transform ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
         style={{ 
-          backgroundColor: 'rgba(255,255,255,0.72)',
+          backgroundColor: 'rgba(255,255,255,0.88)',
           borderLeft: '1px solid rgba(255,255,255,0.5)',
-          boxShadow: '0 0 80px rgba(0,0,0,0.12)',
+          boxShadow: '0 0 36px rgba(0,0,0,0.10)',
         }}
       >
         {hasRaceData && (

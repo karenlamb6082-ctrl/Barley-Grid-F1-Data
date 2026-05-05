@@ -27,31 +27,29 @@
       #FFFFFF;
     border-radius: 14px;
     border: 1px solid rgba(16, 16, 16, 0.10);
-    box-shadow: 0 10px 30px rgba(16, 16, 16, 0.06), 0 1px 0 rgba(255,255,255,0.75) inset;
-    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-                box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 8px 22px rgba(16, 16, 16, 0.055), 0 1px 0 rgba(255,255,255,0.75) inset;
+    transition: box-shadow 0.22s ease, background-color 0.22s ease;
     position: relative;
     overflow: hidden;
   }
   
-  .apple-card:hover {
-    box-shadow: 0 18px 42px rgba(16, 16, 16, 0.10), 0 1px 0 rgba(255,255,255,0.75) inset;
-    transform: translateY(-2px);
+  @media (hover: hover) and (pointer: fine) {
+    .apple-card:hover {
+      box-shadow: 0 12px 28px rgba(16, 16, 16, 0.08), 0 1px 0 rgba(255,255,255,0.75) inset;
+    }
   }
 
   /* 按下时的物理回弹感 —— 手指离开后弹回 */
   .apple-card:active {
-    transform: scale(0.985) translateY(0px);
     box-shadow: 0 6px 18px rgba(16, 16, 16, 0.07);
     transition-duration: 0.1s;
   }
 
   /* ---- 可点击行的按压反馈 ---- */
   .tap-row {
-    transition: background-color 0.25s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: background-color 0.18s ease;
   }
   .tap-row:active {
-    transform: scale(0.98);
     background-color: rgba(0, 0, 0, 0.04) !important;
     transition-duration: 0.08s;
   }
@@ -103,8 +101,8 @@
   /* ---- 入场动画系统 ---- */
   .animate-in {
     animation-name: fadeInUp;
-    animation-duration: 900ms;
-    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    animation-duration: 420ms;
+    animation-timing-function: ease-out;
     animation-fill-mode: both;
   }
 
@@ -123,19 +121,11 @@
 @keyframes fadeInUp {
   0% {
     opacity: 0;
-    transform: translateY(28px) scale(0.97);
-  }
-  40% {
-    opacity: 0.6;
-    transform: translateY(8px) scale(0.995);
-  }
-  75% {
-    opacity: 1;
-    transform: translateY(-1px) scale(1.001);
+    transform: translateY(12px);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 

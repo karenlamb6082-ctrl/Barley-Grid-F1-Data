@@ -45,17 +45,36 @@ function TopThreeList({ title, items, type, onViewAll, onItemClick }) {
   );
 }
 
-export default function DashboardHero({ data, setCurrentView, onRaceClick, onDriverClick, onTeamClick }) {
-  const { nextRace, schedule = [], driverStandings = [], teamStandings = [], recentResults = [] } = data;
+function CountdownStrip({ targetDate }) {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    if (!nextRace?.date) return;
+    if (!targetDate) return;
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
-  }, [nextRace?.date]);
+  }, [targetDate]);
 
-  const countdown = getCountdown(nextRace?.date, now);
+  const countdown = getCountdown(targetDate, now);
+
+  return (
+    <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2 rounded-lg bg-f1-lime p-3">
+      {[
+        [countdown.days, "天"],
+        [countdown.hours, "时"],
+        [countdown.minutes, "分"],
+        [countdown.seconds, "秒"],
+      ].map(([value, label]) => (
+        <div key={label} className="rounded-md bg-white p-2 text-center">
+          <div className="text-[24px] font-black leading-none tabular-nums text-f1-text">{String(value).padStart(2, "0")}</div>
+          <div className="mt-1 text-[11px] font-black text-f1-text-muted">{label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function DashboardHero({ data, setCurrentView, onRaceClick, onDriverClick, onTeamClick }) {
+  const { nextRace, schedule = [], driverStandings = [], teamStandings = [], recentResults = [] } = data;
   const completed = recentResults.length || schedule.filter((race) => race.status === "completed").length;
   const total = schedule.length || 24;
   const progress = Math.max(0, Math.min(100, Math.round((completed / total) * 100)));
@@ -117,19 +136,7 @@ export default function DashboardHero({ data, setCurrentView, onRaceClick, onDri
               <div className="text-[12px] font-bold text-f1-text-muted">当地时间</div>
             </div>
           </div>
-          <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2 rounded-lg bg-f1-lime p-3">
-            {[
-              [countdown.days, "天"],
-              [countdown.hours, "时"],
-              [countdown.minutes, "分"],
-              [countdown.seconds, "秒"],
-            ].map(([value, label]) => (
-              <div key={label} className="rounded-md bg-white p-2 text-center">
-                <div className="text-[24px] font-black leading-none tabular-nums text-f1-text">{String(value).padStart(2, "0")}</div>
-                <div className="mt-1 text-[11px] font-black text-f1-text-muted">{label}</div>
-              </div>
-            ))}
-          </div>
+          <CountdownStrip targetDate={nextRace?.date} />
         </div>
 
         <div className="py-6 lg:py-0 lg:px-7">
@@ -158,13 +165,15 @@ export default function DashboardHero({ data, setCurrentView, onRaceClick, onDri
             onViewAll={() => setCurrentView("standings")}
             onItemClick={onDriverClick}
           />
-          <TopThreeList
-            title="车队积分 TOP 3"
-            items={teamStandings}
-            type="team"
-            onViewAll={() => setCurrentView("standings", "team-standings")}
-            onItemClick={onTeamClick}
-          />
+          <div className="hidden sm:block">
+            <TopThreeList
+              title="车队积分 TOP 3"
+              items={teamStandings}
+              type="team"
+              onViewAll={() => setCurrentView("standings", "team-standings")}
+              onItemClick={onTeamClick}
+            />
+          </div>
         </div>
       </div>
     </section>

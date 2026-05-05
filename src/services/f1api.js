@@ -446,7 +446,7 @@ function findPracticeSessionPaths(indexData, raceName) {
 function parseTimingData(data) {
   if (!data?.Lines) return null;
   const results = Object.entries(data.Lines)
-    .filter(([_, d]) => d.BestLapTime?.Value && d.BestLapTime.Value !== '')
+    .filter(([, d]) => d.BestLapTime?.Value && d.BestLapTime.Value !== '')
     .map(([num, d]) => {
       const info = DRIVER_BY_NUMBER[num] || { firstName: '', lastName: `#${num}`, team: 'Unknown', teamColor: '#999' };
       return {
