@@ -229,8 +229,23 @@ function App() {
             <div className="animate-in fade-in duration-700">
               {currentView === "home" && <Home setCurrentView={setCurrentView} data={data} onDriverClick={openDriver} onTeamClick={openTeam} onRaceClick={openRace} />}
               <Suspense fallback={<ViewFallback />}>
-                {currentView === "schedule" && <Schedule scheduleData={data.schedule} allRaces={data.allRaces} onRaceClick={openRace} />}
-                {currentView === "standings" && <Standings driverData={data.driverStandings} teamData={data.teamStandings} onDriverClick={openDriver} onTeamClick={openTeam} />}
+                {currentView === "schedule" && (
+                  <Schedule
+                    scheduleData={data.schedule}
+                    allRaces={data.allRaces}
+                    onRaceClick={openRace}
+                    onBack={() => setCurrentView("home")}
+                  />
+                )}
+                {currentView === "standings" && (
+                  <Standings
+                    driverData={data.driverStandings}
+                    teamData={data.teamStandings}
+                    onDriverClick={openDriver}
+                    onTeamClick={openTeam}
+                    onBack={() => setCurrentView("home")}
+                  />
+                )}
               </Suspense>
             </div>
           )}

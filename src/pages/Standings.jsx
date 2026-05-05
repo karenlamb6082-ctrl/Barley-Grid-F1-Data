@@ -1,4 +1,6 @@
-export default function Standings({ driverData = [], teamData = [], onDriverClick, onTeamClick }) {
+import { ArrowLeft } from "lucide-react";
+
+export default function Standings({ driverData = [], teamData = [], onDriverClick, onTeamClick, onBack }) {
   if (!driverData.length || !teamData.length) return null;
 
   const maxDriverPoints = driverData[0]?.points || 100;
@@ -6,6 +8,14 @@ export default function Standings({ driverData = [], teamData = [], onDriverClic
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      <button
+        onClick={onBack}
+        className="inline-flex items-center gap-2 rounded-lg border border-black/10 bg-white/80 px-4 py-2 text-[14px] font-black text-f1-text hover:border-f1-red/40 hover:text-f1-red"
+      >
+        <ArrowLeft size={16} />
+        返回概览
+      </button>
+
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* 车手榜 */}
         <div className="apple-card flex flex-col">

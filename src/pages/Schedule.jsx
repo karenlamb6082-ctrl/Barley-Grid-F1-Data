@@ -1,8 +1,9 @@
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
+import { ArrowLeft } from "lucide-react";
 import { getRaceNameCN, getCountryNameCN, getCircuitNameCN } from '../services/f1api';
 
-export default function Schedule({ scheduleData = [], allRaces = [], onRaceClick }) {
+export default function Schedule({ scheduleData = [], allRaces = [], onRaceClick, onBack }) {
   if (!scheduleData || scheduleData.length === 0) return null;
 
   // 哪些轮次有完整结果（统一转数字比较）
@@ -10,6 +11,14 @@ export default function Schedule({ scheduleData = [], allRaces = [], onRaceClick
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      <button
+        onClick={onBack}
+        className="inline-flex items-center gap-2 rounded-lg border border-black/10 bg-white/80 px-4 py-2 text-[14px] font-black text-f1-text hover:border-f1-red/40 hover:text-f1-red"
+      >
+        <ArrowLeft size={16} />
+        返回概览
+      </button>
+
       <div className="apple-card p-10 lg:p-14 mb-8">
          <h1 className="text-3xl sm:text-4xl font-semibold text-f1-text tracking-tight mb-4">2026 赛季赛程</h1>
          <p className="text-f1-text-muted text-[16px] max-w-2xl leading-relaxed">

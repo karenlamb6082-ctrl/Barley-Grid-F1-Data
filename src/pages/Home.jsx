@@ -1,5 +1,6 @@
 import { useState } from "react";
 import DashboardHero from "../components/DashboardHero";
+import FavoriteDriverCard from "../components/FavoriteDriverCard";
 import RecentResultsCard from "../components/RecentResultsCard";
 import SchedulePreview from "../components/SchedulePreview";
 
@@ -98,6 +99,10 @@ export default function Home({ setCurrentView, data, onDriverClick, onTeamClick,
       </FadeInSection>
 
       <FadeInSection delay={180}>
+        <FavoriteDriverCard data={data} onDriverClick={onDriverClick} />
+      </FadeInSection>
+
+      <FadeInSection delay={240}>
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_0.92fr_1.04fr] gap-6">
           <RecentResultsCard
             results={recentResults}
