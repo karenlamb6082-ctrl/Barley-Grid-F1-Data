@@ -83,46 +83,46 @@ export default function DashboardHero({ data, setCurrentView, onRaceClick, onDri
   const raceDate = nextRace?.date ? new Date(nextRace.date) : null;
 
   return (
-    <section className="grid min-w-0 grid-cols-1 xl:grid-cols-[1fr_1.25fr] gap-0 rounded-[18px] overflow-hidden border border-black/10 shadow-[0_24px_70px_rgba(16,16,16,0.12)] bg-white">
-      <div className="relative min-w-0 min-h-[360px] overflow-hidden bg-f1-graphite text-white p-7 sm:p-10 lg:p-12 race-cut">
+    <section className="grid min-w-0 grid-cols-1 xl:grid-cols-[1fr_1.25fr] gap-0 rounded-[16px] sm:rounded-[18px] overflow-hidden border border-black/10 shadow-[0_18px_46px_rgba(16,16,16,0.10)] sm:shadow-[0_24px_70px_rgba(16,16,16,0.12)] bg-white">
+      <div className="relative min-w-0 min-h-[320px] overflow-hidden bg-f1-graphite text-white p-5 sm:min-h-[360px] sm:p-10 lg:p-12 race-cut">
         <div className="absolute inset-0 timing-grid opacity-[0.14]"></div>
         <div className="absolute right-[-12%] top-[-20%] h-[140%] w-[42%] bg-f1-bg -skew-x-12 hidden xl:block"></div>
         <div className="absolute left-0 bottom-0 h-16 w-2/3 bg-gradient-to-r from-f1-red via-f1-red/70 to-transparent"></div>
-        <div className="absolute top-0 right-16 h-3 w-24 bg-f1-lime -skew-x-12"></div>
+        <div className="absolute top-0 right-10 h-3 w-24 bg-f1-lime -skew-x-12 sm:right-16"></div>
         <svg className="absolute right-8 bottom-24 w-[260px] max-w-[60%] opacity-45 hidden sm:block" viewBox="0 0 320 180" fill="none">
           <path d="M28 118C60 154 100 96 128 116C160 140 178 82 210 94C252 110 236 44 280 56" stroke="white" strokeWidth="4" strokeLinecap="round" />
           <path d="M28 134C62 170 105 112 131 132C165 158 184 99 215 110C265 128 245 60 292 72" stroke="#20D7FF" strokeWidth="2" strokeLinecap="round" />
         </svg>
 
         <div className="relative z-10 max-w-[560px]">
-          <div className="mb-8 text-[12px] font-black tracking-[0.32em] text-f1-red uppercase">
+          <div className="mb-7 text-[11px] font-black tracking-[0.24em] text-f1-red uppercase sm:mb-8 sm:text-[12px] sm:tracking-[0.32em]">
             Barley Grid · F1 Data Center
           </div>
-          <h1 className="text-[34px] sm:text-[58px] lg:text-[72px] font-black leading-[0.98] tracking-tight">
+          <h1 className="text-[31px] sm:text-[58px] lg:text-[72px] font-black leading-[0.98] tracking-tight">
             2026 赛季<span className="block text-f1-red">全景看板</span>
           </h1>
-          <p className="mt-5 max-w-[280px] sm:max-w-[340px] text-[16px] sm:text-[17px] font-bold text-white/78 leading-relaxed">
+          <p className="mt-5 max-w-[280px] sm:max-w-[340px] text-[14px] sm:text-[17px] font-bold text-white/78 leading-relaxed">
             实时同步每一次超越、排位与积分变化
           </p>
-          <div className="mt-10 flex flex-wrap gap-3">
-            <button onClick={() => setCurrentView("schedule")} className="btn-bounce race-cut bg-f1-red px-7 py-3 text-[15px] font-black text-white">
+          <div className="mt-9 flex flex-wrap gap-2.5 sm:mt-10 sm:gap-3">
+            <button onClick={() => setCurrentView("schedule")} className="btn-bounce race-cut bg-f1-red px-5 py-2.5 text-[14px] font-black text-white sm:px-7 sm:py-3 sm:text-[15px]">
               赛程追踪
             </button>
-            <button onClick={() => setCurrentView("standings")} className="btn-bounce race-cut border border-white/25 bg-white/8 px-7 py-3 text-[15px] font-black text-white">
+            <button onClick={() => setCurrentView("standings")} className="btn-bounce race-cut border border-white/25 bg-white/8 px-5 py-2.5 text-[14px] font-black text-white sm:px-7 sm:py-3 sm:text-[15px]">
               积分榜单
             </button>
           </div>
         </div>
       </div>
 
-      <div className="grid min-w-0 grid-cols-1 lg:grid-cols-[1fr_0.7fr_1.15fr] divide-y lg:divide-y-0 lg:divide-x divide-black/10 bg-white p-5 sm:p-7">
+      <div className="grid min-w-0 grid-cols-1 lg:grid-cols-[1fr_0.7fr_1.15fr] divide-y lg:divide-y-0 lg:divide-x divide-black/10 bg-white p-4 sm:p-7">
         <div className="min-w-0 pb-6 lg:pb-0 lg:pr-7">
           <div className="flex items-center gap-2 mb-5">
             <span className="w-2 h-2 rounded-full bg-f1-red"></span>
             <h2 className="text-[15px] font-black text-f1-text">下一站</h2>
           </div>
           <button onClick={() => onRaceClick?.(nextRace?.round)} className="block text-left">
-            <div className="text-[30px] font-black text-f1-text leading-tight">{nextRace?.name}</div>
+            <div className="text-[28px] font-black text-f1-text leading-tight sm:text-[30px]">{nextRace?.name}</div>
             <div className="mt-2 text-[14px] font-semibold text-f1-text-muted">{getRaceNameCN(nextRace?.name) || ""}</div>
             <div className="mt-2 text-[14px] font-semibold text-f1-text-muted">
               {nextRace?.circuit} <span className="mx-2 text-black/20">|</span> {getCountryNameCN(nextRace?.country)}

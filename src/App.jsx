@@ -214,7 +214,7 @@ function App() {
 
       <div className="relative z-10 flex flex-col min-h-screen">
         <Header currentView={currentView} setCurrentView={setCurrentView} />
-        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-14">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-14">
           {loading ? (
              <div className="h-96 flex flex-col items-center justify-center animate-pulse">
                 <span className="text-[14px] font-semibold tracking-widest uppercase text-f1-text-muted mb-3">数据同步中</span>

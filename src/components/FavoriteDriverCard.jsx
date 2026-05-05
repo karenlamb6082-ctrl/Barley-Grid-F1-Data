@@ -80,31 +80,31 @@ export default function FavoriteDriverCard({ data, onDriverClick }) {
       <div className="grid grid-cols-1 lg:grid-cols-[0.95fr_1fr_0.9fr]">
         <button
           onClick={() => onDriverClick?.(selectedDriver.id)}
-          className="relative min-h-[230px] overflow-hidden bg-f1-graphite p-6 text-left text-white sm:p-7 race-cut"
+          className="relative min-h-[285px] overflow-hidden bg-f1-graphite p-5 text-left text-white sm:min-h-[230px] sm:p-7 race-cut"
         >
           <div className="absolute inset-0 timing-grid opacity-[0.10]"></div>
           <div className="absolute bottom-0 left-0 h-12 w-2/3 bg-gradient-to-r from-f1-red to-transparent"></div>
-          <div className="absolute right-5 top-5 text-[108px] font-black leading-none text-white/[0.06]">
+          <div className="absolute right-4 top-5 text-[96px] font-black leading-none text-white/[0.06] sm:right-5 sm:text-[108px]">
             {selectedDriver.number || selectedDriver.code}
           </div>
           {driverImage && (
             <img
               src={driverImage}
               alt={`${selectedDriver.firstName} ${selectedDriver.lastName}`}
-              className="absolute bottom-3 right-5 h-[170px] w-auto object-contain drop-shadow-[0_18px_28px_rgba(0,0,0,0.35)]"
+              className="absolute bottom-5 right-6 h-[112px] w-auto object-contain drop-shadow-[0_18px_28px_rgba(0,0,0,0.35)] sm:bottom-3 sm:right-5 sm:h-[170px]"
               loading="lazy"
             />
           )}
-          <div className="relative z-10 max-w-[68%]">
-            <div className="mb-4 flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.24em] text-f1-lime">
+          <div className="relative z-10 max-w-[62%] sm:max-w-[68%]">
+            <div className="mb-4 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-f1-lime sm:text-[12px] sm:tracking-[0.24em]">
               <Star size={14} fill="currentColor" />
               我的关注车手
             </div>
-            <div className="text-[14px] font-bold text-white/60">{selectedDriver.firstName}</div>
-            <h2 className="mt-1 text-[42px] font-black uppercase leading-[0.9] tracking-tight">
+            <div className="text-[13px] font-bold text-white/60 sm:text-[14px]">{selectedDriver.firstName}</div>
+            <h2 className="mt-1 text-[31px] font-black uppercase leading-[0.9] tracking-tight sm:text-[42px]">
               {selectedDriver.lastName}
             </h2>
-            <div className="mt-5 inline-flex items-center gap-3 rounded-md bg-white/10 px-3 py-2 text-[13px] font-black">
+            <div className="mt-4 inline-flex items-center gap-3 rounded-md bg-white/10 px-3 py-2 text-[13px] font-black sm:mt-5">
               <span className="h-6 w-1.5 rounded-full" style={{ backgroundColor: selectedDriver.teamColor }}></span>
               {selectedDriver.team}
             </div>
