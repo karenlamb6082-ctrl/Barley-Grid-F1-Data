@@ -1,6 +1,7 @@
 import { useState } from "react";
 import DashboardHero from "../components/DashboardHero";
 import FavoriteDriverCard from "../components/FavoriteDriverCard";
+import F1Pulse from "../components/F1Pulse";
 import RecentResultsCard from "../components/RecentResultsCard";
 import SchedulePreview from "../components/SchedulePreview";
 
@@ -100,6 +101,10 @@ export default function Home({ setCurrentView, data, onDriverClick, onTeamClick,
 
       <FadeInSection delay={180}>
         <FavoriteDriverCard data={data} onDriverClick={onDriverClick} />
+      </FadeInSection>
+
+      <FadeInSection delay={200}>
+        <F1Pulse />
       </FadeInSection>
 
       <FadeInSection delay={240}>

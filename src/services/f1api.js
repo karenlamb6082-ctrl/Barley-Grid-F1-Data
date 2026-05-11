@@ -505,3 +505,47 @@ export async function fetchPracticeResults(round, schedule) {
     return { fp1: null, fp2: null, fp3: null, error: 'network' };
   }
 }
+
+// ========== 热点追踪 (F1 Pulse) ==========
+const HOT_TOPICS_CACHE_KEY = 'barley-grid:hot-topics:v1';
+const HOT_TOPICS_CACHE_MAX_AGE = 10 * 60 * 1000;
+
+export function getCachedHotTopics() {
+  if (!canUseStorage()) return null;
+  try {
+    const raw = window.localStorage.getItem(HOT_TOPICS_CACHE_KEY);
+    if (!raw) return null;
+    const cached = JSON.parse(raw);
+    if (!cached?.topics || Date.now() - cached.cachedAt > HOT_TOPICS_CACHE_MAX_AGE) return null;
+    return cached;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedHotTopics(data) {
+  if (!canUseStorage() || !data) return;
+  try {
+    window.localStorage.setItem(HOT_TOPICS_CACHE_KEY, JSON.stringify({
+      ...data,
+      cachedAt: Date.now(),
+    }));
+  } catch {
+    // quota exceeded, ignore
+  }
+}
+
+export async function fetchHotTopics() {
+  try {
+    const res = await fetch('/api/hot-topics');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data?.topics) {
+      setCachedHotTopics(data);
+    }
+    return data;
+  } catch (error) {
+    console.warn('Hot topics fetch failed:', error);
+    return getCachedHotTopics();
+  }
+}
