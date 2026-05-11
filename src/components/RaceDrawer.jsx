@@ -5,57 +5,63 @@ import { EMPTY_STATE_MESSAGES } from '../data/f1Fun';
 
 export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) {
   const [isOpen, setIsOpen] = useState(false);
-  const activeRound = raceRound;
-  const [activeTab, setActiveTab] = useState(() => {
-    const hasResults = data?.allRaces?.find(r => r.round === String(raceRound));
-    return hasResults ? 'race' : 'schedule';
-  });
+  const [activeId, setActiveId] = useState(null);
+  const [activeTab, setActiveTab] = useState('schedule');
   const [weekendData, setWeekendData] = useState({ qualifying: null, sprint: null, sprintQualifying: null });
   const [loadingWeekend, setLoadingWeekend] = useState(true);
   const [practiceData, setPracticeData] = useState({ fp1: null, fp2: null, fp3: null });
   const [practiceError, setPracticeError] = useState(null);
   const [loadingPractice, setLoadingPractice] = useState(true);
-  
+
   useEffect(() => {
     if (raceRound) {
+      setActiveId(raceRound);
       // 智能默认 tab：有正赛结果的显示正赛，否则显示时间表
+      const hasResults = data?.allRaces?.find(r => r.round === String(raceRound));
+      setActiveTab(hasResults ? 'race' : 'schedule');
       lockScroll();
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setIsOpen(true);
         });
       });
-      return () => unlockScroll();
+    } else {
+      setIsOpen(false);
+      unlockScroll();
+      const timer = setTimeout(() => {
+        setActiveId(null);
+      }, 450);
+      return () => clearTimeout(timer);
     }
   }, [raceRound]);
 
   // 打开 Drawer 时按需加载排位赛和冲刺赛数据
   useEffect(() => {
-    if (!activeRound) return;
-    fetchRaceWeekend(activeRound).then(d => {
+    if (!activeId) return;
+    fetchRaceWeekend(activeId).then(d => {
       setWeekendData(d);
       setLoadingWeekend(false);
     });
     // 并行加载练习赛数据
-    fetchPracticeResults(activeRound, data?.schedule).then(d => {
+    fetchPracticeResults(activeId, data?.schedule).then(d => {
       setPracticeData({ fp1: d.fp1, fp2: d.fp2, fp3: d.fp3 });
       setPracticeError(d.error || null);
       setLoadingPractice(false);
     });
-  }, [activeRound, data?.schedule]);
+  }, [activeId, data?.schedule]);
 
   const handleClose = () => {
     setIsOpen(false);
     setTimeout(onClose, 320);
   };
 
-  const isVisible = isOpen || activeRound;
+  const isVisible = isOpen || activeId;
 
   // 从 allRaces 获取完整比赛数据
-  const race = data?.allRaces?.find(r => r.round === String(activeRound));
+  const race = data?.allRaces?.find(r => r.round === String(activeId));
   
   // 从 schedule 获取赛程信息
-  const scheduleInfo = data?.schedule?.find(s => String(s.round) === String(activeRound));
+  const scheduleInfo = data?.schedule?.find(s => String(s.round) === String(activeId));
 
   const results = race?.Results || [];
   const circuit = race?.Circuit;
@@ -529,7 +535,7 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
               <div className="flex items-center gap-2">
                 {isSprint && <span className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-600 rounded font-bold">冲刺周末</span>}
                 <span className="text-[11px] font-bold text-f1-text-muted uppercase tracking-[0.1em]">
-                  Round {String(activeRound).padStart(2, '0')}
+                  Round {String(activeId).padStart(2, '0')}
                 </span>
               </div>
             </div>

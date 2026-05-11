@@ -372,8 +372,8 @@ export async function fetchRaceWeekend(round) {
 }
 
 
-// ========== F1 LiveTiming API 缁冧範璧涙暟鎹?==========
-// 鏈湴閫氳繃 Vite 浠ｇ悊锛岀敓浜ч€氳繃 Vercel Serverless Function 浠ｇ悊
+// ========== F1 LiveTiming API 练习赛数据 ==========
+// 本地通过 Vite 代理，生产通过 Vercel Serverless Function 代理
 const DRIVER_BY_NUMBER = {
   '1': { firstName: 'Max', lastName: 'Verstappen', team: 'Red Bull Racing', teamColor: '#3671C6' },
   '3': { firstName: 'Daniel', lastName: 'Ricciardo', team: 'Cadillac', teamColor: '#1C3D2A' },
@@ -501,7 +501,7 @@ export async function fetchPracticeResults(round, schedule) {
     await Promise.all(fetches);
     return results;
   } catch (error) {
-    console.error('缁冧範璧涙暟鎹幏鍙栧け璐?', error);
+    console.error('练习赛数据获取失败', error);
     return { fp1: null, fp2: null, fp3: null, error: 'network' };
   }
 }

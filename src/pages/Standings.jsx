@@ -1,7 +1,10 @@
 import { ArrowLeft } from "lucide-react";
 
 export default function Standings({ driverData = [], teamData = [], onDriverClick, onTeamClick, onBack }) {
-  if (!driverData.length || !teamData.length) return null;
+  const hasDrivers = driverData.length > 0;
+  const hasTeams = teamData.length > 0;
+
+  if (!hasDrivers && !hasTeams) return null;
 
   const maxDriverPoints = driverData[0]?.points || 100;
   const maxTeamPoints = teamData[0]?.points || 100;
@@ -18,6 +21,7 @@ export default function Standings({ driverData = [], teamData = [], onDriverClic
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* 车手榜 */}
+        {hasDrivers && (
         <div className="apple-card flex flex-col">
           <div className="px-8 py-6 border-b border-black/5 bg-black/[0.01]">
             <h2 className="text-[19px] font-semibold text-f1-text tracking-tight">车手锦标赛</h2>
@@ -52,8 +56,10 @@ export default function Standings({ driverData = [], teamData = [], onDriverClic
             </div>
           </div>
         </div>
+        )}
 
         {/* 车队榜 */}
+        {hasTeams && (
         <div id="team-standings" className="apple-card flex flex-col">
           <div className="px-8 py-6 border-b border-black/5 bg-black/[0.01]">
             <h2 className="text-[19px] font-semibold text-f1-text tracking-tight">车队锦标赛</h2>
@@ -86,6 +92,7 @@ export default function Standings({ driverData = [], teamData = [], onDriverClic
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
