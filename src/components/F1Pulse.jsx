@@ -162,17 +162,9 @@ export default function F1Pulse() {
           <h2 className="text-[18px] font-black text-f1-text tracking-tight">
             围场热点
           </h2>
-          {data?.sourceStatus && (
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold text-f1-text-muted">
-              <span className={data.sourceStatus.reddit ? "text-f1-lime" : "text-f1-text-muted/40"}>
-                Reddit
-              </span>
-              <span>·</span>
-              <span className={data.sourceStatus.rss ? "text-f1-lime" : "text-f1-text-muted/40"}>
-                RSS
-              </span>
-            </span>
-          )}
+          <span className="hidden sm:inline text-[11px] font-bold text-f1-text-muted">
+            {data?.totalItems || 0} 条信号源
+          </span>
         </div>
 
         <div className="flex items-center gap-3">
@@ -242,3 +234,4 @@ export default function F1Pulse() {
     </section>
   );
 }
+                                                                                                                                                                                                                                                                                                                                                         
