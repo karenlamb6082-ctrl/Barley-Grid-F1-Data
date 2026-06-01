@@ -17,7 +17,8 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
     if (raceRound) {
       setActiveId(raceRound);
       // 智能默认 tab：有正赛结果的显示正赛，否则显示时间表
-      const hasResults = data?.allRaces?.find(r => r.round === String(raceRound));
+      const race = data?.allRaces?.find(r => r.round === String(raceRound));
+      const hasResults = race && race.Results && race.Results.length > 0;
       setActiveTab(hasResults ? 'race' : 'schedule');
       lockScroll();
       requestAnimationFrame(() => {

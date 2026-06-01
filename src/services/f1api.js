@@ -195,8 +195,8 @@ export async function fetchAllData() {
       fetchJson(`${API_BASE}/driverStandings.json`),
       fetchJson(`${API_BASE}/constructorStandings.json`),
       fetchJson(`${API_BASE}.json`),
-      fetchJson(`${API_BASE}/results.json?limit=100`),
-      fetchJson(`${API_BASE}/sprint.json?limit=100`)
+      fetchJson(`${API_BASE}/results.json?limit=1000`),
+      fetchJson(`${API_BASE}/sprint.json?limit=1000`)
     ]);
 
     // 1. Driver Standings
