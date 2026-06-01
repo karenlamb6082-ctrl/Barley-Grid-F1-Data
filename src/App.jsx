@@ -79,6 +79,8 @@ function App() {
   const [currentView, setCurrentViewRaw] = useState(() => getViewFromLocation());
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [stale, setStale] = useState(false);
   const [selectedDriverId, setSelectedDriverId] = useState(null);
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   const [selectedRaceRound, setSelectedRaceRound] = useState(null);
@@ -165,6 +167,7 @@ function App() {
       const cached = getCachedAllData();
       if (cached?.data && isMounted) {
         setData(cached.data);
+        setLastUpdated(cached.cachedAt);
         setLoading(false);
       }
 
@@ -177,14 +180,17 @@ function App() {
       const res = await fetchAllData();
       if (isMounted && res) {
         setData(res);
+        setLastUpdated(Date.now());
+        setStale(false);
         setLoading(false);
       } else if (isMounted) {
+        // API 失败但有缓存数据时标记过期
+        if (data || cached?.data) setStale(true);
         setLoading(false);
       }
     };
     
     loadData();
-    // 后续轮询不需要延迟
     return () => {
       isMounted = false;
     };
@@ -196,7 +202,14 @@ function App() {
     const interval = getDataRefreshInterval(data);
     const intervalId = setInterval(async () => {
       const res = await fetchAllData();
-      if (isMounted && res) setData(res);
+      if (isMounted && res) {
+        setData(res);
+        setLastUpdated(Date.now());
+        setStale(false);
+      } else if (isMounted) {
+        // 轮询失败，标记数据可能过期
+        setStale(true);
+      }
     }, interval);
 
     return () => {
@@ -215,6 +228,16 @@ function App() {
       <div className="relative z-10 flex flex-col min-h-screen">
         <Header currentView={currentView} setCurrentView={setCurrentView} />
         <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-14">
+          {/* 数据过期提醒 */}
+          {stale && data && (
+            <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-amber-300/40 bg-amber-50/80 px-4 py-2.5 text-[13px] font-bold text-amber-700 animate-in fade-in duration-500">
+              <span>⚠️ 数据同步异常，当前展示的可能不是最新数据{lastUpdated ? `（上次更新：${new Date(lastUpdated).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}）` : ''}</span>
+              <button
+                onClick={async () => { setStale(false); const res = await fetchAllData(); if (res) { setData(res); setLastUpdated(Date.now()); } else { setStale(true); } }}
+                className="flex-shrink-0 rounded bg-amber-600 px-3 py-1 text-[12px] font-black text-white hover:bg-amber-700"
+              >重试</button>
+            </div>
+          )}
           {loading ? (
              <div className="h-96 flex flex-col items-center justify-center animate-pulse">
                 <span className="text-[14px] font-semibold tracking-widest uppercase text-f1-text-muted mb-3">数据同步中</span>
@@ -250,7 +273,7 @@ function App() {
             </div>
           )}
         </main>
-        <Footer />
+        <Footer lastUpdated={lastUpdated} />
       </div>
       <Suspense fallback={null}>
         {selectedDriverId && <DriverDrawer driverId={selectedDriverId} data={data} onClose={closeDriver} />}

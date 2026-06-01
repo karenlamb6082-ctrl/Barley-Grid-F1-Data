@@ -5,7 +5,7 @@ import { fetchAllRSS } from './lib/rss-simple.js';
 import { detectHotTopics } from './lib/hotspot-engine.js';
 
 let _memoryCache = null;
-const MEMORY_TTL = 120 * 1000;
+const MEMORY_TTL = 30 * 1000; // 30 秒缓存，大幅提效
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

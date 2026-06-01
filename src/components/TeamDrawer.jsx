@@ -33,9 +33,9 @@ export default function TeamDrawer({ teamId, data, onClose }) {
   const isVisible = isOpen || activeId;
   const team = data?.teamStandings?.find(t => t.id === activeId);
   
-  // 该车队旗下车手
+  // 该车队旗下车手（用 constructorId 精确匹配）
   const teamDrivers = data?.driverStandings?.filter(d => {
-    return d.teamColor === team?.teamColor;
+    return d.constructorId === team?.id;
   }) || [];
 
   // 构建每场比赛的详细分站数据（正赛 + 冲刺赛）

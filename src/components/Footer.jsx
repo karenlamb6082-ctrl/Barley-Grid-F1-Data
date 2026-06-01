@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FUN_FACTS } from '../data/f1Fun';
 
-export default function Footer() {
+export default function Footer({ lastUpdated }) {
   // 每次组件挂载随机取一条冷知识
   const [fact] = useState(() => FUN_FACTS[Math.floor(Math.random() * FUN_FACTS.length)]);
 
@@ -29,6 +29,9 @@ export default function Footer() {
             </p>
             <p className="text-[12px] text-black/20 mt-1">
               数据来源：Ergast F1 API · © {new Date().getFullYear()} Barley Grid
+              {lastUpdated && (
+                <span className="ml-2">· 数据更新于 {new Date(lastUpdated).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</span>
+              )}
             </p>
           </div>
           

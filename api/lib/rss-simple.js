@@ -1,4 +1,5 @@
-// RSS 多源聚合器 — 包含 Reddit 原生 RSS（无需 API 凭证）
+// RSS 多源聚合器
+// Reddit 原生 RSS + F1 新闻媒体 RSS，零配置
 
 function getTagContent(xml, tag) {
   const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, 'i');
@@ -22,7 +23,7 @@ function parseRSS(xml) {
         title,
         url: link,
         publishedAt: pubDate ? new Date(pubDate).toISOString() : null,
-        author: author || null,
+        author: author ? author.replace('/u/', '') : null,
         description: description ? description.slice(0, 500) : null,
       });
     }
@@ -50,14 +51,15 @@ function parseAtom(xml) {
 }
 
 const FEEDS = [
-  // Reddit — 原生 RSS，无需 API 凭证
-  { url: 'https://www.reddit.com/r/formula1/hot.rss', label: 'r/formula1', baseScore: 20 },
-  { url: 'https://www.reddit.com/r/F1Technical/hot.rss', label: 'r/F1Technical', baseScore: 12 },
+  // Reddit — 两个排序：hot(热度) + new(时效)
+  { url: 'https://www.reddit.com/r/formula1/hot.rss', label: 'r/formula1', category: 'hot' },
+  { url: 'https://www.reddit.com/r/formula1/new.rss?limit=15', label: 'r/formula1', category: 'new' },
+  { url: 'https://www.reddit.com/r/F1Technical/hot.rss', label: 'r/F1Technical', category: 'hot' },
 
-  // F1 新闻媒体 RSS
-  { url: 'https://www.autosport.com/rss/feed/f1', label: 'Autosport', baseScore: 8 },
-  { url: 'https://the-race.com/feed/', label: 'The Race', baseScore: 8 },
-  { url: 'https://www.racefans.net/feed/', label: 'RaceFans', baseScore: 8 },
+  // F1 新闻媒体
+  { url: 'https://www.autosport.com/rss/feed/f1', label: 'Autosport', category: 'news' },
+  { url: 'https://the-race.com/feed/', label: 'The Race', category: 'news' },
+  { url: 'https://www.racefans.net/feed/', label: 'RaceFans', category: 'news' },
 ];
 
 export async function fetchAllRSS() {
@@ -77,20 +79,29 @@ export async function fetchAllRSS() {
         if (items.length === 0) items = parseAtom(xml);
 
         return items.map(item => {
-          // Reddit RSS description 里可能有互动数据
-          let score = feed.baseScore;
+          let score = 1;
           let comments = 0;
           if (item.description) {
             const scoreMatch = item.description.match(/score">(\d+)/);
             const commentsMatch = item.description.match(/comments">(\d+)/);
-            if (scoreMatch) score = parseInt(scoreMatch[1]) || feed.baseScore;
+            if (scoreMatch) score = parseInt(scoreMatch[1]) || 1;
             if (commentsMatch) comments = parseInt(commentsMatch[1]) || 0;
+          }
+
+          // 新帖时效加分
+          if (feed.category === 'new') {
+            const ageMinutes = item.publishedAt
+              ? (Date.now() - new Date(item.publishedAt).getTime()) / 60000
+              : 999;
+            if (ageMinutes < 30) score += 15;
+            else if (ageMinutes < 60) score += 8;
           }
 
           return {
             id: btoa(item.url).slice(0, 12),
             source: feed.label.startsWith('r/') ? 'reddit' : 'rss',
             sourceLabel: feed.label,
+            sourceCategory: feed.category,
             title: item.title,
             url: item.url,
             publishedAt: item.publishedAt,
@@ -101,7 +112,7 @@ export async function fetchAllRSS() {
           };
         });
       } catch (e) {
-        console.error(`[RSS] ${feed.label} 失败:`, e.message);
+        console.error(`[RSS] ${feed.label}/${feed.category} 失败:`, e.message);
         return [];
       }
     })

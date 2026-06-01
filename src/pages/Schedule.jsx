@@ -52,7 +52,7 @@ export default function Schedule({ scheduleData = [], allRaces = [], onRaceClick
                 
                 <div>
                   <div className="flex items-center space-x-3 mb-2">
-                    <span className="text-[11px] font-bold text-f1-text-muted uppercase tracking-[0.15em] bg-black/[0.04] px-2 py-0.5 rounded-sm">Round 0{race.round}</span>
+                    <span className="text-[11px] font-bold text-f1-text-muted uppercase tracking-[0.15em] bg-black/[0.04] px-2 py-0.5 rounded-sm">Round {String(race.round).padStart(2, '0')}</span>
                     {isCompleted && <span className="text-[11px] font-bold text-f1-text-muted uppercase tracking-wider">已完赛</span>}
                   </div>
                   <h3 className="text-[22px] font-bold text-f1-text tracking-tight mb-0.5">{race.name}</h3>

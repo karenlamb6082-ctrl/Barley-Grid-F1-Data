@@ -57,8 +57,9 @@ const TEAM_COLORS = {
   aston_martin: "#229971",
   alpine: "#FF87BC",
   rb: "#6692FF",
-  sauber: "#52E252",
-  haas: "#B6BABD"
+  audi: "#52E252",
+  haas: "#B6BABD",
+  cadillac: "#1C3D2A"
 };
 
 export const getTeamColor = (constructorId) => TEAM_COLORS[constructorId] || "#376b6d";
@@ -73,7 +74,7 @@ const TEAM_ABBR = {
   aston_martin: 'AMR',
   alpine: 'ALP',
   rb: 'RB',
-  sauber: 'AUDI',
+  audi: 'AUDI',
   haas: 'HAAS',
   cadillac: 'CAD',
 };
@@ -145,8 +146,9 @@ const CIRCUIT_NAMES_CN = {
   'Circuit of the Americas': '美洲赛道',
   'Autódromo Hermanos Rodríguez': '罗德里格斯兄弟赛道',
   'Autódromo José Carlos Pace': '英特拉格斯赛道',
-  'Las Vegas Strip Circuit': '拉斯维加斯大道赛道',
-  'Lusail International Circuit': '卢赛尔国际赛道',
+  'Las Vegas Strip Street Circuit': '拉斯维加斯大道赛道',
+  'Losail International Circuit': '卢赛尔国际赛道',
+  'Madring': '马德里赛道',
   'Yas Marina Circuit': '亚斯码头赛道',
 };
 
@@ -207,6 +209,7 @@ export async function fetchAllData() {
       code: d.Driver.code,
       number: d.Driver.permanentNumber,
       team: d.Constructors[0]?.name || "Unknown",
+      constructorId: d.Constructors[0]?.constructorId || "unknown",
       points: parseFloat(d.points),
       teamColor: getTeamColor(d.Constructors[0]?.constructorId)
     }));
@@ -375,22 +378,21 @@ export async function fetchRaceWeekend(round) {
 // ========== F1 LiveTiming API 练习赛数据 ==========
 // 本地通过 Vite 代理，生产通过 Vercel Serverless Function 代理
 const DRIVER_BY_NUMBER = {
-  '1': { firstName: 'Max', lastName: 'Verstappen', team: 'Red Bull Racing', teamColor: '#3671C6' },
-  '3': { firstName: 'Daniel', lastName: 'Ricciardo', team: 'Cadillac', teamColor: '#1C3D2A' },
-  '4': { firstName: 'Lando', lastName: 'Norris', team: 'McLaren', teamColor: '#FF8000' },
+  '1': { firstName: 'Lando', lastName: 'Norris', team: 'McLaren', teamColor: '#FF8000' },
+  '3': { firstName: 'Max', lastName: 'Verstappen', team: 'Red Bull', teamColor: '#3671C6' },
   '5': { firstName: 'Gabriel', lastName: 'Bortoleto', team: 'Audi', teamColor: '#52E252' },
-  '6': { firstName: 'Isack', lastName: 'Hadjar', team: 'Racing Bulls', teamColor: '#6692FF' },
+  '6': { firstName: 'Isack', lastName: 'Hadjar', team: 'Red Bull', teamColor: '#3671C6' },
   '10': { firstName: 'Pierre', lastName: 'Gasly', team: 'Alpine', teamColor: '#FF87BC' },
-  '11': { firstName: 'Sergio', lastName: 'Perez', team: 'Red Bull Racing', teamColor: '#3671C6' },
+  '11': { firstName: 'Sergio', lastName: 'Perez', team: 'Cadillac', teamColor: '#1C3D2A' },
   '12': { firstName: 'Kimi', lastName: 'Antonelli', team: 'Mercedes', teamColor: '#27F4D2' },
   '14': { firstName: 'Fernando', lastName: 'Alonso', team: 'Aston Martin', teamColor: '#229971' },
   '16': { firstName: 'Charles', lastName: 'Leclerc', team: 'Ferrari', teamColor: '#E8002D' },
   '18': { firstName: 'Lance', lastName: 'Stroll', team: 'Aston Martin', teamColor: '#229971' },
   '23': { firstName: 'Alexander', lastName: 'Albon', team: 'Williams', teamColor: '#00A0ED' },
   '27': { firstName: 'Nico', lastName: 'Hulkenberg', team: 'Audi', teamColor: '#52E252' },
-  '30': { firstName: 'Liam', lastName: 'Lawson', team: 'Red Bull Racing', teamColor: '#3671C6' },
+  '30': { firstName: 'Liam', lastName: 'Lawson', team: 'RB F1 Team', teamColor: '#6692FF' },
   '31': { firstName: 'Esteban', lastName: 'Ocon', team: 'Haas', teamColor: '#B6BABD' },
-  '41': { firstName: 'Arvid', lastName: 'Lindblad', team: 'Racing Bulls', teamColor: '#6692FF' },
+  '41': { firstName: 'Arvid', lastName: 'Lindblad', team: 'RB F1 Team', teamColor: '#6692FF' },
   '43': { firstName: 'Franco', lastName: 'Colapinto', team: 'Alpine', teamColor: '#FF87BC' },
   '44': { firstName: 'Lewis', lastName: 'Hamilton', team: 'Ferrari', teamColor: '#E8002D' },
   '55': { firstName: 'Carlos', lastName: 'Sainz', team: 'Williams', teamColor: '#00A0ED' },
