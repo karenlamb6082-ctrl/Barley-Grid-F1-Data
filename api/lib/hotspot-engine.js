@@ -1,5 +1,5 @@
-// F1 热点识别引擎 v2
-// 双通道：热度聚类 + 信任源直通车
+// F1 智能资讯平台 (F1HOT) 核心分析与聚类去重引擎 v3
+// 完全遵循自媒体 AI 选选题（“AIHOT” 系统）的过滤、打分、去重和折叠机制
 
 const DRIVER_ENTITIES = [
   ['Verstappen', 'max_verstappen', 'Max'],
@@ -40,220 +40,218 @@ const TEAM_ENTITIES = [
   ['Cadillac', 'cadillac'],
 ];
 
-const EVENT_KEYWORDS = {
-  penalty: 'stewards, penalty, penalised, penalized, fine, grid drop',
-  crash: 'crash, collision, accident, dnf, retired, red flag, safety car',
-  contract: 'contract, signed, extension, leaving, joining, transfer, silly season',
-  protest: 'protest, appeal, investigation, summoned',
-  upgrade: 'upgrade, update, package, new parts, brought',
-  podium: 'podium, win, won, victory, winner, champion',
-  pole: 'pole position, pole, qualifying, quali',
-  drama: 'blames, angry, furious, slams, hits back, tension, conflict',
-  regulation: 'regulation, rules, FIA, FOM',
-  budget: 'budget cap, cost cap',
-  rumour: 'rumour, rumor, rumored, reported, sources say, could, might, set to',
-};
+// F1 核心词丛（预筛选匹配，过滤互联网纯灌水/非F1噪音）
+const F1_KEY_PATTERN = /f1|formula\s*1|grand\s*prix|gp|fia|fom|paddock|stewards|lap|circuit|tire|tyre|wing|aero|chassis|telemetry|pit\s*stop|overtake|drs|silly\s*season|contract|verstappen|norris|leclerc|hamilton|alonso|perez|piastri|sainz|russell|gasly|ocon|albon|tsunoda|lawson|bearman|hadjar|antonelli|bortoleto|lindblad/i;
 
-// 信任源列表 — 知名 F1 博主 / 数据分析师 / 内部人士
-// 可根据观察持续补充
-const TRUSTED_AUTHORS = new Set([
-  // F1 数据分析
-  'u/F1DataAnalysis',
-  // 如果发现其他知名ID，加到这里
-]);
-
-// 信任源发帖加分
-const TRUSTED_BOOST = 30;
-const NEW_FRESH_BONUS = 15; // new 分类时效加分
-
-function extractEntities(title) {
-  const lower = title.toLowerCase();
-  const entities = [];
-
-  for (const [displayName, driverId, ...aliases] of DRIVER_ENTITIES) {
-    for (const name of [displayName, ...aliases]) {
-      if (name.length >= 3 && lower.includes(name.toLowerCase())) {
-        entities.push('driver:' + driverId);
-        break;
-      }
-    }
-  }
-
-  for (const [displayName, constructorId, ...aliases] of TEAM_ENTITIES) {
-    for (const name of [displayName, ...aliases]) {
-      if (name.length >= 2 && lower.includes(name.toLowerCase())) {
-        entities.push('team:' + constructorId);
-        break;
-      }
-    }
-  }
-
-  for (const [eventKey, keywordStr] of Object.entries(EVENT_KEYWORDS)) {
-    for (const kw of keywordStr.split(', ')) {
-      if (kw.length >= 3 && lower.includes(kw)) {
-        entities.push('event:' + eventKey);
-        break;
-      }
-    }
-  }
-
-  return [...new Set(entities)];
+// N-gram 分词清洗：转小写、去掉标点与虚词，为文本相似度匹配打基础
+function getCleanWords(title) {
+  const stopwords = new Set([
+    'the', 'a', 'an', 'to', 'for', 'in', 'on', 'at', 'of', 'and', 'with', 
+    'after', 'about', 'is', 'are', 'was', 'were', 'by', 'from', 'that', 
+    'this', 'but', 'how', 'why', 'what', 'will', 'has', 'have', 'had', 'been'
+  ]);
+  return title.toLowerCase()
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "")
+    .split(/\s+/)
+    .filter(w => w.length >= 3 && !stopwords.has(w));
 }
 
-function jaccardSimilarity(a, b) {
-  const setA = new Set(a);
-  const setB = new Set(b);
-  const intersection = [...setA].filter(x => setB.has(x)).length;
-  const union = new Set([...a, ...b]).size;
+// 计算两条标题的 Jaccard 文本级别交并相似度 (彻底解决“只要谈论同一个人就被误并成同一个卡片”的顽疾！)
+export function getTitleSimilarity(titleA, titleB) {
+  const wordsA = new Set(getCleanWords(titleA));
+  const wordsB = new Set(getCleanWords(titleB));
+  
+  const intersection = [...wordsA].filter(x => wordsB.has(x)).length;
+  const union = new Set([...wordsA, ...wordsB]).size;
+  
   return union === 0 ? 0 : intersection / union;
 }
 
-export function detectHotTopics(items, { threshold = 0.18, minSources = 2, maxTopics = 12 } = {}) {
+// 模拟 DeepSeek 的高保真 5 维度客观打分引擎 (支持无缝对接未来在线 API)
+function calculateLocalDimensions(item) {
+  const title = item.title.toLowerCase();
+  
+  // 1. 技术深度分 (Technical Depth)：技术专业词汇与技术探讨板打高分
+  let technicalDepth = 3;
+  if (/aero|engine|wing|chassis|telemetry|setup|tire|tyre|suspension|floor|diffuser|downforce/i.test(title)) {
+    technicalDepth = 8;
+  }
+  if (item.sourceLabel === 'r/F1Technical') {
+    technicalDepth = Math.max(technicalDepth, 9);
+  } else if (item.sourceLabel === 'The Race') {
+    technicalDepth = Math.max(technicalDepth, 7);
+  }
+
+  // 2. 突发指数 (Breaking Value)：重大官宣、撞车、红旗、重罚打高分
+  let breakingValue = 3;
+  if (/breaking|crash|collision|dnf|retired|accident|red\s*flag|safety\s*car|penalty|penalised|fine|stewards|signed|signed|transfer/i.test(title)) {
+    breakingValue = 8;
+  }
+  if (item.sourceCategory === 'new' && (item.engagementScore || 0) > 10) {
+    breakingValue = Math.max(breakingValue, 7);
+  }
+
+  // 3. 受众价值 (Audience Value)：根据网友的真实互动(Comments/Score)进行换算
+  let audienceValue = 4;
+  const engagement = item.engagementScore || 1;
+  if (engagement > 100) audienceValue = 9;
+  else if (engagement > 50) audienceValue = 8;
+  else if (engagement > 20) audienceValue = 7;
+  else if (engagement > 8) audienceValue = 6;
+
+  // 4. 冲突/八卦戏剧度 (Drama Index)：争议、愤怒、转会绯闻、传闻打高分
+  let dramaIndex = 3;
+  if (/blames|angry|furious|slams|tension|conflict|dispute|rumour|rumor|rumored|speculation|talks|silly\s*season/i.test(title)) {
+    dramaIndex = 8;
+  }
+
+  // 5. 可信度 (Truthfulness)：根据信源的分级 Tier 来做客观映射
+  let truthfulness = 5;
+  if (item.tier === 'T1') {
+    truthfulness = 9; // 官方及权威外媒极度可信
+  } else if (item.tier === 'T1.5') {
+    truthfulness = 7; // 专业社区和技术版基本可靠
+  } else if (item.tier === 'T2') {
+    truthfulness = 4; // 玩家大社区杂谈多传闻，较低
+  }
+
+  return { technicalDepth, breakingValue, audienceValue, dramaIndex, truthfulness };
+}
+
+// 代码公式计算最终 F1HOT 质量分 (QualityScore) — 百分制，极度可控
+function calculateQualityScore(dims, weight) {
+  const { technicalDepth, breakingValue, audienceValue, dramaIndex, truthfulness } = dims;
+  
+  // 加权公式：技术深度2.0 + 突发指数2.5 + 受众价值2.5 + 冲突指数1.5 + 可信度1.5 = 满分100
+  let rawScore = (technicalDepth * 2.0) + 
+                 (breakingValue * 2.5) + 
+                 (audienceValue * 2.5) + 
+                 (dramaIndex * 1.5) + 
+                 (truthfulness * 1.5);
+                 
+  // 乘上信源 Tier 权威权重 (T1*1.25, T2*0.75)
+  let finalScore = rawScore * (weight || 1.0);
+  
+  return Math.round(Math.min(100, finalScore));
+}
+
+// 核心热点分析与聚类算法
+export function detectHotTopics(items, { threshold = 0.28, maxTopics = 12 } = {}) {
   if (!items || items.length === 0) return [];
 
   const now = Date.now();
-  const HOUR = 3600000;
 
-  // === 通道一：多源热度聚类 ===
-  const clusters = [];
-  for (const item of items) {
-    const entities = extractEntities(item.title);
-    if (entities.length === 0) continue;
-
-    let bestCluster = null;
-    let bestScore = 0;
-    for (const cluster of clusters) {
-      const score = jaccardSimilarity(entities, cluster.entities);
-      if (score > threshold && score > bestScore) {
-        bestCluster = cluster;
-        bestScore = score;
-      }
-    }
-
-    if (bestCluster) {
-      bestCluster.items.push(item);
-      bestCluster.entities = [...new Set([...bestCluster.entities, ...entities])];
-    } else {
-      clusters.push({ entities: [...entities], items: [item] });
-    }
-  }
-
-  const clustered = clusters
-    .map(c => {
-      const sources = [...new Set(c.items.map(i => i.sourceLabel))];
-      const sourceTypes = [...new Set(c.items.map(i => i.source))];
-      const totalScore = c.items.reduce((s, i) => s + (i.score || 0), 0);
-      const totalComments = c.items.reduce((s, i) => s + (i.comments || 0), 0);
-      const latestAt = Math.max(...c.items.map(i => new Date(i.publishedAt).getTime()));
-      const topItem = [...c.items].sort((a, b) => (b.engagementScore || 0) - (a.engagementScore || 0))[0];
-      const hasTrusted = c.items.some(i => i.author && TRUSTED_AUTHORS.has('u/' + i.author));
-      const isFresh = c.items.some(i => i.sourceCategory === 'new');
-      const isRumour = c.entities.some(e => e.startsWith('event:rumour'));
-
+  // === 第一阶段：预筛选 + 5维度客观打分 ===
+  const scoredItems = items
+    .filter(item => {
+      // 预筛选：如果与 F1 词丛不相关，直接物理丢弃，零 Token 消耗
+      return F1_KEY_PATTERN.test(item.title);
+    })
+    .map(item => {
+      const dimensions = calculateLocalDimensions(item);
+      const qualityScore = calculateQualityScore(dimensions, item.weight);
       return {
-        sources,
-        sourceTypes,
-        sourceCount: sources.length,
-        itemCount: c.items.length,
-        totalScore,
-        totalComments,
-        latestAt,
-        topItem,
-        hasTrusted,
-        isFresh,
-        isRumour,
-        items: c.items,
+        ...item,
+        dimensions,
+        qualityScore
       };
     });
 
-  // === 通道二：信任源直通车 ===
-  // 信任源发的帖如果互动高，即使单源也上榜
-  const trustedItems = items.filter(i => {
-    if (!i.author || !TRUSTED_AUTHORS.has('u/' + i.author)) return false;
-    return (i.engagementScore || 0) >= 5; // 最低互动门槛
+  // === 第二阶段：基于标题 Jaccard 文本相似度的语义事件聚类 ===
+  const clusters = [];
+  for (const item of scoredItems) {
+    let bestCluster = null;
+    let bestSim = 0;
+    
+    for (const cluster of clusters) {
+      // 拿新文章标题与这个事件簇的主条目标题计算文本重叠相似度
+      const sim = getTitleSimilarity(item.title, cluster.mainItem.title);
+      if (sim > threshold && sim > bestSim) {
+        bestCluster = cluster;
+        bestSim = sim;
+      }
+    }
+    
+    if (bestCluster) {
+      bestCluster.items.push(item);
+      // 自动选出质量分最高、信源评级最优的作为当前事件的主卡片标题
+      if (item.qualityScore > bestCluster.mainItem.qualityScore) {
+        bestCluster.mainItem = item;
+      }
+    } else {
+      clusters.push({
+        mainItem: item,
+        items: [item]
+      });
+    }
+  }
+
+  // === 第三阶段：事件热度加权与排序 ===
+  const processed = clusters.map(c => {
+    const main = c.mainItem;
+    const sources = [...new Set(c.items.map(i => i.sourceLabel))];
+    const sourceTypes = [...new Set(c.items.map(i => i.source))];
+    const totalComments = c.items.reduce((sum, i) => sum + (i.comments || 0), 0);
+    const latestAt = Math.max(...c.items.map(i => new Date(i.publishedAt).getTime()));
+    
+    // 综合热度公式：质量分为基底 + 评论数对数增益 + 聚类多源增益
+    let heatScore = main.qualityScore + 
+                    (12 * Math.log10(totalComments + 1)) + 
+                    (10 * (c.items.length - 1));
+
+    // 时效性衰减 (超过 12 小时降热度)
+    const ageHours = (now - latestAt) / 3600000;
+    if (ageHours < 1) heatScore += 20;      // 极速新料加分
+    else if (ageHours < 3) heatScore += 10;
+    else if (ageHours > 12) heatScore -= 15; // 陈年旧闻降热度
+
+    return {
+      mainItem: main,
+      sources,
+      sourceTypes,
+      sourceCount: sources.length,
+      itemCount: c.items.length,
+      totalComments,
+      latestAt,
+      heatScore,
+      items: c.items
+    };
   });
 
-  const trustSourced = trustedItems
-    .filter(ti => !clustered.some(c => c.items.some(ci => ci.id === ti.id))) // 排除已在聚类中的
-    .map(ti => ({
-      sources: [ti.sourceLabel],
-      sourceTypes: [ti.source],
-      sourceCount: 1,
-      itemCount: 1,
-      totalScore: ti.score || 0,
-      totalComments: ti.comments || 0,
-      latestAt: new Date(ti.publishedAt).getTime(),
-      topItem: ti,
-      hasTrusted: true,
-      isFresh: ti.sourceCategory === 'new',
-      isRumour: false,
-      items: [ti],
-      isTrustSignal: true, // 标记为信任源独发
-    }));
-
-  // === 通道三：高热度单帖补位 ===
-  // 互动很高的单帖，即使没聚类，也值得展示
-  const allClusteredIds = new Set(clustered.flatMap(c => c.items.map(i => i.id)));
-  const highEngageItems = items
-    .filter(i => {
-      if (allClusteredIds.has(i.id)) return false;
-      if (TRUSTED_AUTHORS.has('u/' + (i.author || ''))) return false; // 已在通道二
-      return (i.comments || 0) >= 15 || (i.score || 0) >= 50;
-    })
-    .sort((a, b) => (b.engagementScore || 0) - (a.engagementScore || 0))
-    .slice(0, 5);
-
-  const highEngageSourced = highEngageItems.map(ti => ({
-    sources: [ti.sourceLabel],
-    sourceTypes: [ti.source],
-    sourceCount: 1,
-    itemCount: 1,
-    totalScore: ti.score || 0,
-    totalComments: ti.comments || 0,
-    latestAt: new Date(ti.publishedAt).getTime(),
-    topItem: ti,
-    hasTrusted: false,
-    isFresh: ti.sourceCategory === 'new',
-    isRumour: false,
-    items: [ti],
-    isHotSignal: true, // 标记为高热度单帖
-  }));
-
-  // === 合并 + 排序 ===
-  const allCandidates = [...clustered, ...trustSourced, ...highEngageSourced];
-
-  const result = allCandidates
-    .filter(c => c.sourceCount >= minSources || c.isTrustSignal || c.isHotSignal)
-    .sort((a, b) => {
-      const heatA = calculateHeatScore(a, now);
-      const heatB = calculateHeatScore(b, now);
-      return heatB - heatA;
-    })
+  // === 第四阶段：精选排序与徽章配置 ===
+  const result = processed
+    .sort((a, b) => b.heatScore - a.heatScore)
     .slice(0, maxTopics)
     .map((c, i) => {
-      // 生成 badge
+      const main = c.mainItem;
+      const dims = main.dimensions;
+      
+      // 根据维度高低，为 F1HOT 精选打上极其逼真的“AI特质徽章”
       let badge = null;
-      if (c.isTrustSignal) badge = '独家';
-      else if (c.isHotSignal) badge = '热议';
-      else if (c.hasTrusted) badge = '可靠源';
-      else if (c.isRumour) badge = '传闻';
-      else if (c.isFresh && c.sourceCount < 2) badge = '新信号';
+      if (main.tier === 'T1' && dims.breakingValue >= 8) badge = '官方重磅';
+      else if (dims.technicalDepth >= 8) badge = '深度技术';
+      else if (dims.breakingValue >= 8) badge = '突发焦点';
+      else if (dims.dramaIndex >= 8) badge = '传闻热议';
+      else if (main.sourceCategory === 'new') badge = '新信号';
 
       return {
         rank: i + 1,
-        id: c.topItem?.id || String(i),
-        title: c.topItem?.title || 'Unknown',
+        id: main.id,
+        title: main.title,
         badge,
+        qualityScore: main.qualityScore,
+        dimensions: main.dimensions,
+        tier: main.tier,
+        weight: main.weight,
+        url: main.url,
         sourceCount: c.sourceCount,
         sources: c.sources,
         sourceTypes: c.sourceTypes,
         itemCount: c.itemCount,
         totalComments: c.totalComments,
         ageMinutes: Math.round((now - c.latestAt) / 60000),
-        author: c.isTrustSignal ? c.topItem?.author : null,
         relatedItems: c.items
-          .sort((a, b) => (b.engagementScore || 0) - (a.engagementScore || 0))
-          .slice(0, 6)
+          .sort((a, b) => b.qualityScore - a.qualityScore)
           .map(i => ({
             title: i.title,
             url: i.url,
@@ -262,40 +260,13 @@ export function detectHotTopics(items, { threshold = 0.18, minSources = 2, maxTo
             score: i.score || 0,
             comments: i.comments || 0,
             publishedAt: i.publishedAt,
-          })),
+            qualityScore: i.qualityScore,
+            tier: i.tier
+          }))
       };
     });
 
   return result;
 }
 
-function calculateHeatScore(c, now) {
-  const HOUR = 3600000;
-  let heat = 0;
-
-  // 来源多样性
-  heat += c.sourceCount * 18;
-
-  // 互动量
-  heat += Math.log10(c.totalScore + c.totalComments + 1) * 12;
-
-  // 时效性
-  const age = (now - c.latestAt) / HOUR;
-  if (age < 0.5) heat += 25;      // 30 分钟内
-  else if (age < 1) heat += 18;   // 1 小时内
-  else if (age < 3) heat += 10;   // 3 小时内
-  else if (age < 6) heat += 5;    // 6 小时内
-
-  // 信任源加分
-  if (c.hasTrusted || c.isTrustSignal) heat += TRUSTED_BOOST;
-
-  // 新鲜度加分
-  if (c.isFresh) heat += NEW_FRESH_BONUS;
-
-  // 传闻加分（用户感兴趣）
-  if (c.isRumour) heat += 8;
-
-  return heat;
-}
-
-export { extractEntities, clusterItems(){} };
+export { calculateLocalDimensions, calculateQualityScore };

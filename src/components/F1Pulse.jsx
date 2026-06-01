@@ -112,7 +112,7 @@ function HotTopicCard({ topic, rank }) {
   );
 }
 
-export default function F1Pulse() {
+export default function F1Pulse({ onViewAll }) {
   const [data, setData] = useState(() => getCachedHotTopics());
   const [loading, setLoading] = useState(!data);
   const [error, setError] = useState(null);
@@ -162,6 +162,14 @@ export default function F1Pulse() {
           <h2 className="text-[18px] font-black text-f1-text tracking-tight">
             围场热点
           </h2>
+          {onViewAll && (
+            <button
+              onClick={onViewAll}
+              className="inline-flex items-center gap-1 text-[11px] font-black text-f1-red hover:text-white px-2.5 py-1 rounded-full bg-f1-red/10 border border-f1-red/15 hover:bg-f1-red transition-all cursor-pointer ml-3 active:scale-95"
+            >
+              F1HOT 工作台 →
+            </button>
+          )}
           <span className="hidden sm:inline text-[11px] font-bold text-f1-text-muted">
             {data?.totalItems || 0} 条信号源
           </span>

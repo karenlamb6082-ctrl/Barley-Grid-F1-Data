@@ -8,11 +8,12 @@ import { LOADING_QUOTES } from "./data/f1Fun"
 
 const Schedule = lazy(() => import("./pages/Schedule"));
 const Standings = lazy(() => import("./pages/Standings"));
+const F1Hot = lazy(() => import("./pages/F1Hot"));
 const DriverDrawer = lazy(() => import("./components/DriverDrawer"));
 const TeamDrawer = lazy(() => import("./components/TeamDrawer"));
 const RaceDrawer = lazy(() => import("./components/RaceDrawer"));
 
-const APP_VIEWS = new Set(["home", "schedule", "standings"]);
+const APP_VIEWS = new Set(["home", "f1hot", "schedule", "standings"]);
 const LIVE_REFRESH_INTERVAL = 60 * 1000;
 const RACE_WEEK_REFRESH_INTERVAL = 2 * 60 * 1000;
 const DEFAULT_REFRESH_INTERVAL = 15 * 60 * 1000;
@@ -252,6 +253,14 @@ function App() {
             <div className="animate-in fade-in duration-700">
               {currentView === "home" && <Home setCurrentView={setCurrentView} data={data} onDriverClick={openDriver} onTeamClick={openTeam} onRaceClick={openRace} />}
               <Suspense fallback={<ViewFallback />}>
+                {currentView === "f1hot" && (
+                  <F1Hot
+                    data={data}
+                    onDriverClick={openDriver}
+                    onTeamClick={openTeam}
+                    onBack={() => setCurrentView("home")}
+                  />
+                )}
                 {currentView === "schedule" && (
                   <Schedule
                     scheduleData={data.schedule}

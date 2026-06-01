@@ -104,7 +104,7 @@ export default function Home({ setCurrentView, data, onDriverClick, onTeamClick,
       </FadeInSection>
 
       <FadeInSection delay={200}>
-        <F1Pulse />
+        <F1Pulse onViewAll={() => setCurrentView("f1hot")} />
       </FadeInSection>
 
       <FadeInSection delay={240}>

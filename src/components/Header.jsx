@@ -5,6 +5,7 @@ export default function Header({ currentView, setCurrentView }) {
   
   const tabs = [
     { id: 'home', label: '概览' },
+    { id: 'f1hot', label: 'F1HOT 热点' },
     { id: 'schedule', label: '赛程追踪' },
     { id: 'standings', label: '战果与积分' }
   ];

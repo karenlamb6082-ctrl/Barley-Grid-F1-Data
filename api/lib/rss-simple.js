@@ -51,15 +51,17 @@ function parseAtom(xml) {
 }
 
 const FEEDS = [
-  // Reddit — 两个排序：hot(热度) + new(时效)
-  { url: 'https://www.reddit.com/r/formula1/hot.rss', label: 'r/formula1', category: 'hot' },
-  { url: 'https://www.reddit.com/r/formula1/new.rss?limit=15', label: 'r/formula1', category: 'new' },
-  { url: 'https://www.reddit.com/r/F1Technical/hot.rss', label: 'r/F1Technical', category: 'hot' },
+  // T1: 官方及顶级权威外媒 (权重倍率 1.25)
+  { url: 'https://www.autosport.com/rss/feed/f1', label: 'Autosport', category: 'news', tier: 'T1', weight: 1.25 },
+  { url: 'https://the-race.com/feed/', label: 'The Race', category: 'news', tier: 'T1', weight: 1.25 },
 
-  // F1 新闻媒体
-  { url: 'https://www.autosport.com/rss/feed/f1', label: 'Autosport', category: 'news' },
-  { url: 'https://the-race.com/feed/', label: 'The Race', category: 'news' },
-  { url: 'https://www.racefans.net/feed/', label: 'RaceFans', category: 'news' },
+  // T1.5: 专业硬核技术与直观自媒体 (权重倍率 1.0)
+  { url: 'https://www.reddit.com/r/F1Technical/hot.rss', label: 'r/F1Technical', category: 'hot', tier: 'T1.5', weight: 1.0 },
+  { url: 'https://www.racefans.net/feed/', label: 'RaceFans', category: 'news', tier: 'T1.5', weight: 1.0 },
+
+  // T2: 普通大众社区讨论（用于看热闹和搜集话题讨论度）(权重倍率 0.75)
+  { url: 'https://www.reddit.com/r/formula1/hot.rss', label: 'r/formula1', category: 'hot', tier: 'T2', weight: 0.75 },
+  { url: 'https://www.reddit.com/r/formula1/new.rss?limit=15', label: 'r/formula1', category: 'new', tier: 'T2', weight: 0.75 }
 ];
 
 export async function fetchAllRSS() {
@@ -102,6 +104,8 @@ export async function fetchAllRSS() {
             source: feed.label.startsWith('r/') ? 'reddit' : 'rss',
             sourceLabel: feed.label,
             sourceCategory: feed.category,
+            tier: feed.tier,
+            weight: feed.weight,
             title: item.title,
             url: item.url,
             publishedAt: item.publishedAt,
