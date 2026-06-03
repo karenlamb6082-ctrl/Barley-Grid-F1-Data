@@ -91,7 +91,7 @@ export default function FavoriteDriverCard({ data, onDriverClick }) {
             <img
               src={driverImage}
               alt={`${selectedDriver.firstName} ${selectedDriver.lastName}`}
-              className="absolute bottom-5 right-6 h-[112px] w-auto object-contain drop-shadow-[0_18px_28px_rgba(0,0,0,0.25)] sm:bottom-3 sm:right-5 sm:h-[170px] grayscale"
+              className="absolute bottom-5 right-6 h-[112px] w-auto object-contain drop-shadow-[0_18px_28px_rgba(0,0,0,0.25)] sm:bottom-3 sm:right-5 sm:h-[170px]"
               loading="lazy"
             />
           )}

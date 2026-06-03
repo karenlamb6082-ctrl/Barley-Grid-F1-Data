@@ -10,7 +10,7 @@ export default function Schedule({ scheduleData = [], allRaces = [], onRaceClick
   const completedRoundNums = new Set(allRaces.map(r => parseInt(r.round, 10)));
 
   return (
-    <div className="space-y-12 animate-in fade-in duration-500 max-w-5xl mx-auto px-4 pb-20">
+    <div className="space-y-12 animate-in fade-in duration-500 max-w-5xl mx-auto px-4 pb-20 pt-20">
       
       {/* 头部导航与切换 */}
       <div className="flex justify-between items-center border-b border-black/[0.05] pb-6">

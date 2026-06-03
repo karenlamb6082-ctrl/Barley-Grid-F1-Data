@@ -190,7 +190,7 @@ export default function F1Chat({ onBack, f1Data }) {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 max-w-4xl mx-auto px-4 pb-20">
+    <div className="space-y-8 animate-in fade-in duration-500 max-w-4xl mx-auto px-4 pb-20 pt-20">
       
       {/* 顶部社论返回栏 */}
       <div className="flex items-center justify-between border-b border-black/[0.05] pb-6">

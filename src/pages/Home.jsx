@@ -88,7 +88,7 @@ export default function Home({ setCurrentView, data, onDriverClick, onTeamClick,
   const { recentResults, driverStandings, teamStandings, schedule, allRaces } = data;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-20">
       <FadeInSection delay={0}>
         <DashboardHero
           data={data}

@@ -35,7 +35,7 @@ function PodiumCard({ rank, item, type }) {
           <img
             src={driverImage}
             alt={item.lastName}
-            className="w-full h-full object-cover grayscale transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
         ) : (
@@ -87,7 +87,7 @@ export default function Standings({ driverData = [], teamData = [], onDriverClic
   ];
 
   return (
-    <div className="space-y-12 animate-in fade-in duration-500 max-w-5xl mx-auto px-4 pb-20">
+    <div className="space-y-12 animate-in fade-in duration-500 max-w-5xl mx-auto px-4 pb-20 pt-20">
       
       {/* 头部社论导航 */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-6 border-b border-black/[0.05] pb-6">

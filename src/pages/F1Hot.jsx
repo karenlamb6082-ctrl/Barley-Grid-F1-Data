@@ -107,7 +107,7 @@ export default function F1Hot({ onBack, f1Data }) {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl mx-auto">
+    <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl mx-auto pt-20">
       {/* 顶部返回导航 */}
       <div className="flex items-center justify-between">
         <button
