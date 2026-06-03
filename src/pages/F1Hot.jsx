@@ -144,7 +144,10 @@ export default function F1Hot({ onBack, f1Data }) {
     try {
       const saved = localStorage.getItem("f1hot:chat_messages");
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
       }
     } catch (e) {
       console.error("加载聊天历史记录失败", e);
