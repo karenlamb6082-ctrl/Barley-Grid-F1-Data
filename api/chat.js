@@ -52,6 +52,15 @@ export default async function handler(req, res) {
     scheduleContextText += `- 当前赛季进度：已完成 ${f1Context.seasonProgress.completed} 站，全年总共 ${f1Context.seasonProgress.total} 站。\n`;
   }
 
+  // 整理全年赛历列表
+  if (f1Context?.schedule && Array.isArray(f1Context.schedule) && f1Context.schedule.length > 0) {
+    scheduleContextText += `\n【2026赛季全年赛历表】\n`;
+    f1Context.schedule.forEach(s => {
+      const dateStr = s.date ? new Date(s.date).toLocaleDateString('zh-CN') : '未定';
+      scheduleContextText += `- Rnd ${s.round}: ${s.name} (${s.circuit}) - ${dateStr} [${s.status === 'completed' ? '已完赛' : '未进行'}]\n`;
+    });
+  }
+
   let standingsContextText = '';
   if (f1Context?.driverStandings && Array.isArray(f1Context.driverStandings) && f1Context.driverStandings.length > 0) {
     standingsContextText += `【当前赛季车手积分榜（实时数据）】\n`;
@@ -66,17 +75,34 @@ export default async function handler(req, res) {
     });
   }
 
+  // 整理已完赛历史分站的具体成绩和DNF信息
+  let historyRacesText = '';
+  if (f1Context?.allRaces && Array.isArray(f1Context.allRaces) && f1Context.allRaces.length > 0) {
+    historyRacesText += `【已完赛大奖赛历史详细正赛结果（按排名列出车手及分数/DNF）】\n`;
+    f1Context.allRaces.forEach(race => {
+      historyRacesText += `- 第${race.round}站: ${race.raceName} (${race.Circuit?.circuitName || race.circuit || ''})\n`;
+      if (race.Results && Array.isArray(race.Results)) {
+        const resultsSummary = race.Results.map(r => {
+          const isRet = r.status !== 'Finished' && !r.status?.includes('Lap');
+          return `${r.position}.${r.Driver?.familyName || '未知车手'}(${isRet ? 'DNF' : r.points + '分'})`;
+        }).join(', ');
+        historyRacesText += `  成绩单: ${resultsSummary}\n`;
+      }
+    });
+  }
+
   const currentYear = new Date().getFullYear();
   const systemPromptContent = `
 你是一个专业的 F1（一级方程式）围场资深技术分析师与围场百事通。
-为了让你能获取到最实时的赛历、积分榜和全网突发新闻，系统已通过【联网增强数据流】为您实时注入了以下围场数据：
+为了让你能获取到最实时的赛历、积分榜、各已完赛大奖赛正赛结果以及全网突发新闻，系统已通过【联网增强数据流】为您实时注入了以下围场数据：
 
 [系统时间]：${new Date().toLocaleDateString('zh-CN')}
 ${scheduleContextText || '（暂无最新分站赛历数据）'}
 ${standingsContextText || '（暂无当前赛季积分排行榜数据）'}
+${historyRacesText || '（暂无已完赛大奖赛历史正赛结果数据）'}
 ${realtimeNewsText || '（暂无今日全网最新实时新闻数据）'}
 
-请使用专业、客观且风趣幽默的中文，结合上述联网注入的最新实时资讯、赛历与积分榜排行榜，回答用户的问题。如果用户询问关于“积分榜情况”、“谁排第一”、“下一场比赛是多久”、“今天有什么新爆料”等内容，请直接利用上面注入的实时数据给出精确答案！
+请使用专业、客观且风趣幽默的中文，结合上述联网注入的最新实时资讯、全年赛历、各完赛分站详细成绩单与积分排行榜，回答用户的问题。如果用户询问关于“积分榜情况”、“下一场比赛是多久”、“今天有什么新爆料”以及关于“某一历史站比赛结果、某人拿了第几、某站谁退赛了”等问题，请直接从上面注入的数据中提取并给出极其精准的答案！
 `;
 
   const deepseekModel = model || process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash';

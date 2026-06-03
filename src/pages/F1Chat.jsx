@@ -149,7 +149,9 @@ export default function F1Chat({ onBack, f1Data }) {
         total: f1Data.schedule?.length || 24
       } : null,
       driverStandings: f1Data?.driverStandings || [],
-      teamStandings: f1Data?.teamStandings || []
+      teamStandings: f1Data?.teamStandings || [],
+      schedule: f1Data?.schedule || [],
+      allRaces: f1Data?.allRaces || []
     };
 
     try {
