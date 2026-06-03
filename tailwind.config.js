@@ -8,18 +8,18 @@ export default {
     extend: {
       colors: {
         f1: {
-          bg: '#F7F4EE',
+          bg: '#FAF8F5',
           card: '#FFFFFF',
           text: '#101010',
-          'text-muted': '#77746F',
-          red: '#FF2D2D',
-          cyan: '#20D7FF',
-          lime: '#D7FF38',
-          graphite: '#171717',
-          gold: '#D2B056',
+          'text-muted': '#7A7772',
+          red: '#B33A3A',
+          cyan: '#758A99',
+          lime: '#C5A880',
+          graphite: '#1E1D1B',
+          gold: '#C5A880',
           silver: '#8E8E93',
           darkcyan: '#36696A',
-          danger: '#C83232',
+          danger: '#B33A3A',
         },
       },
       fontFamily: {

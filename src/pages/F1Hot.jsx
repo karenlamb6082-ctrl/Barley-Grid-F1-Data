@@ -137,15 +137,15 @@ export default function F1Hot({ onBack, f1Data }) {
 
       {/* 顶部高保真胶囊式分段切换菜单 (代替原先繁杂的侧边栏，实现手机端极致手感) */}
       <div className="flex justify-center">
-        <div className="inline-flex p-1 bg-[#171717] rounded-xl border border-black/10 shadow-md w-full sm:w-auto">
+        <div className="inline-flex p-1.5 bg-f1-graphite rounded-xl border border-white/[0.06] shadow-md w-full sm:w-auto">
           <button
             onClick={() => {
               setActiveTab("featured");
               setExpandedEventId(null);
             }}
-            className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-lg text-[13px] font-bold transition-all btn-bounce ${
+            className={`flex-1 sm:flex-initial px-6 py-2 rounded-lg text-[13px] font-bold transition-all btn-bounce ${
               activeTab === "featured"
-                ? "bg-[#D7FF38] text-[#101010] shadow-sm font-black scale-[1.02]"
+                ? "bg-f1-lime text-f1-text shadow-sm font-black scale-[1.02]"
                 : "text-white/65 hover:text-white"
             }`}
           >
@@ -156,9 +156,9 @@ export default function F1Hot({ onBack, f1Data }) {
               setActiveTab("daily");
               setExpandedEventId(null);
             }}
-            className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-lg text-[13px] font-bold transition-all btn-bounce ${
+            className={`flex-1 sm:flex-initial px-6 py-2 rounded-lg text-[13px] font-bold transition-all btn-bounce ${
               activeTab === "daily"
-                ? "bg-[#D7FF38] text-[#101010] shadow-sm font-black scale-[1.02]"
+                ? "bg-f1-lime text-f1-text shadow-sm font-black scale-[1.02]"
                 : "text-white/65 hover:text-white"
             }`}
           >

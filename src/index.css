@@ -4,14 +4,11 @@
 
 @layer base {
   body {
-    background:
-      linear-gradient(135deg, rgba(255, 45, 45, 0.045) 0%, transparent 28%),
-      linear-gradient(315deg, rgba(215, 255, 56, 0.055) 0%, transparent 24%),
-      #F7F4EE;
+    background: #FAF8F5;
     color: #101010;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
-    letter-spacing: 0;
+    letter-spacing: -0.01em;
   }
 
   /* 全局可点击元素的触感反馈 */
@@ -23,25 +20,25 @@
 @layer utilities {
   .apple-card {
     background:
-      linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.92)),
+      linear-gradient(180deg, rgba(255,255,255,0.99), rgba(255,255,255,0.96)),
       #FFFFFF;
-    border-radius: 14px;
-    border: 1px solid rgba(16, 16, 16, 0.10);
-    box-shadow: 0 8px 22px rgba(16, 16, 16, 0.055), 0 1px 0 rgba(255,255,255,0.75) inset;
-    transition: box-shadow 0.22s ease, background-color 0.22s ease;
+    border-radius: 18px;
+    border: 1px solid rgba(16, 16, 16, 0.045);
+    box-shadow: 0 4px 20px rgba(16, 16, 16, 0.02), 0 1px 0 rgba(255,255,255,0.8) inset;
+    transition: box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), background-color 0.22s ease;
     position: relative;
     overflow: hidden;
   }
   
   @media (hover: hover) and (pointer: fine) {
     .apple-card:hover {
-      box-shadow: 0 12px 28px rgba(16, 16, 16, 0.08), 0 1px 0 rgba(255,255,255,0.75) inset;
+      box-shadow: 0 12px 36px rgba(16, 16, 16, 0.045), 0 1px 0 rgba(255,255,255,0.8) inset;
     }
   }
 
   /* 按下时的物理回弹感 —— 手指离开后弹回 */
   .apple-card:active {
-    box-shadow: 0 6px 18px rgba(16, 16, 16, 0.07);
+    box-shadow: 0 6px 18px rgba(16, 16, 16, 0.035);
     transition-duration: 0.1s;
   }
 
@@ -50,32 +47,33 @@
     transition: background-color 0.18s ease;
   }
   .tap-row:active {
-    background-color: rgba(0, 0, 0, 0.04) !important;
+    background-color: rgba(0, 0, 0, 0.03) !important;
     transition-duration: 0.08s;
   }
 
   /* ---- 按钮的微弹反馈 ---- */
   .btn-bounce {
-    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-                box-shadow 0.4s ease,
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+                box-shadow 0.35s ease,
                 background-color 0.25s ease;
   }
   .btn-bounce:hover {
     transform: translateY(-1px);
   }
   .btn-bounce:active {
-    transform: scale(0.95) translateY(0px);
+    transform: scale(0.97) translateY(0px);
     transition-duration: 0.08s;
   }
 
   .race-cut {
-    clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+    border-radius: 16px;
+    clip-path: none !important;
   }
 
   .timing-grid {
     background-image:
-      linear-gradient(rgba(16,16,16,0.045) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(16,16,16,0.045) 1px, transparent 1px);
+      linear-gradient(rgba(16,16,16,0.012) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(16,16,16,0.012) 1px, transparent 1px);
     background-size: 28px 28px;
   }
 
@@ -87,22 +85,22 @@
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.08);
     border-radius: 4px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.15);
   }
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+    scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
   }
 
   /* ---- 入场动画系统 ---- */
   .animate-in {
     animation-name: fadeInUp;
     animation-duration: 420ms;
-    animation-timing-function: ease-out;
+    animation-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1);
     animation-fill-mode: both;
   }
 

@@ -34,7 +34,7 @@ export default function RecentResultsCard({ results, onRaceClick, onViewAll }) {
             <div key={pod.position} className="min-w-0 px-3 first:pl-0 last:pr-0">
               <div
                 className="mb-4 inline-flex h-8 w-8 items-center justify-center race-cut text-[18px] font-black text-f1-text"
-                style={{ backgroundColor: pod.position === 1 ? "#D7FF38" : pod.teamColor }}
+                style={{ backgroundColor: pod.position === 1 ? "#C5A880" : pod.teamColor }}
               >
                 {pod.position}
               </div>

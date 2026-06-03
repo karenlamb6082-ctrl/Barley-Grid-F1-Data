@@ -22,21 +22,21 @@ export default function Header({ currentView, setCurrentView }) {
         <div className="flex items-center space-x-2.5 font-black text-[18px] text-f1-text tracking-tight cursor-pointer antialiased hover:opacity-80 transition-opacity" onClick={() => handleNav('home')}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mt-[1px]">
              <path d="M2.5 21.5C2.5 11.0066 11.0066 2.5 21.5 2.5" stroke="#101010" strokeWidth="3.2" strokeLinecap="round" />
-             <circle cx="21.5" cy="2.5" r="2.5" fill="#FF2D2D" />
+             <circle cx="21.5" cy="2.5" r="2.5" fill="#B33A3A" />
           </svg>
           <span className="pt-[1px]">Barley Grid</span>
-          <span className="hidden sm:block w-10 h-1 bg-f1-lime -skew-x-12 ml-1"></span>
+          <span className="hidden sm:block w-2.5 h-2.5 rounded-full bg-f1-lime ml-1.5"></span>
         </div>
         
         {/* 桌面端导航 */}
-        <nav className="hidden md:flex space-x-1.5 bg-[#171717] text-white p-1 rounded-lg border border-black/10 shadow-[0_10px_28px_rgba(16,16,16,0.14)]">
+        <nav className="hidden md:flex space-x-1.5 bg-f1-graphite text-white p-1.5 rounded-xl border border-white/[0.06] shadow-[0_12px_36px_rgba(0,0,0,0.16)]">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => handleNav(tab.id)}
-              className={`btn-bounce px-5 py-1.5 rounded-md text-[13px] font-bold ${
+              className={`btn-bounce px-5 py-1.5 rounded-lg text-[13px] font-bold ${
                 currentView === tab.id 
-                  ? 'bg-[#D7FF38] text-[#101010] shadow-sm'
+                  ? 'bg-f1-lime text-f1-text shadow-sm'
                   : 'text-white/65 hover:text-white hover:bg-white/10'
               }`}
             >
@@ -44,7 +44,7 @@ export default function Header({ currentView, setCurrentView }) {
             </button>
           ))}
         </nav>
-
+        
         {/* 移动端汉堡菜单按钮 */}
         <button 
           className="md:hidden flex flex-col justify-center items-center w-8 h-8 gap-1.5"
@@ -58,14 +58,14 @@ export default function Header({ currentView, setCurrentView }) {
       
       {/* 移动端下拉菜单 */}
       <div className={`md:hidden overflow-hidden transition-all duration-300 ease-out ${menuOpen ? 'max-h-80 border-t border-black/[0.04]' : 'max-h-0'}`}>
-        <nav className="px-4 py-3 space-y-1 bg-[#171717] text-white">
+        <nav className="px-4 py-3 space-y-1 bg-f1-graphite text-white">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => handleNav(tab.id)}
               className={`block w-full text-left px-4 py-3 rounded-xl text-[15px] font-semibold transition-all ${
                 currentView === tab.id 
-                  ? 'bg-[#D7FF38] text-[#101010]'
+                  ? 'bg-f1-lime text-f1-text'
                   : 'text-white/65 hover:bg-white/10 hover:text-white'
               }`}
             >

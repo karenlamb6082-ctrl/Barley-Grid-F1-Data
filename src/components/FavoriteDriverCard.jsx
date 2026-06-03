@@ -82,8 +82,8 @@ export default function FavoriteDriverCard({ data, onDriverClick }) {
           onClick={() => onDriverClick?.(selectedDriver.id)}
           className="relative min-h-[285px] overflow-hidden bg-f1-graphite p-5 text-left text-white sm:min-h-[230px] sm:p-7 race-cut"
         >
-          <div className="absolute inset-0 timing-grid opacity-[0.10]"></div>
-          <div className="absolute bottom-0 left-0 h-12 w-2/3 bg-gradient-to-r from-f1-red to-transparent"></div>
+          <div className="absolute inset-0 timing-grid opacity-[0.03]"></div>
+          <div className="absolute bottom-0 left-0 h-0.5 w-full bg-f1-red/60"></div>
           <div className="absolute right-4 top-5 text-[96px] font-black leading-none text-white/[0.06] sm:right-5 sm:text-[108px]">
             {selectedDriver.number || selectedDriver.code}
           </div>

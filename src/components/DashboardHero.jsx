@@ -57,15 +57,15 @@ function CountdownStrip({ targetDate }) {
   const countdown = getCountdown(targetDate, now);
 
   return (
-    <div className="mt-5 grid grid-cols-2 gap-2 rounded-lg bg-f1-lime p-2.5 sm:grid-cols-4 xl:grid-cols-2">
+    <div className="mt-5 grid grid-cols-2 gap-2 rounded-xl bg-f1-lime/10 p-2 sm:grid-cols-4 xl:grid-cols-2 border border-f1-lime/15">
       {[
         [countdown.days, "天"],
         [countdown.hours, "时"],
         [countdown.minutes, "分"],
         [countdown.seconds, "秒"],
       ].map(([value, label]) => (
-        <div key={label} className="flex min-h-[58px] flex-col items-center justify-center rounded-md bg-white px-2 text-center">
-          <span className="text-[24px] font-black leading-none tabular-nums text-f1-text">
+        <div key={label} className="flex min-h-[58px] flex-col items-center justify-center rounded-lg bg-white px-2 text-center border border-black/[0.03]">
+          <span className="text-[22px] font-black leading-none tabular-nums text-f1-text">
             {String(value).padStart(2, "0")}
           </span>
           <span className="mt-1 text-[11px] font-black text-f1-text-muted">{label}</span>
@@ -83,35 +83,28 @@ export default function DashboardHero({ data, setCurrentView, onRaceClick, onDri
   const raceDate = nextRace?.date ? new Date(nextRace.date) : null;
 
   return (
-    <section className="grid min-w-0 grid-cols-1 xl:grid-cols-[1fr_1.25fr] gap-0 rounded-[16px] sm:rounded-[18px] overflow-hidden border border-black/10 shadow-[0_18px_46px_rgba(16,16,16,0.10)] sm:shadow-[0_24px_70px_rgba(16,16,16,0.12)] bg-white">
+    <section className="grid min-w-0 grid-cols-1 xl:grid-cols-[1fr_1.25fr] gap-0 rounded-2xl overflow-hidden border border-black/[0.045] shadow-[0_8px_32px_rgba(16,16,16,0.03)] bg-white animate-in">
       <div className="relative min-w-0 min-h-[320px] overflow-hidden bg-f1-graphite text-white p-5 sm:min-h-[360px] sm:p-10 lg:p-12 race-cut">
-        <div className="absolute inset-0 timing-grid opacity-[0.14]"></div>
-        <div className="absolute right-[-12%] top-[-20%] h-[140%] w-[42%] bg-f1-bg -skew-x-12 hidden xl:block"></div>
-        <div className="absolute left-0 bottom-0 h-16 w-2/3 bg-gradient-to-r from-f1-red via-f1-red/70 to-transparent"></div>
-        <div className="absolute top-0 right-10 h-3 w-24 bg-f1-lime -skew-x-12 sm:right-16"></div>
-        <svg className="absolute right-8 bottom-24 w-[260px] max-w-[60%] opacity-45 hidden sm:block" viewBox="0 0 320 180" fill="none">
-          <path d="M28 118C60 154 100 96 128 116C160 140 178 82 210 94C252 110 236 44 280 56" stroke="white" strokeWidth="4" strokeLinecap="round" />
-          <path d="M28 134C62 170 105 112 131 132C165 158 184 99 215 110C265 128 245 60 292 72" stroke="#20D7FF" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-
+        <div className="absolute inset-0 timing-grid opacity-[0.03]"></div>
+        
         <div className="relative z-10 max-w-[560px]">
-          <div className="mb-7 text-[11px] font-black tracking-[0.24em] text-f1-red uppercase sm:mb-8 sm:text-[12px] sm:tracking-[0.32em]">
-            Barley Grid · F1 Data Center
+          <div className="mb-7 text-[11px] font-bold tracking-[0.28em] text-f1-lime uppercase sm:mb-8 sm:text-[12px] sm:tracking-[0.36em]">
+            BARLEY GRID · F1 DATA CENTER
           </div>
           <h1 className="text-[31px] sm:text-[58px] lg:text-[72px] font-black leading-[0.98] tracking-tight">
-            2026 赛季<span className="block text-f1-red">全景看板</span>
+            2026 赛季<span className="block text-f1-lime">全景看板</span>
           </h1>
-          <p className="mt-5 max-w-[280px] sm:max-w-[340px] text-[14px] sm:text-[17px] font-bold text-white/78 leading-relaxed">
+          <p className="mt-5 max-w-[280px] sm:max-w-[340px] text-[14px] sm:text-[17px] font-semibold text-white/60 leading-relaxed">
             实时同步每一次超越、排位与积分变化
           </p>
           <div className="mt-9 flex flex-wrap gap-2.5 sm:mt-10 sm:gap-3">
             <button onClick={() => setCurrentView("schedule")} className="btn-bounce race-cut bg-f1-red px-5 py-2.5 text-[14px] font-black text-white sm:px-7 sm:py-3 sm:text-[15px]">
               赛程追踪
             </button>
-            <button onClick={() => setCurrentView("standings")} className="btn-bounce race-cut border border-white/25 bg-white/8 px-5 py-2.5 text-[14px] font-black text-white sm:px-7 sm:py-3 sm:text-[15px]">
+            <button onClick={() => setCurrentView("standings")} className="btn-bounce race-cut border border-white/15 bg-white/5 px-5 py-2.5 text-[14px] font-black text-white sm:px-7 sm:py-3 sm:text-[15px]">
               积分榜单
             </button>
-            <button onClick={() => setCurrentView("chat")} className="btn-bounce race-cut border border-[#D7FF38]/40 bg-[#D7FF38]/10 px-5 py-2.5 text-[14px] font-black text-[#D7FF38] sm:px-7 sm:py-3 sm:text-[15px] shadow-[0_4px_16px_rgba(215,255,56,0.1)]">
+            <button onClick={() => setCurrentView("chat")} className="btn-bounce race-cut border border-f1-lime/30 bg-f1-lime/10 px-5 py-2.5 text-[14px] font-black text-f1-lime sm:px-7 sm:py-3 sm:text-[15px]">
               AI 助手
             </button>
           </div>
@@ -153,12 +146,12 @@ export default function DashboardHero({ data, setCurrentView, onRaceClick, onDri
             <span className="text-[74px] font-black leading-none text-f1-red">{completed}</span>
             <span className="pb-3 text-[40px] font-black leading-none text-black/25">/ {total}</span>
           </div>
-          <div className="mt-8 h-2 rounded-full bg-black/10 overflow-hidden">
+          <div className="mt-8 h-1.5 rounded-full bg-black/[0.06] overflow-hidden">
             <div className="h-full rounded-full bg-f1-red" style={{ width: `${progress}%` }}></div>
           </div>
-          <div className="mt-8 flex items-center gap-2 whitespace-nowrap text-[15px] font-black text-f1-text">
-            <span className="text-f1-lime drop-shadow-[0_1px_0_rgba(16,16,16,0.55)]">{progress}%</span>
-            <span className="text-f1-text-muted">赛季完成度</span>
+          <div className="mt-8 flex items-center gap-2 whitespace-nowrap text-[15px] font-bold text-f1-text">
+            <span className="text-f1-lime font-black">{progress}%</span>
+            <span className="text-f1-text-muted font-bold">赛季完成度</span>
           </div>
         </div>
 
