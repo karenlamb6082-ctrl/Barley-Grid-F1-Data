@@ -101,7 +101,7 @@ export default function F1Chat({ onBack, f1Data }) {
   });
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
-  const chatBottomRef = useRef(null);
+  const chatListRef = useRef(null);
 
   const [chatModel, setChatModel] = useState(() => {
     return localStorage.getItem("f1hot:chat_model") || "deepseek-v4-flash";
@@ -124,7 +124,12 @@ export default function F1Chat({ onBack, f1Data }) {
   }, [chatModel]);
 
   useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatListRef.current) {
+      chatListRef.current.scrollTo({
+        top: chatListRef.current.scrollHeight,
+        behavior: "smooth"
+      });
+    }
   }, [chatMessages, chatLoading]);
 
   const handleSendChat = async (e) => {
@@ -244,7 +249,7 @@ export default function F1Chat({ onBack, f1Data }) {
         </div>
 
         {/* 消息历史滚动区 */}
-        <div className="flex-1 overflow-y-auto pr-2 space-y-6 mb-4 custom-scrollbar overscroll-contain">
+        <div ref={chatListRef} className="flex-1 overflow-y-auto pr-2 space-y-6 mb-4 custom-scrollbar overscroll-contain">
           {chatMessages.map((msg, idx) => (
             <div
               key={idx}
@@ -284,7 +289,6 @@ export default function F1Chat({ onBack, f1Data }) {
               </div>
             </div>
           )}
-          <div ref={chatBottomRef} />
         </div>
 
         {/* 智能快捷引导问题 */}
