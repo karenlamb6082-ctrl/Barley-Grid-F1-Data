@@ -37,7 +37,7 @@ function HotTopicCard({ topic, rank }) {
         </span>
         <div className="min-w-0 flex-1">
           <h4 className="text-[14px] sm:text-[15px] font-black text-f1-text leading-snug line-clamp-2">
-            {topic.title}
+            {topic.titleCN || topic.title}
           </h4>
           {/* 元信息 */}
           <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-bold text-f1-text-muted">

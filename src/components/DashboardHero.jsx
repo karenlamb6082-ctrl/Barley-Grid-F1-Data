@@ -111,6 +111,9 @@ export default function DashboardHero({ data, setCurrentView, onRaceClick, onDri
             <button onClick={() => setCurrentView("standings")} className="btn-bounce race-cut border border-white/25 bg-white/8 px-5 py-2.5 text-[14px] font-black text-white sm:px-7 sm:py-3 sm:text-[15px]">
               积分榜单
             </button>
+            <button onClick={() => setCurrentView("chat")} className="btn-bounce race-cut border border-[#D7FF38]/40 bg-[#D7FF38]/10 px-5 py-2.5 text-[14px] font-black text-[#D7FF38] sm:px-7 sm:py-3 sm:text-[15px] shadow-[0_4px_16px_rgba(215,255,56,0.1)]">
+              AI 助手
+            </button>
           </div>
         </div>
       </div>

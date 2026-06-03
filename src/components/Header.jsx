@@ -57,7 +57,7 @@ export default function Header({ currentView, setCurrentView }) {
       </div>
       
       {/* 移动端下拉菜单 */}
-      <div className={`md:hidden overflow-hidden transition-all duration-300 ease-out ${menuOpen ? 'max-h-60 border-t border-black/[0.04]' : 'max-h-0'}`}>
+      <div className={`md:hidden overflow-hidden transition-all duration-300 ease-out ${menuOpen ? 'max-h-80 border-t border-black/[0.04]' : 'max-h-0'}`}>
         <nav className="px-4 py-3 space-y-1 bg-[#171717] text-white">
           {tabs.map(tab => (
             <button
