@@ -30,7 +30,7 @@ export default function RecentResultsCard({ results, onRaceClick, onViewAll }) {
         </div>
 
         <div className="mt-8 grid grid-cols-3 divide-x divide-black/10">
-          {race.podium.map((pod) => (
+          {race.podium?.map((pod) => (
             <div key={pod.position} className="min-w-0 px-3 first:pl-0 last:pr-0">
               <div
                 className="mb-4 inline-flex h-8 w-8 items-center justify-center race-cut text-[18px] font-black text-f1-text"

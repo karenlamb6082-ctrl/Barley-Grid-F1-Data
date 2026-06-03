@@ -135,7 +135,7 @@ export default function DashboardHero({ data, setCurrentView, onRaceClick, onDri
             </div>
             <div className="rounded-lg border border-black/10 p-3">
               <div className="text-[18px] font-black text-f1-text">{raceDate ? format(raceDate, "HH:mm") : "--:--"}</div>
-              <div className="text-[12px] font-bold text-f1-text-muted">当地时间</div>
+              <div className="text-[12px] font-bold text-f1-text-muted">本地时间</div>
             </div>
           </div>
           <CountdownStrip targetDate={nextRace?.date} />

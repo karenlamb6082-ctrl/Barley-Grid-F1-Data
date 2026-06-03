@@ -1,36 +1,8 @@
-import { useState, useEffect } from 'react';
-import { lockScroll, unlockScroll } from '../utils/scrollLock';
+import { useDrawer } from '../hooks/useDrawer';
 import { getDriverImage, getTeamAbbr, getRaceNameCN } from '../services/f1api';
 
 export default function TeamDrawer({ teamId, data, onClose }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [activeId, setActiveId] = useState(null);
-  
-  useEffect(() => {
-    if (teamId) {
-      setActiveId(teamId);
-      lockScroll();
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setIsOpen(true);
-        });
-      });
-    } else {
-      setIsOpen(false);
-      unlockScroll();
-      const timer = setTimeout(() => {
-        setActiveId(null);
-      }, 450);
-      return () => clearTimeout(timer);
-    }
-  }, [teamId]);
-
-  const handleClose = () => {
-    setIsOpen(false);
-    setTimeout(onClose, 320);
-  };
-
-  const isVisible = isOpen || activeId;
+  const { isOpen, activeId, handleClose, isVisible } = useDrawer(teamId, onClose);
   const team = data?.teamStandings?.find(t => t.id === activeId);
   
   // 该车队旗下车手（用 constructorId 精确匹配）
@@ -173,7 +145,7 @@ export default function TeamDrawer({ teamId, data, onClose }) {
                     <div className="text-[32px] font-bold text-f1-text tracking-tighter leading-none">{totalWins}</div>
                  </div>
                  <div className="rounded-2xl p-4 border border-white/70 relative overflow-hidden hover:bg-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
-                    <div className="text-[12px] font-bold text-[#A68224] uppercase tracking-wider mb-2">领奖台</div>
+                    <div className="text-[12px] font-bold text-f1-gold uppercase tracking-wider mb-2">领奖台</div>
                     <div className="text-[32px] font-bold text-f1-text tracking-tighter leading-none">{totalPodiums}</div>
                  </div>
                  <div className="rounded-2xl p-4 border border-white/70 relative overflow-hidden hover:bg-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
@@ -229,7 +201,7 @@ export default function TeamDrawer({ teamId, data, onClose }) {
                           </div>
                           <div className="text-[10px] text-f1-text-muted font-medium mt-0.5">
                             RND {String(rb.round).padStart(2, '0')}
-                            {rb.hasSprint && <span className="ml-1.5 text-[#A68224]">冲刺周末</span>}
+                            {rb.hasSprint && <span className="ml-1.5 text-f1-gold">冲刺周末</span>}
                           </div>
                         </div>
                         {/* 两位车手得分 */}
@@ -237,7 +209,7 @@ export default function TeamDrawer({ teamId, data, onClose }) {
                           <div key={dr.id} className="w-[70px] text-center">
                             {dr.racePos ? (
                               <div>
-                                <span className={`text-[13px] font-bold ${dr.racePos <= 3 ? 'text-[#A68224]' : dr.racePos <= 10 ? 'text-f1-cyan' : 'text-f1-text'}`}>
+                                <span className={`text-[13px] font-bold ${dr.racePos <= 3 ? 'text-f1-gold/90' : dr.racePos <= 10 ? 'text-f1-cyan' : 'text-f1-text'}`}>
                                   P{dr.racePos}
                                 </span>
                                 <span className="text-[11px] text-f1-text-muted ml-1">+{dr.racePts}</span>
@@ -258,13 +230,13 @@ export default function TeamDrawer({ teamId, data, onClose }) {
                       {rb.hasSprint && rb.driversRace.some(d => d.sprintPos) && (
                         <div className="flex items-center px-4 py-2 bg-black/[0.02] border-t border-black/[0.04]">
                           <div className="flex-1 min-w-0">
-                            <div className="text-[11px] text-[#A68224] font-bold">↳ 冲刺赛</div>
+                            <div className="text-[11px] text-f1-gold font-bold">↳ 冲刺赛</div>
                           </div>
                           {rb.driversRace.map(dr => (
                             <div key={dr.id} className="w-[70px] text-center">
                               {dr.sprintPos ? (
                                 <div>
-                                  <span className={`text-[12px] font-bold ${dr.sprintPos <= 3 ? 'text-[#A68224]' : 'text-f1-text/70'}`}>
+                                  <span className={`text-[12px] font-bold ${dr.sprintPos <= 3 ? 'text-f1-gold/90' : 'text-f1-text/70'}`}>
                                     P{dr.sprintPos}
                                   </span>
                                   <span className="text-[10px] text-f1-text-muted ml-1">+{dr.sprintPts}</span>

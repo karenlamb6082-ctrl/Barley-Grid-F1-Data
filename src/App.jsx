@@ -186,7 +186,7 @@ function App() {
         setLoading(false);
       } else if (isMounted) {
         // API 失败但有缓存数据时标记过期
-        if (data || cached?.data) setStale(true);
+        if (cached?.data) setStale(true);
         setLoading(false);
       }
     };
@@ -255,10 +255,8 @@ function App() {
               <Suspense fallback={<ViewFallback />}>
                 {currentView === "f1hot" && (
                   <F1Hot
-                    data={data}
-                    onDriverClick={openDriver}
-                    onTeamClick={openTeam}
                     onBack={() => setCurrentView("home")}
+                    f1Data={data}
                   />
                 )}
                 {currentView === "schedule" && (

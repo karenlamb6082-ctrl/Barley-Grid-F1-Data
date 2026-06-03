@@ -272,7 +272,7 @@ export async function fetchAllData() {
         name: `${res.Driver.givenName[0]}. ${res.Driver.familyName}`,
         team: res.Constructor.name,
         teamColor: getTeamColor(res.Constructor.constructorId),
-        time: res.position === '1' ? res.Time?.time || "Finished" : res.Time?.time || "Finished"
+        time: res.Time?.time || "Finished"
       })) : []
     })).reverse();
 
@@ -417,13 +417,17 @@ async function getLiveTimingIndex() {
   if (_indexCache && (Date.now() - _indexCacheTime) < 30 * 60 * 1000) return _indexCache;
   try {
     const c = new AbortController();
-    setTimeout(() => c.abort(), 8000);
-    const res = await fetch(buildTimingUrl('2026/Index.json'), { signal: c.signal });
-    if (!res.ok) throw new Error(res.status);
-    const data = await res.json();
-    _indexCache = data;
-    _indexCacheTime = Date.now();
-    return data;
+    const timer = setTimeout(() => c.abort(), 8000);
+    try {
+      const res = await fetch(buildTimingUrl('2026/Index.json'), { signal: c.signal });
+      if (!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      _indexCache = data;
+      _indexCacheTime = Date.now();
+      return data;
+    } finally {
+      clearTimeout(timer);
+    }
   } catch (e) {
     console.warn('LiveTiming Index 获取失败:', e.message);
     return null;
@@ -474,12 +478,16 @@ async function fetchLiveTimingSession(sessionPath) {
   if (_fpCache[sessionPath]) return _fpCache[sessionPath];
   try {
     const c = new AbortController();
-    setTimeout(() => c.abort(), 8000);
-    const res = await fetch(buildTimingUrl(`${sessionPath}TimingData.json`), { signal: c.signal });
-    if (!res.ok) return null;
-    const parsed = parseTimingData(await res.json());
-    if (parsed) _fpCache[sessionPath] = parsed;
-    return parsed;
+    const timer = setTimeout(() => c.abort(), 8000);
+    try {
+      const res = await fetch(buildTimingUrl(`${sessionPath}TimingData.json`), { signal: c.signal });
+      if (!res.ok) return null;
+      const parsed = parseTimingData(await res.json());
+      if (parsed) _fpCache[sessionPath] = parsed;
+      return parsed;
+    } finally {
+      clearTimeout(timer);
+    }
   } catch (e) {
     console.warn('FP session 获取失败:', e.message);
     return null;

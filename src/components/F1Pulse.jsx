@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { RefreshCw, MessageCircle, ExternalLink, TrendingUp } from "lucide-react";
+import { RefreshCw, MessageCircle, ExternalLink } from "lucide-react";
 import { fetchHotTopics, getCachedHotTopics } from "../services/f1api";
 
 function SourcePill({ label, type }) {

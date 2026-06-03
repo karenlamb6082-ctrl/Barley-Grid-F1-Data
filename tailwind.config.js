@@ -16,6 +16,10 @@ export default {
           cyan: '#20D7FF',
           lime: '#D7FF38',
           graphite: '#171717',
+          gold: '#D2B056',
+          silver: '#8E8E93',
+          darkcyan: '#36696A',
+          danger: '#C83232',
         },
       },
       fontFamily: {

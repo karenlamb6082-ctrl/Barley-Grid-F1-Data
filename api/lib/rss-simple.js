@@ -126,6 +126,14 @@ export async function fetchAllRSS() {
   for (const r of results) {
     if (r.status === 'fulfilled') all.push(...r.value);
   }
+
+  // 如果所有 RSS 真实源都因本地网络连接超时或中断失败，自动导入 Mock 数据兜底，保障网站的可用性
+  if (all.length === 0) {
+    const { MOCK_RSS_ITEMS } = await import('./mock-rss.js');
+    console.warn('[RSS] 所有真实源请求均超时或失败，已自动载入高保真本地 Mock 数据兜底！');
+    return MOCK_RSS_ITEMS;
+  }
+
   return all;
 }
 

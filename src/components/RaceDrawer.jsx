@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { lockScroll, unlockScroll } from '../utils/scrollLock';
+import { useDrawer } from '../hooks/useDrawer';
 import { getTeamColor, fetchRaceWeekend, fetchPracticeResults, getRaceNameCN, getCountryNameCN, getCircuitNameCN } from '../services/f1api';
 import { EMPTY_STATE_MESSAGES } from '../data/f1Fun';
 
 export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [activeId, setActiveId] = useState(null);
+  const { isOpen, activeId, handleClose, isVisible } = useDrawer(raceRound, onClose);
   const [activeTab, setActiveTab] = useState('schedule');
   const [weekendData, setWeekendData] = useState({ qualifying: null, sprint: null, sprintQualifying: null });
   const [loadingWeekend, setLoadingWeekend] = useState(true);
@@ -15,48 +14,50 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
 
   useEffect(() => {
     if (raceRound) {
-      setActiveId(raceRound);
       // 智能默认 tab：有正赛结果的显示正赛，否则显示时间表
       const race = data?.allRaces?.find(r => r.round === String(raceRound));
       const hasResults = race && race.Results && race.Results.length > 0;
       setActiveTab(hasResults ? 'race' : 'schedule');
-      lockScroll();
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setIsOpen(true);
-        });
-      });
-    } else {
-      setIsOpen(false);
-      unlockScroll();
-      const timer = setTimeout(() => {
-        setActiveId(null);
-      }, 450);
-      return () => clearTimeout(timer);
     }
-  }, [raceRound]);
+  }, [raceRound, data?.allRaces]);
 
   // 打开 Drawer 时按需加载排位赛和冲刺赛数据
   useEffect(() => {
     if (!activeId) return;
+    let isMounted = true;
+
+    setWeekendData({ qualifying: null, sprint: null, sprintQualifying: null });
+    setLoadingWeekend(true);
+    setPracticeData({ fp1: null, fp2: null, fp3: null });
+    setPracticeError(null);
+    setLoadingPractice(true);
+
     fetchRaceWeekend(activeId).then(d => {
+      if (!isMounted) return;
       setWeekendData(d);
+      setLoadingWeekend(false);
+    }).catch(() => {
+      if (!isMounted) return;
       setLoadingWeekend(false);
     });
     // 并行加载练习赛数据
     fetchPracticeResults(activeId, data?.schedule).then(d => {
+      if (!isMounted) return;
       setPracticeData({ fp1: d.fp1, fp2: d.fp2, fp3: d.fp3 });
       setPracticeError(d.error || null);
       setLoadingPractice(false);
+    }).catch(() => {
+      if (!isMounted) return;
+      setPracticeError('network');
+      setLoadingPractice(false);
     });
+
+    return () => {
+      isMounted = false;
+    };
   }, [activeId, data?.schedule]);
 
-  const handleClose = () => {
-    setIsOpen(false);
-    setTimeout(onClose, 320);
-  };
 
-  const isVisible = isOpen || activeId;
 
   // 从 allRaces 获取完整比赛数据
   const race = data?.allRaces?.find(r => r.round === String(activeId));
@@ -114,7 +115,7 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
         {weekendData.qualifying.map(r => {
           const teamColor = getTeamColor(r.constructorId);
           let posStyle = 'text-f1-text-muted';
-          if (r.position === 1) posStyle = 'text-[#A68224] font-black';
+          if (r.position === 1) posStyle = 'text-f1-gold/90 font-black';
           else if (r.position <= 3) posStyle = 'text-f1-text font-bold';
           else if (r.position <= 10) posStyle = 'text-f1-cyan font-bold';
 
@@ -163,7 +164,7 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
         {weekendData.sprintQualifying.map(r => {
           const teamColor = getTeamColor(r.constructorId);
           let posStyle = 'text-f1-text-muted';
-          if (r.position === 1) posStyle = 'text-[#A68224] font-black';
+          if (r.position === 1) posStyle = 'text-f1-gold/90 font-black';
           else if (r.position <= 3) posStyle = 'text-f1-text font-bold';
           else if (r.position <= 8) posStyle = 'text-f1-cyan font-bold';
 
@@ -198,15 +199,14 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
           const teamColor = getTeamColor(r.constructorId);
           const isRetired = r.status !== 'Finished' && !r.status.includes('Lap');
           let posStyle = 'text-f1-text-muted';
-          if (r.position === 1) posStyle = 'text-[#A68224] font-black';
+          if (r.position === 1) posStyle = 'text-f1-gold/90 font-black';
           else if (r.position <= 3) posStyle = 'text-f1-text font-bold';
           else if (r.position <= 8) posStyle = 'text-f1-cyan font-bold';
 
           return (
             <div 
               key={r.driverId}
-              className="flex items-center p-3.5 rounded-xl border border-white/60 transition-all hover:bg-white/30 cursor-pointer"
-              style={{ backgroundColor: isRetired ? 'rgba(200,50,50,0.03)' : 'rgba(255,255,255,0.35)' }}
+              className={`flex items-center p-3.5 rounded-xl border border-white/60 transition-all hover:bg-white/30 cursor-pointer ${isRetired ? 'bg-f1-danger/[0.04]' : 'bg-white/35'}`}
               onClick={() => onDriverClick && onDriverClick(r.driverId)}
             >
               <span className={`w-8 text-center text-[16px] flex-shrink-0 mr-3 ${posStyle}`}>
@@ -221,11 +221,11 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
               </div>
               <div className="text-right flex-shrink-0 ml-2">
                 {isRetired ? (
-                  <span className="text-[12px] text-[#C83232] font-bold">{r.status}</span>
+                  <span className="text-[12px] text-f1-danger font-bold">{r.status}</span>
                 ) : (
                   <>
                     <div className="text-[13px] font-medium text-f1-text-muted">
-                      {r.position === 1 ? r.time : (r.time ? `${r.time}` : '—')}
+                      {r.position === 1 ? r.time : (r.time || '—')}
                     </div>
                     {r.points > 0 && (
                       <div className="text-[11px] font-bold text-f1-cyan mt-0.5">+{r.points} PTS</div>
@@ -328,7 +328,7 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
         return (
           <div className="rounded-2xl p-8 border border-white/60 text-center" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
             <div className="text-[36px] mb-4">📡</div>
-            <div className="text-[15px] font-bold text-f1-text mb-2">📡 无线电故障！</div>
+            <div className="text-[15px] font-bold text-f1-text mb-2">无线电故障！</div>
             <div className="text-[13px] text-f1-text-muted">请检查你的网络连接</div>
           </div>
         );
@@ -339,7 +339,7 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
       <div className="space-y-2">
         {sessionData.map(r => {
           let posStyle = 'text-f1-text-muted';
-          if (r.position === 1) posStyle = 'text-[#A68224] font-black';
+          if (r.position === 1) posStyle = 'text-f1-gold/90 font-black';
           else if (r.position <= 3) posStyle = 'text-f1-text font-bold';
           else if (r.position <= 10) posStyle = 'text-f1-cyan font-bold';
 
@@ -374,115 +374,124 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
   };
 
   // ========== 正赛结果渲染（保持原有逻辑） ==========
-  const renderRace = () => (
-    <>
-      {/* 领奖台高亮 */}
-      {results.length >= 3 && (
+  const renderRace = () => {
+    if (results.length === 0) {
+      return (
+        <div className="rounded-2xl p-8 border border-white/70 text-center" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
+          <div className="text-[48px] mb-4">🏁</div>
+          <div className="text-[16px] font-bold text-f1-text mb-2">比赛尚未开始</div>
+          <div className="text-[13px] text-f1-text-muted">比赛结束后将在此展示完整排名</div>
+        </div>
+      );
+    }
+    return (
+      <>
+        {/* 领奖台高亮 */}
+        {results.length >= 3 && (
+          <div className="mb-10">
+            <h3 className="text-[16px] font-bold text-f1-text tracking-tight mb-6 px-1">领奖台</h3>
+            <div className="grid grid-cols-3 gap-3">
+              {results.slice(0, 3).map((res, idx) => {
+                const colors = [
+                  { bg: 'bg-f1-gold/15', text: 'text-f1-gold/90', label: '🥇' },
+                  { bg: 'bg-f1-silver/15', text: 'text-f1-silver/90', label: '🥈' },
+                  { bg: 'bg-f1-darkcyan/15', text: 'text-f1-cyan', label: '🥉' },
+                ];
+                return (
+                  <div 
+                    key={res.Driver.driverId} 
+                    className={`rounded-2xl p-4 border border-white/70 text-center cursor-pointer hover:bg-white/30 transition-colors ${colors[idx].bg}`}
+                    onClick={() => onDriverClick && onDriverClick(res.Driver.driverId)}
+                  >
+                    <div className="text-[22px] mb-2">{colors[idx].label}</div>
+                    <div className="text-[14px] font-bold text-f1-text truncate">{res.Driver.familyName}</div>
+                    <div className="text-[11px] text-f1-text-muted font-medium mt-1 truncate">{res.Constructor.name}</div>
+                    <div className={`text-[13px] font-bold mt-2 ${colors[idx].text}`}>
+                      {idx === 0 ? res.Time?.time || 'Finished' : res.Time?.time || '—'}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* 完整排名 */}
         <div className="mb-10">
-          <h3 className="text-[16px] font-bold text-f1-text tracking-tight mb-6 px-1">领奖台</h3>
-          <div className="grid grid-cols-3 gap-3">
-            {results.slice(0, 3).map((res, idx) => {
-              const colors = [
-                { bg: 'rgba(210,176,86,0.15)', text: '#A68224', label: '🥇' },
-                { bg: 'rgba(142,142,147,0.15)', text: '#606060', label: '🥈' },
-                { bg: 'rgba(54,105,106,0.15)', text: '#36696A', label: '🥉' },
-              ];
+          <h3 className="text-[16px] font-bold text-f1-text tracking-tight mb-6 px-1 flex items-center">
+            完整排名
+            <span className="ml-3 px-2 py-0.5 rounded bg-black/[0.03] text-[11px] text-f1-text-muted tracking-widest border border-black/[0.05]">
+              {results.length} 位车手
+            </span>
+          </h3>
+          
+          <div className="space-y-2">
+            {results.map((res) => {
+              const pos = parseInt(res.position, 10);
+              const isRetired = res.status !== 'Finished' && !res.status?.includes('Lap');
+              const teamColor = getTeamColor(res.Constructor.constructorId);
+              
+              let posStyle = 'text-f1-text-muted';
+              if (pos === 1) posStyle = 'text-f1-gold/90 font-black';
+              else if (pos <= 3) posStyle = 'text-f1-text font-bold';
+              else if (pos <= 10) posStyle = 'text-f1-cyan font-bold';
+
               return (
                 <div 
                   key={res.Driver.driverId} 
-                  className="rounded-2xl p-4 border border-white/70 text-center cursor-pointer hover:bg-white/30 transition-colors"
-                  style={{ backgroundColor: colors[idx].bg }}
+                  className={`flex items-center p-3.5 rounded-xl border border-white/60 transition-all hover:bg-white/30 cursor-pointer group ${isRetired ? 'bg-f1-danger/[0.04]' : 'bg-white/35'}`}
                   onClick={() => onDriverClick && onDriverClick(res.Driver.driverId)}
                 >
-                  <div className="text-[22px] mb-2">{colors[idx].label}</div>
-                  <div className="text-[14px] font-bold text-f1-text truncate">{res.Driver.familyName}</div>
-                  <div className="text-[11px] text-f1-text-muted font-medium mt-1 truncate">{res.Constructor.name}</div>
-                  <div className="text-[13px] font-bold mt-2" style={{ color: colors[idx].text }}>
-                    {idx === 0 ? res.Time?.time || 'Finished' : res.Time?.time || '—'}
+                  <span className={`w-8 text-center text-[16px] flex-shrink-0 mr-3 ${posStyle}`}>
+                    {pos}
+                  </span>
+                  <div className="w-1.5 h-8 rounded-full mr-3 flex-shrink-0" style={{ backgroundColor: teamColor }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[14px] font-bold text-f1-text truncate group-hover:text-f1-text/90 transition-colors">
+                      {res.Driver.givenName} <span className="uppercase">{res.Driver.familyName}</span>
+                    </div>
+                    <div className="text-[11px] text-f1-text-muted font-medium truncate mt-0.5">
+                      {res.Constructor.name}
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0 ml-2">
+                    {isRetired ? (
+                      <span className="text-[12px] text-f1-danger font-bold">{res.status}</span>
+                    ) : (
+                      <>
+                        <div className="text-[13px] font-medium text-f1-text-muted">
+                          {pos === 1 ? (res.Time?.time || 'Finished') : (res.Time?.time ? `+${res.Time.time}` : 'Finished')}
+                        </div>
+                        {parseFloat(res.points) > 0 && (
+                          <div className="text-[11px] font-bold text-f1-cyan mt-0.5">+{res.points} PTS</div>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               );
             })}
           </div>
         </div>
-      )}
 
-      {/* 完整排名 */}
-      <div className="mb-10">
-        <h3 className="text-[16px] font-bold text-f1-text tracking-tight mb-6 px-1 flex items-center">
-          完整排名
-          <span className="ml-3 px-2 py-0.5 rounded bg-black/[0.03] text-[11px] text-f1-text-muted tracking-widest border border-black/[0.05]">
-            {results.length} 位车手
-          </span>
-        </h3>
-        
-        <div className="space-y-2">
-          {results.map((res) => {
-            const pos = parseInt(res.position, 10);
-            const isRetired = res.status !== 'Finished' && !res.status.includes('Lap');
-            const teamColor = getTeamColor(res.Constructor.constructorId);
-            
-            let posStyle = 'text-f1-text-muted';
-            if (pos === 1) posStyle = 'text-[#A68224] font-black';
-            else if (pos <= 3) posStyle = 'text-f1-text font-bold';
-            else if (pos <= 10) posStyle = 'text-f1-cyan font-bold';
-
-            return (
-              <div 
-                key={res.Driver.driverId} 
-                className="flex items-center p-3.5 rounded-xl border border-white/60 transition-all hover:bg-white/30 cursor-pointer group"
-                style={{ backgroundColor: isRetired ? 'rgba(200,50,50,0.03)' : 'rgba(255,255,255,0.35)' }}
-                onClick={() => onDriverClick && onDriverClick(res.Driver.driverId)}
-              >
-                <span className={`w-8 text-center text-[16px] flex-shrink-0 mr-3 ${posStyle}`}>
-                  {pos}
-                </span>
-                <div className="w-1.5 h-8 rounded-full mr-3 flex-shrink-0" style={{ backgroundColor: teamColor }} />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[14px] font-bold text-f1-text truncate group-hover:text-f1-text/90 transition-colors">
-                    {res.Driver.givenName} <span className="uppercase">{res.Driver.familyName}</span>
-                  </div>
-                  <div className="text-[11px] text-f1-text-muted font-medium truncate mt-0.5">
-                    {res.Constructor.name}
-                  </div>
+        {/* 车队本站得分 */}
+        {teamPoints.length > 0 && (
+          <div className="mb-10">
+            <h3 className="text-[16px] font-bold text-f1-text tracking-tight mb-6 px-1">车队本站得分</h3>
+            <div className="space-y-2">
+              {teamPoints.map((tp) => (
+                <div key={tp.name} className="flex items-center p-3.5 rounded-xl border border-white/60" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
+                  <div className="w-2 h-2 rounded-full mr-3 flex-shrink-0" style={{ backgroundColor: tp.color }} />
+                  <span className="flex-1 text-[14px] font-bold text-f1-text truncate">{tp.name}</span>
+                  <span className="text-[16px] font-bold text-f1-text tracking-tight">{tp.points} PTS</span>
                 </div>
-                <div className="text-right flex-shrink-0 ml-2">
-                  {isRetired ? (
-                    <span className="text-[12px] text-[#C83232] font-bold">{res.status}</span>
-                  ) : (
-                    <>
-                      <div className="text-[13px] font-medium text-f1-text-muted">
-                        {pos === 1 ? (res.Time?.time || 'Finished') : (res.Time?.time ? `+${res.Time.time}` : 'Finished')}
-                      </div>
-                      {parseFloat(res.points) > 0 && (
-                        <div className="text-[11px] font-bold text-f1-cyan mt-0.5">+{res.points} PTS</div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 车队本站得分 */}
-      {teamPoints.length > 0 && (
-        <div className="mb-10">
-          <h3 className="text-[16px] font-bold text-f1-text tracking-tight mb-6 px-1">车队本站得分</h3>
-          <div className="space-y-2">
-            {teamPoints.map((tp) => (
-              <div key={tp.name} className="flex items-center p-3.5 rounded-xl border border-white/60" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
-                <div className="w-2 h-2 rounded-full mr-3 flex-shrink-0" style={{ backgroundColor: tp.color }} />
-                <span className="flex-1 text-[14px] font-bold text-f1-text truncate">{tp.name}</span>
-                <span className="text-[16px] font-bold text-f1-text tracking-tight">{tp.points} PTS</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-    </>
-  );
+        )}
+      </>
+    );
+  };
 
   // ========== 主渲染 ==========
   const hasRaceData = race || scheduleInfo;
@@ -512,23 +521,18 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
 
       {/* 第三层：内容面板 */}
       <div 
-        className={`absolute top-0 right-0 w-full max-w-[520px] h-full flex flex-col transform-gpu transition-transform duration-300 ease-out will-change-transform ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
-        style={{ 
-          backgroundColor: 'rgba(255,255,255,0.88)',
-          borderLeft: '1px solid rgba(255,255,255,0.5)',
-          boxShadow: '0 0 36px rgba(0,0,0,0.10)',
-        }}
+        className={`absolute top-0 right-0 w-full max-w-[520px] h-full flex flex-col transform-gpu transition-transform duration-300 ease-out will-change-transform ${isOpen ? 'translate-x-0' : 'translate-x-full'} bg-white/88 border-l border-white/50 shadow-[0_0_36px_rgba(0,0,0,0.10)]`}
       >
         {hasRaceData && (
           <div className="flex flex-col h-full">
             {/* 环境光晕 */}
             <div className="absolute top-0 left-0 w-full h-[350px] pointer-events-none overflow-hidden">
-               <div className="absolute -top-[100px] -right-[40px] w-[300px] h-[300px] rounded-full opacity-[0.15]" style={{ backgroundColor: '#C83232', filter: 'blur(80px)' }}></div>
-               <div className="absolute -top-[60px] -left-[40px] w-[200px] h-[200px] rounded-full opacity-[0.08]" style={{ backgroundColor: '#36696A', filter: 'blur(60px)' }}></div>
+               <div className="absolute -top-[100px] -right-[40px] w-[300px] h-[300px] rounded-full opacity-[0.15] bg-f1-danger filter blur-[80px]"></div>
+               <div className="absolute -top-[60px] -left-[40px] w-[200px] h-[200px] rounded-full opacity-[0.08] bg-f1-darkcyan filter blur-[60px]"></div>
             </div>
 
             {/* 标题栏 */}
-            <div className="flex-shrink-0 flex items-center justify-between px-8 py-6 relative z-20 border-b border-black/[0.06]" style={{ backgroundColor: 'rgba(255,255,255,0.5)' }}>
+            <div className="flex-shrink-0 flex items-center justify-between px-8 py-6 relative z-20 border-b border-black/[0.06] bg-white/50">
               <div className="flex items-center space-x-3 cursor-pointer group" onClick={handleClose}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-black/40 group-hover:text-f1-text transition-colors"><path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 <span className="text-[14px] font-bold text-f1-text-muted tracking-tight group-hover:text-f1-text transition-colors">返回</span>
@@ -601,14 +605,7 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
               {activeTab === 'sprint' && !loadingWeekend && renderSprint()}
               {activeTab === 'race' && renderRace()}
 
-              {/* 如果当前 tab 没有数据（比如未来比赛点了正赛 tab） */}
-              {activeTab === 'race' && results.length === 0 && (
-                <div className="rounded-2xl p-8 border border-white/70 text-center" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
-                  <div className="text-[48px] mb-4">🏁</div>
-                  <div className="text-[16px] font-bold text-f1-text mb-2">比赛尚未开始</div>
-                  <div className="text-[13px] text-f1-text-muted">比赛结束后将在此展示完整排名</div>
-                </div>
-              )}
+
             </div>
           </div>
         )}

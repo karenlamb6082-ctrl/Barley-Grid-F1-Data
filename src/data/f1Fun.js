@@ -84,15 +84,6 @@ export const FUN_FACTS = [
   '👀 F1 车手在弯道中承受的 G 力会让视野变窄',
 ];
 
-// ========== 比赛状态趣味文案 ==========
-export const SESSION_FUN_STATUS = {
-  race_live: '🏁 灯灭了！比赛正在进行！',
-  qualifying_live: '⏱️ 飞驰圈 ing... 谁是最快的人？',
-  practice_live: '🔧 调校中... 工程师在疯狂看数据',
-  sprint_live: '🏃 冲刺赛！短兵相接！',
-  sprintQualifying_live: '⚡ 冲刺排位 ing...',
-  all_done: '🏁 格子旗挥下！本站比赛全部结束',
-};
 
 // ========== 空状态趣味提示 ==========
 export const EMPTY_STATE_MESSAGES = {

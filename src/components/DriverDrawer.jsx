@@ -1,37 +1,10 @@
-import { useState, useEffect } from 'react';
-import { lockScroll, unlockScroll } from '../utils/scrollLock';
+import { useEffect } from 'react';
+import { useDrawer } from '../hooks/useDrawer';
 import { getDriverImage } from '../services/f1api';
 import { DRIVER_TAGS } from '../data/f1Fun';
 
 export default function DriverDrawer({ driverId, data, onClose }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [activeId, setActiveId] = useState(null);
-  
-  useEffect(() => {
-    if (driverId) {
-      setActiveId(driverId);
-      lockScroll();
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setIsOpen(true);
-        });
-      });
-    } else {
-      setIsOpen(false);
-      unlockScroll();
-      const timer = setTimeout(() => {
-        setActiveId(null);
-      }, 450);
-      return () => clearTimeout(timer);
-    }
-  }, [driverId]);
-
-  const handleClose = () => {
-    setIsOpen(false);
-    setTimeout(onClose, 320);
-  };
-
-  const isVisible = isOpen || activeId;
+  const { isOpen, activeId, handleClose, isVisible } = useDrawer(driverId, onClose);
 
   const driver = data?.driverStandings?.find(d => d.id === activeId);
 
@@ -57,10 +30,10 @@ export default function DriverDrawer({ driverId, data, onClose }) {
       let bgColor = 'bg-black/[0.04] text-f1-text-muted'; 
       if (res) {
         const pos = parseInt(res.position, 10);
-        if (pos === 1) { bgColor = 'bg-[#D2B056]/20 text-[#A68224]'; seasonWins++; seasonPodiums++; }
-        else if (pos === 2 || pos === 3) { bgColor = 'bg-[#8E8E93]/20 text-[#606060]'; seasonPodiums++; }
-        else if (pos <= 10) bgColor = 'bg-[#36696A]/10 text-f1-cyan'; 
-        if (res.status !== 'Finished' && !res.status.includes('Lap')) { bgColor = 'bg-[#C83232]/10 text-[#C83232]'; seasonDNFs++; }
+        if (pos === 1) { bgColor = 'bg-f1-gold/20 text-f1-gold/90'; seasonWins++; seasonPodiums++; }
+        else if (pos === 2 || pos === 3) { bgColor = 'bg-f1-silver/20 text-f1-silver/90'; seasonPodiums++; }
+        else if (pos <= 10) bgColor = 'bg-f1-darkcyan/10 text-f1-cyan'; 
+        if (res.status !== 'Finished' && !res.status?.includes('Lap')) { bgColor = 'bg-f1-danger/10 text-f1-danger'; seasonDNFs++; }
       }
 
       const racePts = res ? parseFloat(res.points) || 0 : 0;
@@ -182,18 +155,18 @@ export default function DriverDrawer({ driverId, data, onClose }) {
 
               {/* 赛季摘要 */}
               <div className="grid grid-cols-3 gap-3 mb-12">
-                 <div className="rounded-2xl p-4 border border-white/70 relative overflow-hidden group hover:bg-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
+                  <div className="rounded-2xl p-4 border border-white/70 relative overflow-hidden group hover:bg-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
                     <div className="text-[12px] font-bold text-f1-text-muted uppercase tracking-wider mb-2 relative z-10">Wins</div>
                     <div className="text-[32px] font-bold text-f1-text tracking-tighter leading-none relative z-10">{seasonWins}</div>
-                 </div>
-                 <div className="rounded-2xl p-4 border border-white/70 relative overflow-hidden group hover:bg-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
-                    <div className="text-[12px] font-bold text-[#A68224] uppercase tracking-wider mb-2 relative z-10">Podiums</div>
+                  </div>
+                  <div className="rounded-2xl p-4 border border-white/70 relative overflow-hidden group hover:bg-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
+                    <div className="text-[12px] font-bold text-f1-gold/90 uppercase tracking-wider mb-2 relative z-10">Podiums</div>
                     <div className="text-[32px] font-bold text-f1-text tracking-tighter leading-none relative z-10">{seasonPodiums}</div>
-                 </div>
-                 <div className="rounded-2xl p-4 border border-white/70 relative overflow-hidden group hover:bg-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
-                    <div className="text-[12px] font-bold text-[#C83232] uppercase tracking-wider mb-2 relative z-10">DNFs</div>
+                  </div>
+                  <div className="rounded-2xl p-4 border border-white/70 relative overflow-hidden group hover:bg-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
+                    <div className="text-[12px] font-bold text-f1-danger uppercase tracking-wider mb-2 relative z-10">DNFs</div>
                     <div className="text-[32px] font-bold text-f1-text tracking-tighter leading-none relative z-10">{seasonDNFs}</div>
-                 </div>
+                  </div>
               </div>
 
               {/* 时间线 */}
@@ -210,10 +183,10 @@ export default function DriverDrawer({ driverId, data, onClose }) {
                     <div key={h.round} className="group flex items-start relative ml-8 cursor-default">
                       
                       {/* 节点 */}
-                      <div className={`absolute -left-[40px] top-2 w-3 h-3 rounded-full ring-4 ring-white/80 z-10 transition-transform duration-300 group-hover:scale-125 shadow-sm ${h.isFinished ? (h.isPodium ? 'bg-[#A68224]' : 'bg-[#36696A]') : 'bg-black/20'}`}></div>
+                      <div className={`absolute -left-[40px] top-2 w-3 h-3 rounded-full ring-4 ring-white/80 z-10 transition-transform duration-300 group-hover:scale-125 shadow-sm ${h.isFinished ? (h.isPodium ? 'bg-f1-gold' : 'bg-f1-darkcyan') : 'bg-black/20'}`}></div>
 
                       {/* 赛事卡片 */}
-                      <div className={`flex-1 min-w-0 rounded-2xl border transition-all duration-300 overflow-hidden ${h.isPodium ? 'border-[#A68224]/20 hover:shadow-md' : 'border-white/70 hover:shadow-md'}`} style={{ backgroundColor: 'rgba(255,255,255,0.4)' }}>
+                      <div className={`flex-1 min-w-0 rounded-2xl border transition-all duration-300 overflow-hidden ${h.isPodium ? 'border-f1-gold/20 hover:shadow-md' : 'border-white/70 hover:shadow-md'}`} style={{ backgroundColor: 'rgba(255,255,255,0.4)' }}>
                         <div className="p-5">
                           <div className="flex items-center justify-between mb-2">
                              <h4 className="text-[15px] font-bold text-f1-text truncate leading-tight">{h.raceName}</h4>
@@ -224,17 +197,17 @@ export default function DriverDrawer({ driverId, data, onClose }) {
                           
                           <p className="text-[12px] text-f1-text-muted font-bold uppercase tracking-[0.05em] flex items-center gap-2">
                             RND {String(h.round).padStart(2, '0')}
-                            {h.hasSprint && <span className="text-[#A68224]">冲刺周末</span>}
+                            {h.hasSprint && <span className="text-f1-gold">冲刺周末</span>}
                             {h.isFinished && h.racePts > 0 && (
                               <>
                                 <span className="w-1 h-1 rounded-full bg-black/10"></span>
-                                <span className={h.isPodium ? 'text-[#A68224]' : 'text-[#36696A]'}>正赛 +{h.racePts}</span>
+                                <span className={h.isPodium ? 'text-f1-gold/90' : 'text-f1-darkcyan'}>正赛 +{h.racePts}</span>
                               </>
                             )}
                             {(h.status !== 'Finished' && !h.status.includes('Lap') && h.status !== '未开始') && (
                                <>
                                 <span className="w-1 h-1 rounded-full bg-black/10"></span>
-                                <span className="text-[#C83232] truncate">{h.status}</span>
+                                <span className="text-f1-danger truncate">{h.status}</span>
                                </>
                             )}
                           </p>
@@ -243,9 +216,9 @@ export default function DriverDrawer({ driverId, data, onClose }) {
                         {/* 冲刺赛子行 */}
                         {h.hasSprint && h.sprintPos && (
                           <div className="px-5 py-2.5 bg-black/[0.02] border-t border-black/[0.04] flex items-center justify-between">
-                            <span className="text-[11px] text-[#A68224] font-bold">↳ 冲刺赛</span>
+                            <span className="text-[11px] text-f1-gold font-bold">↳ 冲刺赛</span>
                             <div className="flex items-center gap-2">
-                              <span className={`text-[12px] font-bold ${h.sprintPos <= 3 ? 'text-[#A68224]' : 'text-f1-text/70'}`}>
+                              <span className={`text-[12px] font-bold ${h.sprintPos <= 3 ? 'text-f1-gold/90' : 'text-f1-text/70'}`}>
                                 P{h.sprintPos}
                               </span>
                               {h.sprintPts > 0 && (

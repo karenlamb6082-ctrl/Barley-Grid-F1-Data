@@ -110,9 +110,7 @@
     animation-name: fadeInUp;
   }
 
-  .fade-in-only {
-    animation-name: fadeInOnly;
-  }
+
 }
 
 /* ========== 动画关键帧 ========== */
@@ -129,20 +127,4 @@
   }
 }
 
-@keyframes fadeInOnly {
-  0% { opacity: 0; }
-  60% { opacity: 0.7; }
-  100% { opacity: 1; }
-}
 
-@keyframes pulseGlow {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
-
-/* 数字翻转感（用于倒计时等） */
-@keyframes countTick {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-3px); opacity: 0.7; }
-  100% { transform: translateY(0); }
-}

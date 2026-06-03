@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { 
   ArrowLeft, RefreshCw, Star, Heart, MessageCircle, ExternalLink, 
   BookOpen, FileText, CheckCircle, Database, PlusCircle, TrendingUp, AlertTriangle
@@ -35,7 +35,88 @@ function translateF1Title(title) {
   return cn !== title ? cn : `（点击原文查阅英文速递）`;
 }
 
-export default function F1Hot({ data: globalData, onDriverClick, onTeamClick, onBack }) {
+// 格式化时间前缀
+function formatTimeAgo(minutes) {
+  if (minutes < 60) return `${minutes}分钟前`;
+  if (minutes < 1440) return `${Math.floor(minutes / 60)}小时前`;
+  return `${Math.floor(minutes / 1440)}天前`;
+}
+
+// 简易 Markdown 正则解析器，支持段落、加粗、无序/有序列表、换行以及代码块等，附带基本 XSS 安全防御
+function formatMessageContent(content) {
+  if (!content) return "";
+  
+  // 1. 转义 HTML 特殊字符，防范 XSS 攻击
+  let safeContent = content
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  // 2. 匹配加粗：**文本** -> <strong>
+  safeContent = safeContent.replace(/\*\*(.*?)\*\*/g, '<strong class="font-extrabold text-f1-red/90 bg-f1-red/[0.03] px-1 py-0.5 rounded border border-f1-red/10">$1</strong>');
+  
+  // 3. 匹配行内代码：`code` -> <code>
+  safeContent = safeContent.replace(/`(.*?)`/g, '<code class="font-mono text-[11.5px] bg-black/[0.05] text-f1-red px-1.5 py-0.5 rounded border border-black/10">$1</code>');
+
+  // 4. 按行切分进行块级解析
+  const lines = safeContent.split("\n");
+  const formattedBlocks = [];
+  let inList = null; // null | 'ul' | 'ol'
+
+  const closeList = () => {
+    if (inList === 'ul') {
+      formattedBlocks.push('</ul>');
+      inList = null;
+    } else if (inList === 'ol') {
+      formattedBlocks.push('</ol>');
+      inList = null;
+    }
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmedLine = line.trim();
+
+    // 匹配无序列表: - item 或 * item
+    const ulMatch = line.match(/^\s*[-*]\s+(.*)/);
+    if (ulMatch) {
+      if (inList !== 'ul') {
+        closeList();
+        formattedBlocks.push('<ul class="list-disc pl-5 my-1.5 space-y-1">');
+        inList = 'ul';
+      }
+      formattedBlocks.push(`<li class="text-[13px] font-medium leading-relaxed">${ulMatch[1]}</li>`);
+      continue;
+    }
+
+    // 匹配有序列表: 1. item
+    const olMatch = line.match(/^\s*(\d+)\.\s+(.*)/);
+    if (olMatch) {
+      if (inList !== 'ol') {
+        closeList();
+        formattedBlocks.push('<ol class="list-decimal pl-5 my-1.5 space-y-1">');
+        inList = 'ol';
+      }
+      formattedBlocks.push(`<li class="text-[13px] font-medium leading-relaxed">${olMatch[2]}</li>`);
+      continue;
+    }
+
+    // 普通空行
+    if (trimmedLine === "") {
+      closeList();
+      continue;
+    }
+
+    // 普通文本段落
+    closeList();
+    formattedBlocks.push(`<p class="mb-2 last:mb-0 text-[13px] font-medium leading-relaxed">${line}</p>`);
+  }
+  
+  closeList();
+  return formattedBlocks.join("\n");
+}
+
+export default function F1Hot({ onBack, f1Data }) {
   const [data, setData] = useState(() => getCachedHotTopics());
   const [loading, setLoading] = useState(!data);
   const [error, setError] = useState(null);
@@ -57,6 +138,102 @@ export default function F1Hot({ data: globalData, onDriverClick, onTeamClick, on
 
   // 聚类展开卡片 ID
   const [expandedEventId, setExpandedEventId] = useState(null);
+
+  // 围场 AI 助手聊天对话状态：从 localStorage 加载历史记录，无历史则初始化
+  const [chatMessages, setChatMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem("f1hot:chat_messages");
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error("加载聊天历史记录失败", e);
+    }
+    return [
+      { role: "assistant", content: "你好！我是你的 F1 围场 AI 助手。你可以问我关于技术升级、转会流言、车队历史或者对今日 F1HOT 日报的看法，我来为您解答！" }
+    ];
+  });
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatBottomRef = useRef(null);
+
+  // 聊天选用的模型，支持从 localStorage 恢复，默认 deepseek-v4-flash
+  const [chatModel, setChatModel] = useState(() => {
+    return localStorage.getItem("f1hot:chat_model") || "deepseek-v4-flash";
+  });
+
+  // 自动保存聊天历史
+  useEffect(() => {
+    try {
+      localStorage.setItem("f1hot:chat_messages", JSON.stringify(chatMessages));
+    } catch (e) {
+      console.error("保存聊天历史记录失败", e);
+    }
+  }, [chatMessages]);
+
+  // 自动保存模型选择
+  useEffect(() => {
+    try {
+      localStorage.setItem("f1hot:chat_model", chatModel);
+    } catch (e) {
+      console.error("保存模型选择失败", e);
+    }
+  }, [chatModel]);
+
+  // 自动滚动到底部
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, chatLoading]);
+
+  const handleSendChat = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim() || chatLoading) return;
+
+    const userMsg = { role: "user", content: chatInput.trim() };
+    const nextMessages = [...chatMessages, userMsg];
+    setChatMessages(nextMessages);
+    setChatInput("");
+    setChatLoading(true);
+
+    const f1Context = {
+      nextRace: f1Data?.nextRace || null,
+      seasonProgress: f1Data ? {
+        completed: f1Data.recentResults?.length || f1Data.schedule?.filter(r => r.status === 'completed').length || 0,
+        total: f1Data.schedule?.length || 24
+      } : null,
+      driverStandings: f1Data?.driverStandings || [],
+      teamStandings: f1Data?.teamStandings || []
+    };
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          messages: nextMessages.map(m => ({ role: m.role, content: m.content })),
+          model: chatModel,
+          f1Context
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('对话接口故障，状态码 ' + response.status);
+      }
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setChatMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
+    } catch (err) {
+      setChatMessages(prev => [...prev, { role: "assistant", content: `❌ 发送失败，原因：${err.message}` }]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
   // 日报手风琴展开状态
   const [dailyBriefingOpen, setDailyBriefingOpen] = useState({
@@ -122,7 +299,7 @@ export default function F1Hot({ data: globalData, onDriverClick, onTeamClick, on
   };
 
   // 获取全部平展后的原始动态流 (All Dynamics)
-  const getAllDynamics = () => {
+  const allDynamics = useMemo(() => {
     if (!data) return [];
     // 整合精选和低标中包含的全部 relatedItems
     const all = [];
@@ -143,14 +320,9 @@ export default function F1Hot({ data: globalData, onDriverClick, onTeamClick, on
     extractItems(data.lowScoreTopics || []);
 
     return all.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-  };
+  }, [data]);
 
-  // 格式化时间前缀
-  const formatTimeAgo = (minutes) => {
-    if (minutes < 60) return `${minutes}分钟前`;
-    if (minutes < 1440) return `${Math.floor(minutes / 60)}小时前`;
-    return `${Math.floor(minutes / 1440)}天前`;
-  };
+
 
   // 模拟信源监测值源列表 (168个大数据量模拟展示前几位)
   const MONITORED_SOURCES = [
@@ -209,14 +381,15 @@ export default function F1Hot({ data: globalData, onDriverClick, onTeamClick, on
             </h2>
           </div>
 
-          {/* 六大工作菜单 */}
+          {/* 七大工作菜单 */}
           {[
             { id: "featured", label: "🌟 精选热点", icon: <TrendingUp size={14} /> },
             { id: "dynamics", label: "📰 全部 F1 动态", icon: <BookOpen size={14} /> },
             { id: "daily", label: "📅 F1HOT 日报", icon: <FileText size={14} /> },
             { id: "lowscore", label: "🗑️ 低标博文", icon: <AlertTriangle size={14} /> },
             { id: "sources", label: "📡 监测信源", icon: <Database size={14} /> },
-            { id: "submit", label: "📥 信源提报", icon: <PlusCircle size={14} /> }
+            { id: "submit", label: "📥 信源提报", icon: <PlusCircle size={14} /> },
+            { id: "chat", label: "🤖 围场 AI 助手", icon: <MessageCircle size={14} /> }
           ].map(menu => (
             <button
               key={menu.id}
@@ -298,34 +471,34 @@ export default function F1Hot({ data: globalData, onDriverClick, onTeamClick, on
             <div className="space-y-3">
               <div className="px-1 text-[12px] font-bold text-f1-text-muted tracking-wide flex justify-between">
                 <span>📰 全网监控的 168 个信源拉取到的原始英文动态（附极速中英对照）：</span>
-                <span>{getAllDynamics().length} 条实时动态</span>
+                <span>{allDynamics.length} 条实时动态</span>
               </div>
 
-              {getAllDynamics().length === 0 ? (
+              {allDynamics.length === 0 ? (
                 <div className="apple-card py-16 text-center">
                   <span className="text-[36px] mb-2 block">📡</span>
                   <span className="text-[14px] font-bold text-f1-text-muted">暂无任何动态</span>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {getAllDynamics().map((item, index) => (
+                  {allDynamics.map((item, index) => (
                     <a 
-                      key={item.url || index}
+                      key={`${item.url || index}-${index}`}
                       href={item.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="apple-card p-4 block hover:bg-black/[0.015] transition-all group relative overflow-hidden text-left"
                     >
-                      <div className="absolute top-0 left-0 w-1.5 h-full" style={{ backgroundColor: item.tier === 'T1' ? '#D2B056' : '#36696A' }} />
+                      <div className={`absolute top-0 left-0 w-1.5 h-full ${item.tier === 'T1' ? 'bg-f1-gold' : 'bg-f1-darkcyan'}`} />
                       <div className="flex justify-between items-start gap-4 pl-2">
                         <div className="space-y-1.5 min-w-0 flex-1">
-                          {/* 英文原标题 */}
+                          {/* AI 汉化及英文对照标题 */}
                           <h4 className="text-[14.5px] font-black text-f1-text leading-snug group-hover:text-f1-red transition-all">
-                            {item.title}
+                            {item.titleCN || item.title}
                           </h4>
                           {/* 汉化双语对照 */}
                           <p className="text-[12.5px] font-bold text-f1-text/50 italic leading-relaxed">
-                            💡 {translateF1Title(item.title)}
+                            {item.titleCN ? `🇬🇧 EN: ${item.title}` : `💡 翻译: ${translateF1Title(item.title)}`}
                           </p>
                         </div>
                         <ExternalLink size={14} className="flex-shrink-0 text-f1-text-muted/40 group-hover:text-f1-red transition-colors" />
@@ -335,8 +508,8 @@ export default function F1Hot({ data: globalData, onDriverClick, onTeamClick, on
                       <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] font-bold text-f1-text-muted pl-2">
                         <span className={`px-1.5 py-0.5 rounded border text-[9.5px] font-black uppercase ${
                           item.tier === 'T1' 
-                            ? 'text-[#D2B056] border-[#D2B056]/30 bg-[#D2B056]/5'
-                            : 'text-[#36696A] border-[#36696A]/30 bg-[#36696A]/5'
+                            ? 'text-f1-gold border-f1-gold/30 bg-f1-gold/5'
+                            : 'text-f1-darkcyan border-f1-darkcyan/30 bg-f1-darkcyan/5'
                         }`}>
                           {item.tier} 信源
                         </span>
@@ -375,9 +548,9 @@ export default function F1Hot({ data: globalData, onDriverClick, onTeamClick, on
 
                 {/* 三大日报手风琴 */}
                 {[
-                  { id: "raceSpeed", title: "🏁 赛事前沿与官方重磅", dataList: data.dailyBriefing?.raceSpeed || [], color: "#C83232" },
-                  { id: "techDig", title: "🔧 技术解构与升级分析", dataList: data.dailyBriefing?.techDig || [], color: "#36696A" },
-                  { id: "paddockVoice", title: "💬 围场声音与转会传闻", dataList: data.dailyBriefing?.paddockVoice || [], color: "#D2B056" }
+                  { id: "raceSpeed", title: "🏁 赛事前沿与官方重磅", dataList: data.dailyBriefing?.raceSpeed || [], color: "var(--color-f1-danger, #C83232)" },
+                  { id: "techDig", title: "🔧 技术解构与升级分析", dataList: data.dailyBriefing?.techDig || [], color: "var(--color-f1-darkcyan, #36696A)" },
+                  { id: "paddockVoice", title: "💬 围场声音与转会传闻", dataList: data.dailyBriefing?.paddockVoice || [], color: "var(--color-f1-gold, #D2B056)" }
                 ].map(section => (
                   <div key={section.id} className="border border-black/[0.06] rounded-xl overflow-hidden shadow-sm">
                     <button
@@ -494,10 +667,10 @@ export default function F1Hot({ data: globalData, onDriverClick, onTeamClick, on
                           <td className="px-6 py-4 text-center">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-black border uppercase ${
                               src.tier === "Tier 1"
-                                ? "text-[#D2B056] border-[#D2B056]/30 bg-[#D2B056]/5"
+                                ? "text-f1-gold border-f1-gold/30 bg-f1-gold/5"
                                 : src.tier === "Tier 1.5"
-                                  ? "text-[#36696A] border-[#36696A]/30 bg-[#36696A]/5"
-                                  : "text-[#8E8E93] border-[#8E8E93]/30 bg-[#8E8E93]/5"
+                                  ? "text-f1-darkcyan border-f1-darkcyan/30 bg-f1-darkcyan/5"
+                                  : "text-f1-silver border-f1-silver/30 bg-f1-silver/5"
                             }`}>
                               {src.tier}
                             </span>
@@ -608,6 +781,104 @@ export default function F1Hot({ data: globalData, onDriverClick, onTeamClick, on
             </div>
           )}
 
+          {/* 视图七：围场 AI 助手 */}
+          {activeTab === "chat" && (
+            <div className="apple-card p-5 bg-white/80 min-h-[520px] flex flex-col h-[calc(100vh-200px)] max-h-[680px]">
+              {/* 头部 */}
+              <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-black/[0.06] mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-f1-red/10 text-f1-red flex items-center justify-center font-black text-[16px]">
+                    🏎️
+                  </div>
+                  <div>
+                    <h3 className="text-[14.5px] font-black text-f1-text">围场 AI 助手</h3>
+                    <p className="text-[10px] font-bold text-f1-text-muted">
+                      模型: {chatModel === "deepseek-v4-flash" ? "DeepSeek-V4 Flash" : "DeepSeek-V4 Pro"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 self-end sm:self-auto">
+                  <select
+                    value={chatModel}
+                    onChange={(e) => setChatModel(e.target.value)}
+                    className="text-[11px] font-bold text-f1-text-muted border border-black/10 px-2 py-1 rounded-lg bg-white/80 hover:border-f1-red/40 transition-colors outline-none cursor-pointer"
+                  >
+                    <option value="deepseek-v4-flash">DeepSeek-V4 Flash (极速联网)</option>
+                    <option value="deepseek-v4-pro">DeepSeek-V4 Pro (深度推理)</option>
+                  </select>
+                  <button
+                    onClick={() => {
+                      if (window.confirm("确定要清空当前的聊天历史记录吗？")) {
+                        setChatMessages([
+                          { role: "assistant", content: "你好！我是你的 F1 围场 AI 助手。你可以问我关于技术升级、转会流言、车队历史或者对今日 F1HOT 日报的看法，我来为您解答！" }
+                        ]);
+                      }
+                    }}
+                    className="text-[11px] font-bold text-f1-text-muted hover:text-f1-red border border-black/10 px-2.5 py-1 rounded-lg bg-white/80 hover:bg-black/[0.02] transition-colors"
+                  >
+                    清空对话
+                  </button>
+                </div>
+              </div>
+
+              {/* 消息区域 */}
+              <div className="flex-1 overflow-y-auto pr-1 space-y-4 mb-4 custom-scrollbar overscroll-contain">
+                 {chatMessages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
+                  >
+                    <div className={`w-7 h-7 rounded-lg font-bold text-[13px] flex items-center justify-center shadow-sm flex-shrink-0 ${
+                      msg.role === "user" ? "bg-f1-red text-white" : "bg-black/[0.04] text-f1-text"
+                    }`}>
+                      {msg.role === "user" ? "U" : "AI"}
+                    </div>
+                    <div 
+                      className={`rounded-2xl px-4 py-2.5 max-w-[80%] text-[13px] font-medium leading-relaxed shadow-sm border ${
+                        msg.role === "user"
+                          ? "bg-f1-red/5 border-f1-red/15 text-f1-text"
+                          : "bg-white border-white/50 text-f1-text markdown-body text-left"
+                      }`}
+                      dangerouslySetInnerHTML={{ __html: formatMessageContent(msg.content) }}
+                    />
+                  </div>
+                ))}
+                {chatLoading && (
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-lg bg-black/[0.04] text-f1-text font-bold text-[13px] flex items-center justify-center shadow-sm flex-shrink-0 animate-pulse">
+                      AI
+                    </div>
+                    <div className="rounded-2xl px-4 py-2.5 bg-white border border-white/50 shadow-sm flex items-center gap-1.5 min-h-[40px]">
+                      <span className="w-1.5 h-1.5 bg-f1-text/30 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 bg-f1-text/30 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 bg-f1-text/30 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                )}
+                <div ref={chatBottomRef} />
+              </div>
+
+              {/* 输入区域 */}
+              <form onSubmit={handleSendChat} className="flex-shrink-0 flex gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  disabled={chatLoading}
+                  placeholder="问问 AI：例如 Hamilton 在法拉利前景如何？"
+                  className="flex-1 bg-black/[0.03] border border-black/10 rounded-xl px-4 py-3 text-[13px] font-medium focus:outline-none focus:border-f1-red/50 focus:bg-white transition-all disabled:opacity-50"
+                />
+                <button
+                  type="submit"
+                  disabled={chatLoading || !chatInput.trim()}
+                  className="px-5 py-3 rounded-xl bg-f1-red text-white text-[13px] font-black hover:bg-f1-red/90 transition-colors disabled:opacity-40 shadow-md shadow-f1-red/10"
+                >
+                  发送
+                </button>
+              </form>
+            </div>
+          )}
+
         </section>
       </div>
     </div>
@@ -626,9 +897,9 @@ function HotspotCard({ event, rank, isCollected, isLiked, isExpanded, onToggleEx
       isFeatured ? "bg-white/80 border border-white/40" : "bg-black/[0.01] border border-black/[0.03]"
     }`}>
       {/* 侧面光晕，金色为 Tier 1 精选，青色为 Tier 1.5, 灰色为 Tier 2 */}
-      <div className="absolute top-0 left-0 w-1.5 h-full" style={{ 
-        backgroundColor: event.tier === "T1" ? "#D2B056" : event.tier === "T1.5" ? "#36696A" : "#8E8E93" 
-      }} />
+      <div className={`absolute top-0 left-0 w-1.5 h-full ${
+        event.tier === "T1" ? "bg-f1-gold" : event.tier === "T1.5" ? "bg-f1-darkcyan" : "bg-f1-silver"
+      }`} />
 
       {/* 第一行：序号、质量分、右侧点赞收藏 */}
       <div className="flex justify-between items-start gap-4 pl-2 mb-3">
@@ -641,8 +912,8 @@ function HotspotCard({ event, rank, isCollected, isLiked, isExpanded, onToggleEx
           {/* 金色/青色高保真发光质量分徽章 */}
           <div className={`px-2.5 py-1 rounded-md text-[11.5px] font-black border flex items-center gap-1.5 shadow-sm ${
             event.qualityScore >= 80
-              ? "text-[#D2B056] border-[#D2B056]/30 bg-[#D2B056]/5 shadow-[#D2B056]/5"
-              : "text-[#36696A] border-[#36696A]/30 bg-[#36696A]/5 shadow-[#36696A]/5"
+              ? "text-f1-gold border-f1-gold/30 bg-f1-gold/5 shadow-f1-gold/5"
+              : "text-f1-darkcyan border-f1-darkcyan/30 bg-f1-darkcyan/5 shadow-f1-darkcyan/5"
           }`}>
             <TrendingUp size={12} />
             质量分 {event.qualityScore}
@@ -688,12 +959,12 @@ function HotspotCard({ event, rank, isCollected, isLiked, isExpanded, onToggleEx
       {/* 第二行：标题与摘要 */}
       <div className="pl-2">
         <h3 className="text-[15.5px] sm:text-[16.5px] font-black text-f1-text leading-snug group-hover:text-f1-red transition-all">
-          {event.title}
+          {event.titleCN || event.title}
         </h3>
         
-        {/* 中文极速机翻预览 (双语对照) */}
+        {/* 双语对照翻译 */}
         <p className="mt-2 text-[13.5px] font-bold text-f1-text/50 italic leading-relaxed">
-          💡 {translateF1Title(event.title)}
+          {event.titleCN ? `🇬🇧 EN: ${event.title}` : `💡 翻译: ${translateF1Title(event.title)}`}
         </p>
 
         {/* 元信息：源、篇数、时效 */}
@@ -766,8 +1037,8 @@ function HotspotCard({ event, rank, isCollected, isLiked, isExpanded, onToggleEx
                     <div className="flex items-center gap-2 text-[10.5px] font-bold text-f1-text-muted">
                       <span className={`px-1 rounded text-[8px] font-black uppercase ${
                         item.tier === 'T1' 
-                          ? 'text-[#D2B056] border-[#D2B056]/20 bg-[#D2B056]/5'
-                          : 'text-[#36696A] border-[#36696A]/20 bg-[#36696A]/5'
+                          ? 'text-f1-gold border-f1-gold/20 bg-f1-gold/5'
+                          : 'text-f1-darkcyan border-f1-darkcyan/20 bg-f1-darkcyan/5'
                       }`}>
                         {item.source}
                       </span>
