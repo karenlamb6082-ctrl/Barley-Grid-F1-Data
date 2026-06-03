@@ -30,8 +30,8 @@ export default function TeamDrawer({ teamId, data, onClose }) {
 
       // 提取两位车手在正赛中的成绩
       const driversRace = teamDrivers.map(td => {
-        const raceRes = race.Results?.find(r => r.Driver.driverId === td.id);
-        const sprintRes = sprintResults.find(r => r.Driver.driverId === td.id);
+        const raceRes = race.Results?.find(r => r.Driver?.driverId === td.id);
+        const sprintRes = sprintResults.find(r => r.Driver?.driverId === td.id);
         
         const racePos = raceRes ? parseInt(raceRes.position, 10) : null;
         const racePts = raceRes ? parseFloat(raceRes.points) || 0 : 0;

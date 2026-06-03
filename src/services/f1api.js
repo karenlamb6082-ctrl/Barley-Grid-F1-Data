@@ -260,6 +260,38 @@ export async function fetchAllData() {
 
     // 4. Recent Results (All completed races this season, reversed so freshest is top)
     const completedRaces = allResultsData.MRData.RaceTable.Races || [];
+
+    // 补全由于上游 API 数据缺失导致的车手正赛成绩（如加拿大站仅有 12 人）
+    completedRaces.forEach(raceItem => {
+      if (raceItem.Results && raceItem.Results.length > 0 && raceItem.Results.length < driverStandings.length) {
+        const finishedDriverIds = new Set(raceItem.Results.map(res => res.Driver?.driverId).filter(Boolean));
+        driverStandings.forEach(dsDriver => {
+          if (!finishedDriverIds.has(dsDriver.id)) {
+            const nextPosition = raceItem.Results.length + 1;
+            raceItem.Results.push({
+              position: String(nextPosition),
+              positionText: "R",
+              points: "0",
+              Driver: {
+                driverId: dsDriver.id,
+                permanentNumber: String(dsDriver.number || ""),
+                code: dsDriver.code || "",
+                givenName: dsDriver.firstName,
+                familyName: dsDriver.lastName,
+              },
+              Constructor: {
+                constructorId: dsDriver.constructorId,
+                name: dsDriver.team,
+              },
+              grid: "—",
+              laps: "—",
+              status: "Retirement"
+            });
+          }
+        });
+      }
+    });
+
     const recentResults = completedRaces.map(raceItem => ({
       id: raceItem.round,
       round: raceItem.round,

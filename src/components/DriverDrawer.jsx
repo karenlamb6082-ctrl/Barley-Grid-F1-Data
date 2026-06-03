@@ -22,9 +22,9 @@ export default function DriverDrawer({ driverId, data, onClose }) {
   let history = [];
   if (driver && data?.allRaces) {
     history = data.allRaces.map(race => {
-      const res = race.Results?.find(r => r.Driver.driverId === activeId);
+      const res = race.Results?.find(r => r.Driver?.driverId === activeId);
       const sprintResults = sprintByRound[race.round] || [];
-      const sprintRes = sprintResults.find(r => r.Driver.driverId === activeId);
+      const sprintRes = sprintResults.find(r => r.Driver?.driverId === activeId);
       const hasSprint = sprintResults.length > 0;
       
       let bgColor = 'bg-black/[0.04] text-f1-text-muted'; 
@@ -43,7 +43,7 @@ export default function DriverDrawer({ driverId, data, onClose }) {
       return {
         round: race.round,
         raceName: race.raceName,
-        circuit: race.Circuit.circuitName,
+        circuit: race.Circuit?.circuitName || 'Unknown Circuit',
         position: res ? res.position : 'DNS',
         status: res ? res.status : '未开始',
         racePts,
