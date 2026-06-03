@@ -46,8 +46,18 @@ function formatTimeAgo(minutes) {
 function formatMessageContent(content) {
   if (!content) return "";
   
+  // 强制确保 content 为字符串类型，防止非字符串（如对象、数字）调用 replace 时崩溃
+  let safeContent = content;
+  if (typeof safeContent !== "string") {
+    try {
+      safeContent = String(safeContent);
+    } catch (e) {
+      return "";
+    }
+  }
+
   // 1. 转义 HTML 特殊字符，防范 XSS 攻击
-  let safeContent = content
+  safeContent = safeContent
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
