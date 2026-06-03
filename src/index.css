@@ -4,9 +4,9 @@
 
 @layer base {
   body {
-    background: #FAF8F5;
-    color: #101010;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #fbf9f6;
+    color: #1b1c1a;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     letter-spacing: -0.01em;
   }
@@ -19,27 +19,51 @@
 
 @layer utilities {
   .apple-card {
-    background:
-      linear-gradient(180deg, rgba(255,255,255,0.99), rgba(255,255,255,0.96)),
-      #FFFFFF;
-    border-radius: 18px;
-    border: 1px solid rgba(16, 16, 16, 0.045);
-    box-shadow: 0 4px 20px rgba(16, 16, 16, 0.02), 0 1px 0 rgba(255,255,255,0.8) inset;
-    transition: box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), background-color 0.22s ease;
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid rgba(30, 29, 27, 0.05);
+    box-shadow: 0 4px 20px rgba(16, 16, 16, 0.015), 0 1px 0 rgba(255,255,255,0.8) inset;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     position: relative;
     overflow: hidden;
   }
   
   @media (hover: hover) and (pointer: fine) {
     .apple-card:hover {
-      box-shadow: 0 12px 36px rgba(16, 16, 16, 0.045), 0 1px 0 rgba(255,255,255,0.8) inset;
+      border-color: rgba(197, 168, 128, 0.4);
+      box-shadow: 0 8px 30px rgba(16, 16, 16, 0.035), 0 1px 0 rgba(255,255,255,0.8) inset;
     }
   }
 
-  /* 按下时的物理回弹感 —— 手指离开后弹回 */
   .apple-card:active {
-    box-shadow: 0 6px 18px rgba(16, 16, 16, 0.035);
+    transform: scale(0.995);
     transition-duration: 0.1s;
+  }
+
+  /* ---- 社论杂志排版辅助类 ---- */
+  .font-display-hero {
+    font-family: "Playfair Display", "Georgia", serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .font-headline-lg {
+    font-family: "Playfair Display", "Georgia", serif;
+    font-weight: 600;
+  }
+  .font-headline-md {
+    font-family: "Playfair Display", "Georgia", serif;
+    font-weight: 500;
+  }
+  .font-data-numeric {
+    font-family: "Playfair Display", "Georgia", serif;
+    font-weight: 600;
+  }
+  .font-label-caps {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
   }
 
   /* ---- 可点击行的按压反馈 ---- */
@@ -47,7 +71,7 @@
     transition: background-color 0.18s ease;
   }
   .tap-row:active {
-    background-color: rgba(0, 0, 0, 0.03) !important;
+    background-color: rgba(30, 29, 27, 0.02) !important;
     transition-duration: 0.08s;
   }
 
@@ -72,9 +96,9 @@
 
   .timing-grid {
     background-image:
-      linear-gradient(rgba(16,16,16,0.012) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(16,16,16,0.012) 1px, transparent 1px);
-    background-size: 28px 28px;
+      linear-gradient(rgba(30, 29, 27, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(30, 29, 27, 0.02) 1px, transparent 1px);
+    background-size: 32px 32px;
   }
 
   /* 抽屉内的纤细滚动条 */

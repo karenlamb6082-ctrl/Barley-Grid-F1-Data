@@ -10,22 +10,31 @@ export default function Schedule({ scheduleData = [], allRaces = [], onRaceClick
   const completedRoundNums = new Set(allRaces.map(r => parseInt(r.round, 10)));
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <button
-        onClick={onBack}
-        className="inline-flex items-center gap-2 rounded-lg border border-black/10 bg-white/80 px-4 py-2 text-[14px] font-black text-f1-text hover:border-f1-red/40 hover:text-f1-red"
-      >
-        <ArrowLeft size={16} />
-        返回概览
-      </button>
-
-      <div className="apple-card p-10 lg:p-14 mb-8">
-         <h1 className="text-3xl sm:text-4xl font-semibold text-f1-text tracking-tight mb-4">2026 赛季赛程</h1>
-         <p className="text-f1-text-muted text-[16px] max-w-2xl leading-relaxed">
-           从揭幕战的初发到收官之夜的对决。全年 24 场顶级大奖赛的日程追踪，每一次引擎轰鸣都精确记录于此。
-         </p>
+    <div className="space-y-12 animate-in fade-in duration-500 max-w-5xl mx-auto px-4 pb-20">
+      
+      {/* 头部导航与切换 */}
+      <div className="flex justify-between items-center border-b border-black/[0.05] pb-6">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-2 rounded-lg border border-black/[0.05] bg-white px-4 py-2 text-[13px] font-bold text-f1-text hover:bg-f1-bg transition-colors"
+        >
+          <ArrowLeft size={15} />
+          返回概览
+        </button>
       </div>
 
+      {/* 社论级页面标题 */}
+      <div className="text-center">
+        <p className="font-label-caps text-[10px] text-f1-text-muted tracking-[0.2em] mb-3">2026 RACE CALENDAR</p>
+        <h1 className="font-display-hero text-[40px] sm:text-[60px] text-f1-text leading-none uppercase">
+          赛程追踪
+        </h1>
+        <p className="font-sans text-[15px] text-f1-text-muted max-w-2xl mx-auto mt-4 leading-relaxed">
+          从揭幕战的初发到收官之夜的对决。全年 24 场顶级大奖赛的日程追踪，每一次引擎轰鸣都精确记录于此。
+        </p>
+      </div>
+
+      {/* 赛程列表区域 */}
       <div className="grid gap-6">
         {scheduleData.map((race) => {
           const raceDate = new Date(race.date);
@@ -35,45 +44,62 @@ export default function Schedule({ scheduleData = [], allRaces = [], onRaceClick
           return (
             <div 
               key={race.id} 
-              className={`apple-card p-8 lg:p-10 flex flex-col md:flex-row md:items-center justify-between gap-8 transition-all duration-400 cursor-pointer ${isCompleted ? 'opacity-70 hover:opacity-100 hover:shadow-[0_16px_40px_rgba(0,0,0,0.06)]' : 'hover:shadow-[0_16px_40px_rgba(0,0,0,0.06)]'}`}
+              className={`apple-card p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all duration-300 cursor-pointer ${
+                isCompleted ? 'opacity-85 hover:opacity-100' : ''
+              }`}
               onClick={() => onRaceClick && onRaceClick(race.round)}
             >
-              <div className="flex items-center space-x-8">
-                <div className="text-center min-w-[64px]">
-                  <div className={`text-[11px] font-bold uppercase tracking-[0.2em] mb-1 ${isCompleted ? 'text-black/40' : 'text-f1-cyan'}`}>
+              <div className="flex items-center space-x-6 sm:space-x-8 min-w-0">
+                {/* 质感日期列 */}
+                <div className="text-center min-w-[56px] border-r border-black/[0.05] pr-5 sm:pr-8">
+                  <div className={`font-label-caps text-[10px] tracking-[0.16em] mb-1 ${isCompleted ? 'text-black/35' : 'text-f1-lime'}`}>
                     {format(raceDate, "MMM", { locale: zhCN })}
                   </div>
-                  <div className={`text-4xl font-bold tracking-tighter ${isCompleted ? 'text-black/40' : 'text-f1-text'}`}>
+                  <div className={`font-data-numeric text-[30px] sm:text-[34px] leading-none ${isCompleted ? 'text-black/30' : 'text-f1-text'}`}>
                     {format(raceDate, "dd")}
                   </div>
                 </div>
                 
-                <div className="h-12 w-px bg-black/[0.08] hidden md:block"></div>
-                
-                <div>
-                  <div className="flex items-center space-x-3 mb-2">
-                    <span className="text-[11px] font-bold text-f1-text-muted uppercase tracking-[0.15em] bg-black/[0.04] px-2 py-0.5 rounded-sm">Round {String(race.round).padStart(2, '0')}</span>
-                    {isCompleted && <span className="text-[11px] font-bold text-f1-text-muted uppercase tracking-wider">已完赛</span>}
+                <div className="min-w-0">
+                  <div className="flex items-center space-x-3 mb-2.5">
+                    <span className="font-label-caps text-[9px] tracking-[0.12em] bg-black/[0.04] px-2.5 py-0.5 rounded text-f1-text-muted font-bold">
+                      Round {String(race.round).padStart(2, '0')}
+                    </span>
+                    {isCompleted && (
+                      <span className="font-label-caps text-[9px] tracking-[0.1em] text-f1-text-muted font-bold">
+                        · COMPLETED
+                      </span>
+                    )}
                   </div>
-                  <h3 className="text-[22px] font-bold text-f1-text tracking-tight mb-0.5">{race.name}</h3>
+                  
+                  <h3 className="font-headline-md text-[20px] sm:text-[23px] text-f1-text leading-tight group-hover:text-f1-red transition-colors">
+                    {race.name}
+                  </h3>
+                  
                   {getRaceNameCN(race.name) && (
-                    <div className="text-[14px] text-f1-text-muted/70 font-medium mb-1">{getRaceNameCN(race.name)}</div>
+                    <div className="text-[13px] text-f1-text-muted/70 font-semibold mt-1">
+                      {getRaceNameCN(race.name)}
+                    </div>
                   )}
-                  <p className="text-[14px] text-f1-text-muted font-medium">{getCircuitNameCN(race.circuit)} <span className="mx-2 text-black/10">|</span> {getCountryNameCN(race.country)}</p>
+                  
+                  <p className="font-sans text-[13px] text-f1-text-muted mt-2">
+                    {getCircuitNameCN(race.circuit)} <span className="mx-2 text-black/10">|</span> {getCountryNameCN(race.country)}
+                  </p>
                 </div>
               </div>
                
-               <div className="mt-6 md:mt-0 md:ml-8 flex-shrink-0">
+               {/* 右侧交互标签按钮 (圆角16px以保持理性架构) */}
+               <div className="md:ml-8 flex-shrink-0 flex items-center">
                  {hasResults ? (
-                   <span className="btn-bounce inline-flex items-center px-4 py-1.5 rounded-full bg-f1-cyan/10 text-[13px] font-semibold text-f1-cyan border border-f1-cyan/20 hover:bg-f1-cyan/20">
+                   <span className="btn-bounce inline-flex items-center px-5 py-2.5 rounded-lg bg-f1-lime/10 text-[13px] font-bold text-f1-lime border border-f1-lime/25 hover:bg-f1-lime/20 transition-all">
                      查看结果 →
                    </span>
                  ) : isCompleted ? (
-                   <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-black/[0.03] text-[13px] font-semibold text-f1-text border border-black/5">
+                   <span className="inline-flex items-center px-5 py-2.5 rounded-lg bg-black/[0.03] text-[13px] font-semibold text-f1-text-muted border border-black/5">
                      已完赛
                    </span>
                  ) : (
-                   <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-f1-text text-white text-[13px] font-medium">
+                   <span className="inline-flex items-center px-5 py-2.5 rounded-lg bg-f1-graphite text-white text-[13px] font-semibold hover:bg-f1-text transition-colors">
                      即将到来
                    </span>
                  )}

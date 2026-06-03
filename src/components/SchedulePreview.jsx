@@ -7,35 +7,35 @@ export default function SchedulePreview({ schedule = [], onRaceClick, onViewAll 
   const races = upcoming.length > 0 ? upcoming : schedule.slice(-4);
 
   return (
-    <div className="apple-card h-full overflow-hidden">
-      <div className="px-6 py-4 bg-f1-cyan text-f1-text flex justify-between items-center">
-        <h3 className="text-[18px] font-black tracking-tight">▣ 接下来赛程</h3>
-        <button className="text-[13px] font-black text-f1-text hover:text-white transition-colors" onClick={() => onViewAll?.()}>
-          查看完整赛程 →
+    <div className="apple-card h-full overflow-hidden animate-in">
+      <div className="border-b border-black/[0.05] px-6 py-4 flex justify-between items-center bg-white">
+        <h3 className="font-headline-md text-[17px] font-bold text-f1-text">▣ 下一站赛程</h3>
+        <button className="font-label-caps text-[11px] tracking-[0.16em] text-f1-text-muted hover:text-f1-text transition-colors" onClick={() => onViewAll?.()}>
+          FULL →
         </button>
       </div>
 
-      <div className="p-5 space-y-2">
+      <div className="p-5 space-y-2.5">
         {races.map((race) => {
           const date = new Date(race.date);
           return (
             <button
               key={race.id}
               onClick={() => onRaceClick?.(race.round)}
-              className="w-full grid grid-cols-[54px_54px_1fr_auto] items-center gap-3 rounded-lg bg-black/[0.035] px-3 py-3 text-left hover:bg-black/[0.06] transition-colors"
+              className="w-full grid grid-cols-[54px_42px_1fr_auto] items-center gap-3 rounded-xl bg-f1-bg/40 border border-black/[0.02] px-4 py-3 text-left hover:bg-black/[0.02] transition-colors"
             >
-              <div className="text-center">
-                <div className="text-[12px] font-black text-f1-text-muted">{format(date, "M月")}</div>
-                <div className="text-[28px] font-black leading-none text-f1-text tabular-nums">{format(date, "dd")}</div>
+              <div className="text-center border-r border-black/[0.05] pr-2">
+                <div className="font-label-caps text-[9px] text-f1-text-muted leading-none mb-1">{format(date, "MMM")}</div>
+                <div className="font-data-numeric text-[22px] leading-none text-f1-text tabular-nums">{format(date, "dd")}</div>
               </div>
-              <div className="text-[12px] font-black text-f1-text-muted">R{String(race.round).padStart(2, "0")}</div>
+              <div className="font-label-caps text-[10px] text-f1-text-muted pl-1">R{String(race.round).padStart(2, "0")}</div>
               <div className="min-w-0">
-                <div className="truncate text-[15px] font-black text-f1-text">{race.name}</div>
-                <div className="truncate text-[12px] font-semibold text-f1-text-muted">
+                <div className="truncate font-sans text-[14px] font-bold text-f1-text">{race.name}</div>
+                <div className="truncate font-sans text-[12px] text-f1-text-muted">
                   {getRaceNameCN(race.name) || getCountryNameCN(race.country)}
                 </div>
               </div>
-              <div className="text-[13px] font-bold text-f1-text-muted tabular-nums">{format(date, "HH:mm")}</div>
+              <div className="font-data-numeric text-[13px] text-f1-text-muted tabular-nums">{format(date, "HH:mm")}</div>
             </button>
           );
         })}

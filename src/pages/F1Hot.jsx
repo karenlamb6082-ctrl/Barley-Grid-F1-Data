@@ -302,40 +302,40 @@ function HotspotCard({ event, rank, isCollected, isLiked, isExpanded, onToggleEx
   const dims = event.dimensions || { technicalDepth: 5, breakingValue: 5, audienceValue: 5, dramaIndex: 5, truthfulness: 5 };
 
   return (
-    <div className="apple-card p-4 sm:p-5 relative transition-all duration-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.06)] overflow-hidden text-left bg-white/80 border border-white/40">
+    <div className="apple-card p-5 relative transition-all duration-300 hover:shadow-[0_8px_24px_rgba(0,0,0,0.02)] overflow-hidden text-left bg-white/90 border border-black/[0.04]">
       {/* 侧面标志色，金色为 Tier 1 精选，青色为 Tier 1.5, 灰色为 Tier 2 */}
-      <div className={`absolute top-0 left-0 w-1.5 h-full ${
-        event.tier === "T1" ? "bg-f1-gold" : event.tier === "T1.5" ? "bg-f1-darkcyan" : "bg-f1-silver"
+      <div className={`absolute top-0 left-0 w-1 h-full ${
+        event.tier === "T1" ? "bg-f1-gold" : event.tier === "T1.5" ? "bg-f1-cyan" : "bg-f1-silver"
       }`} />
 
       {/* 第一行：序号、质量分、右侧点赞收藏 */}
-      <div className="flex justify-between items-start gap-4 pl-2 mb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex justify-between items-start gap-4 pl-2.5 mb-3">
+        <div className="flex items-center gap-2.5">
           {/* 序号 */}
-          <span className="text-[24px] font-black leading-none text-f1-text-muted/30 tabular-nums">
+          <span className="font-data-numeric text-[20px] leading-none text-black/15 tabular-nums">
             {String(rank).padStart(2, "0")}
           </span>
           
           {/* 质量分 */}
-          <div className={`px-2 py-0.5 rounded-md text-[11px] font-black border flex items-center gap-1 shadow-sm ${
+          <div className={`px-2.5 py-0.5 rounded-lg font-label-caps text-[9px] border flex items-center gap-1.5 shadow-sm ${
             event.qualityScore >= 80
-              ? "text-f1-gold border-f1-gold/30 bg-f1-gold/5 shadow-f1-gold/5"
-              : "text-f1-darkcyan border-f1-darkcyan/30 bg-f1-darkcyan/5 shadow-f1-darkcyan/5"
+              ? "text-f1-gold border-f1-gold/25 bg-f1-gold/5"
+              : "text-f1-cyan border-f1-cyan/25 bg-f1-cyan/5"
           }`}>
-            <TrendingUp size={11} />
-            质量分 {event.qualityScore}
+            <TrendingUp size={10} />
+            QS {event.qualityScore}
           </div>
 
           {/* AI特质徽章 */}
           {event.badge && (
-            <span className={`px-1.5 py-0.5 rounded text-[9px] font-black border uppercase tracking-wider ${
+            <span className={`px-2 py-0.5 rounded-lg font-label-caps text-[9px] border tracking-wider ${
               event.badge === "官方重磅"
-                ? "text-f1-red border-f1-red/25 bg-f1-red/5"
+                ? "text-f1-red border-f1-red/20 bg-f1-red/5"
                 : event.badge === "深度技术"
-                  ? "text-f1-cyan border-f1-cyan/25 bg-f1-cyan/5"
+                  ? "text-f1-cyan border-f1-cyan/20 bg-f1-cyan/5"
                   : event.badge === "突发焦点"
-                    ? "text-orange-600 border-orange-500/25 bg-orange-50"
-                    : "text-f1-text-muted border-black/10 bg-black/[0.02]"
+                    ? "text-orange-600 border-orange-500/20 bg-orange-50"
+                    : "text-f1-text-muted border-black/5 bg-black/[0.01]"
             }`}>
               {event.badge}
             </span>
@@ -347,30 +347,30 @@ function HotspotCard({ event, rank, isCollected, isLiked, isExpanded, onToggleEx
           <button 
             onClick={onLike}
             className={`p-1.5 rounded-lg hover:bg-black/[0.04] transition-colors ${
-              isLiked ? "text-f1-red" : "text-f1-text-muted/40"
+              isLiked ? "text-f1-red" : "text-f1-text-muted/30"
             }`}
           >
-            <Heart size={14} fill={isLiked ? "currentColor" : "none"} />
+            <Heart size={13} fill={isLiked ? "currentColor" : "none"} />
           </button>
           <button 
             onClick={onCollect}
             className={`p-1.5 rounded-lg hover:bg-black/[0.04] transition-colors ${
-              isCollected ? "text-amber-500" : "text-f1-text-muted/40"
+              isCollected ? "text-f1-gold" : "text-f1-text-muted/30"
             }`}
           >
-            <Star size={14} fill={isCollected ? "currentColor" : "none"} />
+            <Star size={13} fill={isCollected ? "currentColor" : "none"} />
           </button>
         </div>
       </div>
 
       {/* 第二行：标题与摘要 */}
-      <div className="pl-2">
-        <h3 className="text-[15px] sm:text-[16px] font-black text-f1-text leading-snug group-hover:text-f1-red transition-all">
+      <div className="pl-2.5">
+        <h3 className="font-headline-md text-[17px] sm:text-[18px] text-f1-text leading-snug hover:text-f1-red transition-all cursor-pointer">
           {event.titleCN || event.title}
         </h3>
         
         {/* 翻译对照 */}
-        <p className="mt-1.5 text-[12.5px] font-bold text-f1-text/50 italic leading-relaxed">
+        <p className="mt-2 font-sans text-[12px] text-f1-text-muted/70 italic leading-relaxed">
           {event.titleCN ? `🇬🇧 EN: ${event.title}` : `💡 翻译: ${translateF1Title(event.title)}`}
         </p>
 

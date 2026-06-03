@@ -2,42 +2,31 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { getCountryNameCN, getRaceNameCN } from "../services/f1api";
 
-function getCountdown(targetDate, now = Date.now()) {
-  const diff = new Date(targetDate).getTime() - now;
-  if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-  return {
-    days: Math.floor(diff / 86400000),
-    hours: Math.floor((diff % 86400000) / 3600000),
-    minutes: Math.floor((diff % 3600000) / 60000),
-    seconds: Math.floor((diff % 60000) / 1000),
-  };
-}
-
+// TOP 3 榜单预览组件 (画廊列表美学)
 function TopThreeList({ title, items, type, onViewAll, onItemClick }) {
   return (
-    <div className="min-w-0">
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-f1-red"></span>
-          <h3 className="whitespace-nowrap text-[13px] font-black text-f1-text tracking-wide">{title}</h3>
-        </div>
-        <button onClick={onViewAll} className="hidden 2xl:block whitespace-nowrap text-[12px] font-bold text-f1-text-muted hover:text-f1-red">
-          查看完整榜单 →
+    <div className="min-w-0 group/list">
+      <div className="flex items-center justify-between gap-3 mb-3 border-b border-black/[0.05] pb-2.5">
+        <h3 className="font-label-caps text-f1-text-muted tracking-[0.16em]">{title}</h3>
+        <button onClick={onViewAll} className="hidden xl:block whitespace-nowrap font-label-caps text-f1-text-muted hover:text-f1-red tracking-[0.12em] transition-colors">
+          FULL →
         </button>
       </div>
-      <div className="divide-y divide-black/10">
+      <div className="divide-y divide-black/[0.05]">
         {items.slice(0, 3).map((item, index) => (
           <button
             key={item.id}
             onClick={() => onItemClick?.(item.id)}
-            className="w-full grid grid-cols-[32px_10px_1fr_auto] items-center gap-3 py-3 text-left"
+            className="w-full grid grid-cols-[28px_6px_1fr_auto] items-center gap-3.5 py-3.5 text-left group"
           >
-            <span className="text-[26px] font-black leading-none text-f1-text tabular-nums">{index + 1}</span>
-            <span className="w-1.5 h-7 rounded-full" style={{ backgroundColor: item.teamColor }}></span>
-            <span className="min-w-0 truncate text-[14px] font-bold text-f1-text">
+            <span className="font-data-numeric text-[20px] text-black/25 group-hover:text-f1-text transition-colors text-right pr-1">
+              {index + 1}
+            </span>
+            <span className="w-1 h-5 rounded-full" style={{ backgroundColor: item.teamColor }}></span>
+            <span className="min-w-0 truncate font-sans text-[14px] font-semibold text-f1-text group-hover:text-f1-red transition-colors">
               {type === "driver" ? `${item.firstName?.[0]}. ${item.lastName}` : item.name}
             </span>
-            <span className="text-[17px] font-black text-f1-text tabular-nums">{item.points}</span>
+            <span className="font-data-numeric text-[16px] text-f1-text">{item.points}</span>
           </button>
         ))}
       </div>
@@ -45,6 +34,7 @@ function TopThreeList({ title, items, type, onViewAll, onItemClick }) {
   );
 }
 
+// 倒计时方块组件 (Stitch 高雅门票卡片风格)
 function CountdownStrip({ targetDate }) {
   const [now, setNow] = useState(() => Date.now());
 
@@ -56,23 +46,36 @@ function CountdownStrip({ targetDate }) {
 
   const countdown = getCountdown(targetDate, now);
 
+  const timeBlocks = [
+    { value: countdown.days, label: "Days" },
+    { value: countdown.hours, label: "Hours" },
+    { value: countdown.minutes, label: "Mins" },
+    { value: countdown.seconds, label: "Secs" }
+  ];
+
   return (
-    <div className="mt-5 grid grid-cols-2 gap-2 rounded-xl bg-f1-lime/10 p-2 sm:grid-cols-4 xl:grid-cols-2 border border-f1-lime/15">
-      {[
-        [countdown.days, "天"],
-        [countdown.hours, "时"],
-        [countdown.minutes, "分"],
-        [countdown.seconds, "秒"],
-      ].map(([value, label]) => (
-        <div key={label} className="flex min-h-[58px] flex-col items-center justify-center rounded-lg bg-white px-2 text-center border border-black/[0.03]">
-          <span className="text-[22px] font-black leading-none tabular-nums text-f1-text">
-            {String(value).padStart(2, "0")}
+    <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-black/[0.05] pt-6">
+      {timeBlocks.map((block) => (
+        <div key={block.label} className="flex flex-col border-l border-black/[0.08] pl-3.5">
+          <span className="font-label-caps text-f1-text-muted tracking-[0.12em] mb-1">{block.label}</span>
+          <span className={`font-data-numeric text-[38px] leading-none ${block.label === "Secs" ? "text-f1-red" : "text-f1-text"}`}>
+            {String(block.value).padStart(2, "0")}
           </span>
-          <span className="mt-1 text-[11px] font-black text-f1-text-muted">{label}</span>
         </div>
       ))}
     </div>
   );
+}
+
+function getCountdown(targetDate, now = Date.now()) {
+  const diff = new Date(targetDate).getTime() - now;
+  if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+  return {
+    days: Math.floor(diff / 86400000),
+    hours: Math.floor((diff % 86400000) / 3600000),
+    minutes: Math.floor((diff % 3600000) / 60000),
+    seconds: Math.floor((diff % 60000) / 1000),
+  };
 }
 
 export default function DashboardHero({ data, setCurrentView, onRaceClick, onDriverClick, onTeamClick }) {
@@ -83,96 +86,140 @@ export default function DashboardHero({ data, setCurrentView, onRaceClick, onDri
   const raceDate = nextRace?.date ? new Date(nextRace.date) : null;
 
   return (
-    <section className="grid min-w-0 grid-cols-1 xl:grid-cols-[1fr_1.25fr] gap-0 rounded-2xl overflow-hidden border border-black/[0.045] shadow-[0_8px_32px_rgba(16,16,16,0.03)] bg-white animate-in">
-      <div className="relative min-w-0 min-h-[320px] overflow-hidden bg-f1-graphite text-white p-5 sm:min-h-[360px] sm:p-10 lg:p-12 race-cut">
-        <div className="absolute inset-0 timing-grid opacity-[0.03]"></div>
+    <section className="grid min-w-0 grid-cols-1 xl:grid-cols-[1fr_1.1fr] gap-0 rounded-[24px] overflow-hidden border border-black/[0.045] shadow-[0_8px_32px_rgba(16,16,16,0.015)] bg-white animate-in">
+      
+      {/* 左侧：Stitch 精英主视觉海报 (Hero Section) */}
+      <div className="relative min-w-0 min-h-[480px] sm:min-h-[500px] flex items-center overflow-hidden bg-f1-graphite text-white p-8 sm:p-16 lg:p-20">
         
+        {/* 背景大图及暗黑磨砂玻璃层 */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            alt="Hero Background" 
+            className="w-full h-full object-cover grayscale opacity-60" 
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTbUb24Vtz-CLQZ38OeshJI9TfnUS-QE9nkstmNfE9p4r4WS-7PeyxhgT3O40cxlRICaImg-3oT7hp8q2UMaTarSWCJPGXf1pxVezwMa80At2Vkxu5amcQqhGNWyi-8yq1guW1FZmnX1NgpzRLsadXhrwsNMIrKwL_mkFMGyGMxYukp4tyqrAGESYP1zAazVPgsOS428RpKngLCaqQBtqpMjdWWnGJzxE1M1v1O3H147UQnnc918Q-BkgBVeMb131RuP4GUfo4S4Q"
+          />
+          <div className="absolute inset-0 bg-black/55 z-[5] backdrop-blur-[1px]"></div>
+          <div className="absolute inset-0 timing-grid opacity-[0.04] z-[6]"></div>
+        </div>
+
         <div className="relative z-10 max-w-[560px]">
-          <div className="mb-7 text-[11px] font-bold tracking-[0.28em] text-f1-lime uppercase sm:mb-8 sm:text-[12px] sm:tracking-[0.36em]">
-            BARLEY GRID · F1 DATA CENTER
-          </div>
-          <h1 className="text-[31px] sm:text-[58px] lg:text-[72px] font-black leading-[0.98] tracking-tight">
-            2026 赛季<span className="block text-f1-lime">全景看板</span>
+          <p className="font-label-caps text-f1-lime mb-4 tracking-[0.2em] font-semibold">THE INNER CIRCLE</p>
+          <h1 className="font-display-hero text-[40px] sm:text-[58px] lg:text-[66px] leading-[1.05] tracking-tight text-white mb-6 uppercase">
+            2026 Season Panorama
           </h1>
-          <p className="mt-5 max-w-[280px] sm:max-w-[340px] text-[14px] sm:text-[17px] font-semibold text-white/60 leading-relaxed">
-            实时同步每一次超越、排位与积分变化
+          <p className="font-sans text-[14px] sm:text-[15px] text-white/60 leading-relaxed max-w-md mb-10">
+            精选视角呈现巅峰汽车运动。精密工程与卓越策略的深度交汇。
           </p>
-          <div className="mt-9 flex flex-wrap gap-2.5 sm:mt-10 sm:gap-3">
-            <button onClick={() => setCurrentView("schedule")} className="btn-bounce race-cut bg-f1-red px-5 py-2.5 text-[14px] font-black text-white sm:px-7 sm:py-3 sm:text-[15px]">
+          
+          <div className="flex flex-wrap gap-4">
+            <button 
+              onClick={() => setCurrentView("schedule")} 
+              className="bg-white text-f1-text px-7 py-3 rounded-lg font-sans text-[13px] font-semibold hover:bg-f1-bg transition-colors"
+            >
               赛程追踪
             </button>
-            <button onClick={() => setCurrentView("standings")} className="btn-bounce race-cut border border-white/15 bg-white/5 px-5 py-2.5 text-[14px] font-black text-white sm:px-7 sm:py-3 sm:text-[15px]">
+            <button 
+              onClick={() => setCurrentView("standings")} 
+              className="bg-transparent border border-white/25 text-white px-7 py-3 rounded-lg font-sans text-[13px] font-semibold hover:bg-white/10 transition-colors"
+            >
               积分榜单
             </button>
-            <button onClick={() => setCurrentView("chat")} className="btn-bounce race-cut border border-f1-lime/30 bg-f1-lime/10 px-5 py-2.5 text-[14px] font-black text-f1-lime sm:px-7 sm:py-3 sm:text-[15px]">
-              AI 助手
+            <button 
+              onClick={() => setCurrentView("chat")} 
+              className="bg-transparent border px-7 py-3 rounded-lg font-sans text-[13px] font-semibold hover:bg-f1-lime/10 transition-colors flex items-center gap-2" 
+              style={{ borderColor: '#C5A880', color: '#C5A880' }}
+            >
+              <span className="text-[12px]">✦</span> AI Paddock
             </button>
           </div>
         </div>
       </div>
 
-      <div className="grid min-w-0 grid-cols-1 lg:grid-cols-[1fr_0.7fr_1.15fr] divide-y lg:divide-y-0 lg:divide-x divide-black/10 bg-white p-4 sm:p-7">
-        <div className="min-w-0 pb-6 lg:pb-0 lg:pr-7">
-          <div className="flex items-center gap-2 mb-5">
-            <span className="w-2 h-2 rounded-full bg-f1-red"></span>
-            <h2 className="text-[15px] font-black text-f1-text">下一站</h2>
+      {/* 右侧：下一站倒计时与积分/进度区 */}
+      <div className="grid min-w-0 grid-cols-1 divide-y divide-black/[0.05] bg-white p-6 sm:p-10 lg:p-12">
+        
+        {/* 上部分：下一站倒计时 */}
+        <div className="pb-8">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <span className="font-label-caps text-f1-text-muted tracking-[0.16em]">{getCountryNameCN(nextRace?.country)}大奖赛</span>
+            <span className="bg-f1-red/10 text-f1-red px-3 py-1 rounded-full font-label-caps text-[10px] tracking-[0.12em] font-bold">
+              Round {String(nextRace?.round).padStart(2, "0")}
+            </span>
           </div>
-          <button onClick={() => onRaceClick?.(nextRace?.round)} className="block text-left">
-            <div className="text-[28px] font-black text-f1-text leading-tight sm:text-[30px]">{nextRace?.name}</div>
-            <div className="mt-2 text-[14px] font-semibold text-f1-text-muted">{getRaceNameCN(nextRace?.name) || ""}</div>
-            <div className="mt-2 text-[14px] font-semibold text-f1-text-muted">
-              {nextRace?.circuit} <span className="mx-2 text-black/20">|</span> {getCountryNameCN(nextRace?.country)}
+          
+          <button onClick={() => onRaceClick?.(nextRace?.round)} className="block text-left w-full group">
+            <div className="font-headline-md text-[30px] leading-tight text-f1-text group-hover:text-f1-red transition-colors duration-300">
+              {nextRace?.name}
+            </div>
+            <div className="mt-2.5 font-sans text-[13px] font-semibold text-f1-text-muted flex items-center gap-2">
+              <span>{getRaceNameCN(nextRace?.name)}</span>
+              <span className="w-1 h-1 rounded-full bg-black/15"></span>
+              <span>{nextRace?.circuit}</span>
             </div>
           </button>
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="rounded-lg border border-black/10 p-3">
-              <div className="text-[18px] font-black text-f1-text">{raceDate ? format(raceDate, "MM/dd") : "--/--"}</div>
-              <div className="text-[12px] font-bold text-f1-text-muted">周日</div>
+          
+          {/* 日期小卡片组 */}
+          <div className="mt-5 grid grid-cols-2 gap-4">
+            <div className="rounded-xl border border-black/[0.045] bg-f1-bg/30 p-3.5">
+              <span className="font-label-caps text-[10px] text-f1-text-muted tracking-[0.12em]">正赛日期</span>
+              <div className="mt-1 font-data-numeric text-[20px] text-f1-text leading-none">{raceDate ? format(raceDate, "MM/dd") : "--/--"}</div>
             </div>
-            <div className="rounded-lg border border-black/10 p-3">
-              <div className="text-[18px] font-black text-f1-text">{raceDate ? format(raceDate, "HH:mm") : "--:--"}</div>
-              <div className="text-[12px] font-bold text-f1-text-muted">本地时间</div>
+            <div className="rounded-xl border border-black/[0.045] bg-f1-bg/30 p-3.5">
+              <span className="font-label-caps text-[10px] text-f1-text-muted tracking-[0.12em]">发车时间</span>
+              <div className="mt-1 font-data-numeric text-[20px] text-f1-text leading-none">{raceDate ? format(raceDate, "HH:mm") : "--:--"}</div>
             </div>
           </div>
+          
           <CountdownStrip targetDate={nextRace?.date} />
         </div>
 
-        <div className="py-6 lg:py-0 lg:px-7">
-          <div className="flex items-center gap-2 mb-10">
-            <span className="w-2 h-2 rounded-full bg-f1-red"></span>
-            <h3 className="text-[15px] font-black text-f1-text">赛季进度</h3>
+        {/* 下部分：赛季进度与 TOP 3 车手/车队预览 */}
+        <div className="pt-8 grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x divide-black/[0.05]">
+          
+          {/* 进度 */}
+          <div className="flex flex-col justify-between pb-8 md:pb-0">
+            <div>
+              <div className="font-label-caps text-f1-text-muted tracking-[0.16em] mb-8">Season Progress</div>
+              <div className="flex items-baseline gap-2 mb-3">
+                <span className="font-data-numeric text-[60px] leading-none text-f1-text">{completed}</span>
+                <span className="font-data-numeric text-[24px] text-black/25">/ {total}</span>
+              </div>
+            </div>
+            <div>
+              <div className="mt-2 flex items-center justify-between mb-2">
+                <span className="font-sans text-[12px] font-semibold text-f1-text-muted">赛季完成度</span>
+                <span className="font-data-numeric text-[18px] text-f1-text">{progress}%</span>
+              </div>
+              <div className="w-full h-1 bg-black/[0.05] rounded-full overflow-hidden">
+                <div className="h-full bg-f1-text rounded-full" style={{ width: `${progress}%` }}></div>
+              </div>
+            </div>
           </div>
-          <div className="flex items-end gap-3">
-            <span className="text-[74px] font-black leading-none text-f1-red">{completed}</span>
-            <span className="pb-3 text-[40px] font-black leading-none text-black/25">/ {total}</span>
+
+          {/* TOP 3 列表 */}
+          <div className="pt-8 md:pt-0 md:pl-8 space-y-8">
+            <TopThreeList
+              title="车手排行 TOP 3"
+              items={driverStandings}
+              type="driver"
+              onViewAll={() => setCurrentView("standings")}
+              onItemClick={onDriverClick}
+            />
+            {teamStandings && teamStandings.length > 0 && (
+              <div className="hidden sm:block">
+                <TopThreeList
+                  title="车队排行 TOP 3"
+                  items={teamStandings}
+                  type="team"
+                  onViewAll={() => setCurrentView("standings", "team-standings")}
+                  onItemClick={onTeamClick}
+                />
+              </div>
+            )}
           </div>
-          <div className="mt-8 h-1.5 rounded-full bg-black/[0.06] overflow-hidden">
-            <div className="h-full rounded-full bg-f1-red" style={{ width: `${progress}%` }}></div>
-          </div>
-          <div className="mt-8 flex items-center gap-2 whitespace-nowrap text-[15px] font-bold text-f1-text">
-            <span className="text-f1-lime font-black">{progress}%</span>
-            <span className="text-f1-text-muted font-bold">赛季完成度</span>
-          </div>
+
         </div>
 
-        <div className="pt-6 lg:pt-0 lg:pl-7 space-y-7">
-          <TopThreeList
-            title="车手积分 TOP 3"
-            items={driverStandings}
-            type="driver"
-            onViewAll={() => setCurrentView("standings")}
-            onItemClick={onDriverClick}
-          />
-          <div className="hidden sm:block">
-            <TopThreeList
-              title="车队积分 TOP 3"
-              items={teamStandings}
-              type="team"
-              onViewAll={() => setCurrentView("standings", "team-standings")}
-              onItemClick={onTeamClick}
-            />
-          </div>
-        </div>
       </div>
     </section>
   );

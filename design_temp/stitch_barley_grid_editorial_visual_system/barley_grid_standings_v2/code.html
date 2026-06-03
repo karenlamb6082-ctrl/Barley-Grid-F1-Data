@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Driver Standings - Barley Grid</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#e6e2de",
+                        "primary-fixed-dim": "#cac6c2",
+                        "surface-container-high": "#eae8e5",
+                        "on-tertiary": "#ffffff",
+                        "tertiary": "#060200",
+                        "on-secondary-container": "#700410",
+                        "on-primary-fixed": "#1c1b19",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed": "#fedeb2",
+                        "surface-container": "#efeeeb",
+                        "inverse-primary": "#cac6c2",
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed-variant": "#891b20",
+                        "surface-bright": "#fbf9f6",
+                        "on-tertiary-fixed-variant": "#584323",
+                        "on-primary-container": "#878582",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#e4e2df",
+                        "tertiary-container": "#2a1a01",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#e0c298",
+                        "surface-dim": "#dbdad7",
+                        "on-tertiary-fixed": "#281800",
+                        "secondary-fixed-dim": "#ffb3af",
+                        "primary-container": "#1e1d1b",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-container": "#9b815c",
+                        "on-primary-fixed-variant": "#484644",
+                        "surface-tint": "#605e5b",
+                        "surface-container-low": "#f5f3f0",
+                        "on-surface": "#1b1c1a",
+                        "on-surface-variant": "#494740",
+                        "inverse-surface": "#30312f",
+                        "on-secondary-fixed": "#410005",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#aa3434",
+                        "secondary-fixed": "#ffdad7",
+                        "secondary-container": "#fe716d",
+                        "outline-variant": "#cbc6bd",
+                        "background": "#fbf9f6",
+                        "surface": "#fbf9f6",
+                        "outline": "#7a776f",
+                        "inverse-on-surface": "#f2f0ed",
+                        "on-error-container": "#93000a",
+                        "on-background": "#1b1c1a",
+                        "surface-container-highest": "#e4e2df",
+                        "primary": "#030302"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "64px",
+                        "gutter": "24px",
+                        "margin-mobile": "20px",
+                        "unit": "8px",
+                        "margin-tablet": "32px",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Playfair Display"],
+                        "display-hero": ["Playfair Display"],
+                        "body-md": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "data-numeric": ["Playfair Display"],
+                        "headline-lg-mobile": ["Playfair Display"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Playfair Display"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["48px", { "lineHeight": "56px", "fontWeight": "600" }],
+                        "display-hero": ["72px", { "lineHeight": "80px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.15em", "fontWeight": "600" }],
+                        "data-numeric": ["24px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-md": ["32px", { "lineHeight": "40px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: theme('colors.background'); color: theme('colors.on-background'); }
+    </style>
+</head>
+<body class="antialiased min-h-screen pt-16">
+<!-- TopNavBar (Shared Component) -->
+<nav class="bg-surface/80 dark:bg-surface/80 backdrop-blur-md fixed top-0 w-full z-50 border-b border-outline-variant/10">
+<div class="flex justify-between items-center h-16 px-margin-desktop max-w-container-max mx-auto hidden md:flex">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">Barley Grid</div>
+<div class="flex gap-gutter">
+<a class="font-body-md text-body-md tracking-tight text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors hover:opacity-70 cursor-pointer transition-all duration-300" href="#">Paddock</a>
+<a class="font-body-md text-body-md tracking-tight text-primary dark:text-primary-fixed border-b border-primary dark:border-primary-fixed pb-1 hover:opacity-70 cursor-pointer transition-all duration-300" href="#">Telemetry</a>
+<a class="font-body-md text-body-md tracking-tight text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors hover:opacity-70 cursor-pointer transition-all duration-300" href="#">Journal</a>
+<a class="font-body-md text-body-md tracking-tight text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors hover:opacity-70 cursor-pointer transition-all duration-300" href="#">Scuderia</a>
+</div>
+<div class="flex items-center">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed hover:opacity-70 transition-opacity cursor-pointer">account_circle</span>
+</div>
+</div>
+<!-- Mobile Top Nav (Simplified) -->
+<div class="flex justify-between items-center h-16 px-margin-mobile md:hidden">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">Barley Grid</div>
+<span class="material-symbols-outlined text-primary cursor-pointer">menu</span>
+</div>
+</nav>
+<!-- SideNavBar (Mobile Bottom Nav Mapping - Suppressed as per instructions for top-level non-focused screen, but keeping Top Nav) -->
+<main class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop pt-16 pb-32">
+<!-- Header Section -->
+<header class="mb-24 mt-8 flex flex-col items-center text-center">
+<p class="font-label-caps text-label-caps uppercase text-on-surface-variant mb-4">Round 12 • July 2026</p>
+<h1 class="font-display-hero text-display-hero mb-4 md:block hidden text-tertiary-fixed-dim">DRIVER STANDINGS</h1>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mb-4 md:hidden">DRIVER STANDINGS</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">2026 World Championship Classification. Elite telemetry and performance tracking.</p>
+</header>
+<!-- Podium Section (Top 3) -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-32 relative">
+<!-- P2 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/10 flex flex-col items-center md:mt-12 order-2 md:order-1 relative group">
+<div class="absolute top-4 left-4 font-headline-lg text-headline-lg text-outline-variant/40 group-hover:text-primary transition-colors font-headline-lg text-[64px] font-bold">2</div>
+<div class="w-32 h-32 rounded-full overflow-hidden mb-6 mt-8 border-4 border-surface">
+<img alt="Driver portrait" class="w-full h-full object-cover grayscale" data-alt="A striking digital portrait art piece featuring glowing, generative geometric shapes forming a human face suspended in a vast, minimalist gallery space. The room is illuminated by high-key, soft white lighting that creates a bright, modern light-mode aesthetic. The artwork relies on a sophisticated palette of deep blacks and pristine whites, punctuated by intense accents of vibrant red. The mood is serene yet technologically advanced." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUC7-zVG5Z519GarAYus5lOg6NDfCpNPcYZ8GQ_TiJxJQUdZnUomZW6KAqoOXdXJ9hRnyNaBvY530ZHhff-xbsQ3RHZ40jPGxLYNRst8QosGD9_T-o9arZKU0BZRSNq0RK3i5leiiELccZ7KJOOWR32ZOesw3eLFQ9mzIvGml7Pakdg3sHcSGRHlpGXoqHy78iYN0FIPPZzrHVintnun8g3j2ozLeyY7CsZb3OdjVSQLQTKpxl9dF2K7xSNvvIERpEncUd0cJyUzM"/>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary mb-1">C. Leclerc</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 uppercase tracking-wider text-sm">Scuderia Ferrari</p>
+<div class="font-data-numeric text-data-numeric text-tertiary-fixed-dim">215 <span class="text-sm font-normal text-on-surface-variant">PTS</span></div>
+</div>
+<!-- P1 -->
+<div class="bg-surface-container-lowest rounded-xl p-8 border border-tertiary-fixed-dim/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col items-center z-10 order-1 md:order-2 relative group transform md:-translate-y-4" style="box-shadow: 0 10px 40px -10px rgba(224, 194, 152, 0.4); border: 2px solid #e0c298;">
+<div class="absolute top-4 left-4 font-headline-lg text-headline-lg text-tertiary-fixed-dim group-hover:text-tertiary-container transition-colors font-headline-lg text-[64px] font-bold">1</div>
+<div class="w-40 h-40 rounded-full overflow-hidden mb-6 mt-6 border-4 border-tertiary-fixed-dim/20">
+<img alt="Driver portrait" class="w-full h-full object-cover grayscale" data-alt="A striking digital portrait art piece featuring glowing, generative geometric shapes forming a human face suspended in a vast, minimalist gallery space. The room is illuminated by high-key, soft white lighting that creates a bright, modern light-mode aesthetic. The artwork relies on a sophisticated palette of deep blacks and pristine whites, punctuated by intense accents of vibrant red. The mood is serene yet technologically advanced." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUC7-zVG5Z519GarAYus5lOg6NDfCpNPcYZ8GQ_TiJxJQUdZnUomZW6KAqoOXdXJ9hRnyNaBvY530ZHhff-xbsQ3RHZ40jPGxLYNRst8QosGD9_T-o9arZKU0BZRSNq0RK3i5leiiELccZ7KJOOWR32ZOesw3eLFQ9mzIvGml7Pakdg3sHcSGRHlpGXoqHy78iYN0FIPPZzrHVintnun8g3j2ozLeyY7CsZb3OdjVSQLQTKpxl9dF2K7xSNvvIERpEncUd0cJyUzM"/>
+</div>
+<h3 class="font-headline-lg text-headline-lg text-primary mb-1">M. Verstappen</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 uppercase tracking-wider text-sm">Red Bull Racing</p>
+<div class="font-display-hero text-display-hero text-tertiary-fixed-dim" style="font-size: 48px; line-height: 56px;">284 <span class="text-base font-normal text-on-surface-variant tracking-normal">PTS</span></div>
+</div>
+<!-- P3 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/10 flex flex-col items-center md:mt-16 order-3 md:order-3 relative group">
+<div class="absolute top-4 left-4 font-headline-lg text-headline-lg text-outline-variant/40 group-hover:text-primary transition-colors font-headline-lg text-[64px] font-bold">3</div>
+<div class="w-32 h-32 rounded-full overflow-hidden mb-6 mt-8 border-4 border-surface">
+<img alt="Driver portrait" class="w-full h-full object-cover grayscale" data-alt="A striking digital portrait art piece featuring glowing, generative geometric shapes forming a human face suspended in a vast, minimalist gallery space. The room is illuminated by high-key, soft white lighting that creates a bright, modern light-mode aesthetic. The artwork relies on a sophisticated palette of deep blacks and pristine whites, punctuated by intense accents of vibrant red. The mood is serene yet technologically advanced." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUC7-zVG5Z519GarAYus5lOg6NDfCpNPcYZ8GQ_TiJxJQUdZnUomZW6KAqoOXdXJ9hRnyNaBvY530ZHhff-xbsQ3RHZ40jPGxLYNRst8QosGD9_T-o9arZKU0BZRSNq0RK3i5leiiELccZ7KJOOWR32ZOesw3eLFQ9mzIvGml7Pakdg3sHcSGRHlpGXoqHy78iYN0FIPPZzrHVintnun8g3j2ozLeyY7CsZb3OdjVSQLQTKpxl9dF2K7xSNvvIERpEncUd0cJyUzM"/>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary mb-1">L. Norris</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 uppercase tracking-wider text-sm">McLaren</p>
+<div class="font-data-numeric text-data-numeric text-tertiary-fixed-dim">198 <span class="text-sm font-normal text-on-surface-variant">PTS</span></div>
+</div>
+</section>
+<!-- Full Standings Table -->
+<section class="max-w-4xl mx-auto">
+<h2 class="font-label-caps text-label-caps uppercase text-on-surface-variant border-b border-outline-variant/20 pb-4 mb-4 flex justify-between">
+<span>Driver Classification</span>
+<span>Points</span>
+</h2>
+<div class="flex flex-col">
+<!-- Row 4 -->
+<div class="flex items-center justify-between py-6 border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors px-4 -mx-4 rounded-lg cursor-pointer group">
+<div class="flex items-center gap-6">
+<span class="font-headline-md text-headline-md text-outline-variant/60 w-8 text-right group-hover:text-primary transition-colors">4</span>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-body-lg text-body-lg font-semibold text-primary">C. Sainz</span>
+<div class="w-1.5 h-1.5 rounded-full bg-secondary" title="Last Race Winner"></div>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant text-sm">Scuderia Ferrari</span>
+</div>
+</div>
+<span class="font-data-numeric text-data-numeric text-tertiary-fixed-dim">165</span>
+</div>
+<!-- Row 5 -->
+<div class="flex items-center justify-between py-6 border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors px-4 -mx-4 rounded-lg cursor-pointer group">
+<div class="flex items-center gap-6">
+<span class="font-headline-md text-headline-md text-outline-variant/60 w-8 text-right group-hover:text-primary transition-colors">5</span>
+<div>
+<span class="font-body-lg text-body-lg font-semibold text-primary">S. Perez</span>
+<br/>
+<span class="font-body-md text-body-md text-on-surface-variant text-sm">Red Bull Racing</span>
+</div>
+</div>
+<span class="font-data-numeric text-data-numeric text-tertiary-fixed-dim">142</span>
+</div>
+<!-- Row 6 -->
+<div class="flex items-center justify-between py-6 border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors px-4 -mx-4 rounded-lg cursor-pointer group">
+<div class="flex items-center gap-6">
+<span class="font-headline-md text-headline-md text-outline-variant/60 w-8 text-right group-hover:text-primary transition-colors">6</span>
+<div>
+<span class="font-body-lg text-body-lg font-semibold text-primary">O. Piastri</span>
+<br/>
+<span class="font-body-md text-body-md text-on-surface-variant text-sm">McLaren</span>
+</div>
+</div>
+<span class="font-data-numeric text-data-numeric text-tertiary-fixed-dim">128</span>
+</div>
+<!-- Row 7 -->
+<div class="flex items-center justify-between py-6 border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors px-4 -mx-4 rounded-lg cursor-pointer group">
+<div class="flex items-center gap-6">
+<span class="font-headline-md text-headline-md text-outline-variant/60 w-8 text-right group-hover:text-primary transition-colors">7</span>
+<div>
+<span class="font-body-lg text-body-lg font-semibold text-primary">G. Russell</span>
+<br/>
+<span class="font-body-md text-body-md text-on-surface-variant text-sm">Mercedes</span>
+</div>
+</div>
+<span class="font-data-numeric text-data-numeric text-tertiary-fixed-dim">98</span>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="bg-background dark:bg-background w-full relative border-t border-outline-variant/10">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter py-16 px-margin-desktop max-w-container-max mx-auto">
+<div>
+<div class="font-headline-md text-headline-md text-primary mb-4">Barley Grid</div>
+<p class="font-body-md text-body-md text-on-surface dark:text-on-surface">© 2024 Barley Grid. All Rights Reserved. Engineered for the Inner Circle.</p>
+</div>
+<div class="flex flex-col md:items-end gap-4">
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-on-surface-variant hover:text-secondary transition-colors ease-in-out duration-300" href="#">Privacy</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-on-surface-variant hover:text-secondary transition-colors ease-in-out duration-300" href="#">Terms</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-on-surface-variant hover:text-secondary transition-colors ease-in-out duration-300" href="#">Editorial Policy</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-on-surface-variant hover:text-secondary transition-colors ease-in-out duration-300" href="#">Contact</a>
+</div>
+</div>
+</footer>
+</body></html>

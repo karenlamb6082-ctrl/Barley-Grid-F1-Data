@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Barley Grid - Journal</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Playfair+Display:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-background": "#1b1c1a",
+                    "on-error-container": "#93000a",
+                    "surface-container-highest": "#e4e2df",
+                    "primary": "#030302",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary": "#aa3434",
+                    "on-secondary-fixed": "#410005",
+                    "outline-variant": "#cbc6bd",
+                    "background": "#fbf9f6",
+                    "secondary-fixed": "#ffdad7",
+                    "secondary-container": "#fe716d",
+                    "surface": "#fbf9f6",
+                    "outline": "#7a776f",
+                    "inverse-on-surface": "#f2f0ed",
+                    "on-primary-fixed-variant": "#484644",
+                    "surface-tint": "#605e5b",
+                    "on-surface-variant": "#494740",
+                    "inverse-surface": "#30312f",
+                    "surface-container-low": "#f5f3f0",
+                    "on-surface": "#1b1c1a",
+                    "tertiary-fixed-dim": "#e0c298",
+                    "surface-dim": "#dbdad7",
+                    "on-tertiary-fixed": "#281800",
+                    "secondary-fixed-dim": "#ffb3af",
+                    "primary-container": "#1e1d1b",
+                    "on-tertiary-container": "#9b815c",
+                    "on-primary": "#ffffff",
+                    "on-primary-container": "#878582",
+                    "surface-variant": "#e4e2df",
+                    "on-error": "#ffffff",
+                    "tertiary-container": "#2a1a01",
+                    "error": "#ba1a1a",
+                    "on-secondary-fixed-variant": "#891b20",
+                    "inverse-primary": "#cac6c2",
+                    "error-container": "#ffdad6",
+                    "surface-bright": "#fbf9f6",
+                    "on-tertiary-fixed-variant": "#584323",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-container": "#700410",
+                    "on-primary-fixed": "#1c1b19",
+                    "tertiary": "#060200",
+                    "tertiary-fixed": "#fedeb2",
+                    "on-secondary": "#ffffff",
+                    "surface-container": "#efeeeb",
+                    "primary-fixed": "#e6e2de",
+                    "primary-fixed-dim": "#cac6c2",
+                    "surface-container-high": "#eae8e5"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "20px",
+                    "unit": "8px",
+                    "margin-tablet": "32px",
+                    "container-max": "1440px",
+                    "margin-desktop": "64px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "label-caps": [
+                            "Inter"
+                    ],
+                    "headline-lg": [
+                            "Playfair Display"
+                        ],
+                    "display-hero": [
+                            "Playfair Display"
+                    ],
+                    "headline-lg-mobile": [
+                            "Playfair Display"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Playfair Display"
+                    ],
+                    "data-numeric": [
+                            "Playfair Display"
+                    ]
+            },
+            "fontSize": {
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-caps": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.15em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-lg": [
+                            "48px",
+                            {
+                                    "lineHeight": "56px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "display-hero": [
+                            "72px",
+                            {
+                                    "lineHeight": "80px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-lg-mobile": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-md": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "data-numeric": [
+                            "24px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "600"
+                            }
+                    ]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1;
+        }
+        /* Custom styles for the minimalist gallery feel */
+        body {
+            background-color: #fbf9f6; /* surface */
+            color: #1b1c1a; /* on-surface */
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col pt-16">
+<!-- TopNavBar (Desktop) -->
+<nav class="hidden md:flex bg-surface/80 dark:bg-surface/80 backdrop-blur-md fixed top-0 w-full z-50 border-b border-outline-variant/10">
+<div class="flex justify-between items-center h-16 px-margin-desktop max-w-container-max mx-auto w-full">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">Barley Grid</div>
+<div class="flex items-center gap-gutter">
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors font-body-md text-body-md tracking-tight cursor-pointer hover:opacity-70 transition-opacity" href="#">Paddock</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors font-body-md text-body-md tracking-tight cursor-pointer hover:opacity-70 transition-opacity" href="#">Telemetry</a>
+<a class="text-primary dark:text-primary-fixed border-b border-primary dark:border-primary-fixed pb-1 font-body-md text-body-md tracking-tight cursor-pointer hover:opacity-70 transition-opacity" href="#">Journal</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors font-body-md text-body-md tracking-tight cursor-pointer hover:opacity-70 transition-opacity" href="#">Scuderia</a>
+</div>
+<div class="flex items-center">
+<button class="text-primary hover:opacity-70 transition-opacity cursor-pointer transition-all duration-300">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- SideNavBar (Mobile Bottom Nav Adapter - following semantic shell rules, we suppress it for deeply focused editorial if needed, but it's a top level destination) -->
+<!-- For simplicity in this demo, keeping it hidden on mobile as per prompt focus on the main layout, but typically a bottom nav would exist. -->
+<main class="flex-grow w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-24">
+<!-- Header -->
+<header class="mb-16 md:mb-24 text-center max-w-3xl mx-auto">
+<h1 class="font-display-hero text-display-hero text-primary mb-6">The Journal</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Deep dives, technical analysis, and untold stories from the inner circle of elite motorsport engineering.</p>
+</header>
+<!-- Featured Article (Hero) -->
+<article class="mb-24 group cursor-pointer">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter items-center">
+<div class="md:col-span-8 overflow-hidden rounded-DEFAULT bg-surface-container-low aspect-[16/9] relative">
+<img alt="Formula 1 car engineering details" class="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-700 ease-in-out" data-alt="A sleek, modern Formula 1 race car partially disassembled in a pristine, high-tech garage. Soft, high-key lighting illuminates the intricate carbon fiber details and polished metal components. The color palette is minimal, dominated by deep blacks, bright whites, and subtle bronze reflections. The mood is intense and highly focused, capturing the essence of elite motorsport engineering." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBR2tdbD3IbKgUn3LRVKG5qE6o8s8WW9ipK7tVBWO47JOu_FuO3yaly6RA1miY__arIcNzqmLLc7dYa9k8blww2X24gyBkZP98TfHOf8EdhLBWrIN5F0OY5LCDkXIiwiowFMrRXQpVXsRnh70OlB4r3Vpz7HRMmug8tjdhhyBDUQZJP29xL6Q9MxcFvq91ifbprYDdjkPd3mJ0aAE-x3wzBxVLmnLP61_cUR4iq3C46NZ4XGJvoWgvdmW76yQWIkVC8v9p-jkKuNAM"/>
+</div>
+<div class="md:col-span-4 mt-8 md:mt-0 flex flex-col justify-center">
+<div class="flex items-center gap-4 mb-4">
+<span class="font-label-caps text-label-caps text-on-tertiary-container uppercase tracking-[0.15em]">Technical Analysis</span>
+<span class="w-8 h-[1px] bg-outline-variant/30"></span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">Oct 24, 2024</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-6 group-hover:text-secondary transition-colors duration-300">Aerodynamic Evolution: The New Floor Regulations</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-8 line-clamp-3">An exhaustive breakdown of how the latest regulatory changes are forcing teams to rethink underbody airflow, and who is adapting fastest.</p>
+<div class="flex items-center text-primary font-label-caps text-label-caps uppercase tracking-widest group-hover:text-secondary transition-colors">
+                        Read Article <span class="material-symbols-outlined ml-2 text-[16px]">arrow_forward</span>
+</div>
+</div>
+</div>
+</article>
+<!-- Divider -->
+<hr class="border-t border-outline-variant/20 mb-24"/>
+<!-- Grid Articles -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-gutter gap-y-16">
+<!-- Article 1 -->
+<article class="group cursor-pointer flex flex-col">
+<div class="overflow-hidden rounded-DEFAULT bg-surface-container-low aspect-[4/3] mb-6 relative">
+<img alt="Driver in cockpit" class="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-500 ease-in-out" data-alt="A close-up view of a race car driver's helmet resting on the cockpit halo. The scene is bathed in cool, diffused daylight, highlighting the matte finish of the helmet against the glossy carbon fiber. The aesthetic is clean and minimalist, using shades of gray and stark white with a hint of racing red. The atmosphere conveys quiet anticipation before a major event." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVhDALc3ovVd1h9PZIOiTP5NsEDJ10Nql-48hFECP2GCC_hxuQNoNUPUh5etmqKX-c7z8nFHgfFn6WXCBu6o9PxbeoOarfE4rH2M_DA2l95Bd17FnVCHkad4Frc3K99yezVRl9k9K0B0ShQWy73w3v1pX0o0bwoYKvqjmOGaIOxc2p05gkPPq5oYU1IvRB5zlfE8ZE6JnWGh9e5jTQzdDGsFOwzS1eoZrQClbGC2OoXW_SHLESlgd2qoZUISom-GzBZATnzm9DbR8"/>
+</div>
+<div class="flex items-center gap-4 mb-3">
+<span class="font-label-caps text-label-caps text-on-tertiary-container uppercase tracking-[0.15em]">Driver Psychology</span>
+<span class="w-4 h-[1px] bg-outline-variant/30"></span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">Oct 18</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary mb-4 group-hover:text-secondary transition-colors duration-300">The Mental Toll of the Triple Header</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 line-clamp-2">Navigating fatigue and focus across three continents in three weeks.</p>
+</article>
+<!-- Article 2 -->
+<article class="group cursor-pointer flex flex-col">
+<div class="overflow-hidden rounded-DEFAULT bg-surface-container-low aspect-[4/3] mb-6 relative">
+<img alt="Vintage race car engine" class="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-500 ease-in-out" data-alt="A meticulously restored vintage race car engine block displayed like an art piece in a minimalist, gallery-like setting. Soft spotlighting emphasizes the complex mechanical forms and polished aluminum surfaces. The background is a clean champagne white, allowing the mechanical details to stand out sharply. The mood is historical yet utterly modern and sophisticated." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDKWsu3Ci8yFnekWqVXLHTEL3zmfXFibTB_zKlsZl2JXgNDy2bo6_vYjztCquqLwDr65CieJ3y5BkFQUitRAg3DKeOIwtueqdL23atcmGYVX6nlgL3r5WL3wrz0wB7jLyHHNIQKmsPrho-twLwXh0sbNwKiqwm00YvWxWUKD38Sb8g4gJW3Gzihz6vRXbZPNUEF9qj7xdgRFBhNX6NHiqPjpl3HbU2CR6VR8mbUYqdcOX2SONFqebSMXm6RRlpeZgfjqB8mec7eDyw"/>
+</div>
+<div class="flex items-center gap-4 mb-3">
+<span class="font-label-caps text-label-caps text-on-tertiary-container uppercase tracking-[0.15em]">Archives</span>
+<span class="w-4 h-[1px] bg-outline-variant/30"></span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">Oct 12</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary mb-4 group-hover:text-secondary transition-colors duration-300">V10 Era: The Pinnacle of Sound</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 line-clamp-2">Looking back at the engineering marvels that defined a decade of racing history.</p>
+</article>
+<!-- Article 3 -->
+<article class="group cursor-pointer flex flex-col">
+<div class="overflow-hidden rounded-DEFAULT bg-surface-container-low aspect-[4/3] mb-6 relative">
+<img alt="Telemetry data screens" class="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-500 ease-in-out" data-alt="A series of sleek, dark-mode computer monitors displaying complex telemetry data, graphs, and racing lines in a dimly lit, high-tech control room. Thin neon lines in bronze and fog blue trace across the screens. The overall aesthetic is highly analytical and precise, reflecting a modern data-driven environment with a calm, focused atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBumnjgO8NhmdxcqI6W53PDt3olPDI9ugc6uyzmFejfb40DKfLW744HMR80XcpT2lOfle4Mx9VMxjW12phP1IFETOLc_HT6m1fmnjcEsOUf2W63k0r78qSTccObjatprcy8hSTUvMQFMxKt39xtULi7QOXawd99eW6psw2qOcQflNVRcDOu73Ghn5NxqJz8qiBcIr3KEcOyyDjQM3sUSw4xmY4eihqigOdiD_no_HLvUkVFFxi4g-_kcvu2dv30x5JoYhJ2rMyy7o"/>
+</div>
+<div class="flex items-center gap-4 mb-3">
+<span class="font-label-caps text-label-caps text-on-tertiary-container uppercase tracking-[0.15em]">Data Science</span>
+<span class="w-4 h-[1px] bg-outline-variant/30"></span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">Oct 05</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary mb-4 group-hover:text-secondary transition-colors duration-300">Predictive Tire Degradation Models</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 line-clamp-2">How machine learning is replacing gut feeling on the pit wall.</p>
+</article>
+</div>
+<!-- Load More Button -->
+<div class="mt-24 flex justify-center">
+<button class="bg-primary text-on-primary font-label-caps text-label-caps uppercase tracking-widest px-8 py-4 rounded-DEFAULT hover:bg-surface-tint transition-colors duration-300">
+                Load More Articles
+            </button>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full relative bg-background dark:bg-background border-t border-outline-variant/10">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter py-16 px-margin-desktop max-w-container-max mx-auto">
+<div>
+<div class="font-headline-md text-headline-md text-primary mb-4">Barley Grid</div>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-sm mb-8">© 2024 Barley Grid. All Rights Reserved. Engineered for the Inner Circle.</p>
+</div>
+<div class="flex flex-col md:flex-row md:justify-end gap-8 md:gap-16">
+<div class="flex flex-col gap-4">
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-on-surface-variant hover:text-secondary transition-colors ease-in-out duration-300" href="#">Privacy</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-on-surface-variant hover:text-secondary transition-colors ease-in-out duration-300" href="#">Terms</a>
+</div>
+<div class="flex flex-col gap-4">
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-on-surface-variant hover:text-secondary transition-colors ease-in-out duration-300" href="#">Editorial Policy</a>
+<a class="font-body-md text-body-md text-on-surface-variant dark:text-on-surface-variant hover:text-secondary transition-colors ease-in-out duration-300" href="#">Contact</a>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, RefreshCw, MessageCircle, Send, Trash2, HelpCircle } from "lucide-react";
+import { ArrowLeft, Trash2, HelpCircle, Send } from "lucide-react";
 
 // 简易 Markdown 正则解析器，支持段落、加粗、无序/有序列表、换行以及代码块等，附带基本 XSS 安全防御
 function formatMessageContent(content) {
@@ -21,10 +21,10 @@ function formatMessageContent(content) {
     .replace(/>/g, "&gt;");
 
   // 2. 匹配加粗：**文本** -> <strong>
-  safeContent = safeContent.replace(/\*\*(.*?)\*\*/g, '<strong class="font-extrabold text-f1-red/90 bg-f1-red/[0.03] px-1 py-0.5 rounded border border-f1-red/10">$1</strong>');
+  safeContent = safeContent.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-f1-red bg-f1-red/[0.02] px-1 py-0.5 rounded">$1</strong>');
   
   // 3. 匹配行内代码：`code` -> <code>
-  safeContent = safeContent.replace(/`(.*?)`/g, '<code class="font-mono text-[11.5px] bg-black/[0.05] text-f1-red px-1.5 py-0.5 rounded border border-black/10">$1</code>');
+  safeContent = safeContent.replace(/`(.*?)`/g, '<code class="font-mono text-[11.5px] bg-black/[0.04] text-f1-red px-1.5 py-0.5 rounded border border-black/[0.05]">$1</code>');
 
   // 4. 按行切分进行块级解析
   const lines = safeContent.split("\n");
@@ -45,12 +45,12 @@ function formatMessageContent(content) {
     const line = lines[i];
     const trimmedLine = line.trim();
 
-    // 匹配无序列表: - item 或 * item
+    // 匹配无序列表: - item
     const ulMatch = line.match(/^\s*[-*]\s+(.*)/);
     if (ulMatch) {
       if (inList !== 'ul') {
         closeList();
-        formattedBlocks.push('<ul class="list-disc pl-5 my-1.5 space-y-1">');
+        formattedBlocks.push('<ul class="list-disc pl-5 my-1.5 space-y-1 text-f1-text-muted">');
         inList = 'ul';
       }
       formattedBlocks.push(`<li class="text-[13px] font-medium leading-relaxed">${ulMatch[1]}</li>`);
@@ -62,22 +62,20 @@ function formatMessageContent(content) {
     if (olMatch) {
       if (inList !== 'ol') {
         closeList();
-        formattedBlocks.push('<ol class="list-decimal pl-5 my-1.5 space-y-1">');
+        formattedBlocks.push('<ol class="list-decimal pl-5 my-1.5 space-y-1 text-f1-text-muted">');
         inList = 'ol';
       }
       formattedBlocks.push(`<li class="text-[13px] font-medium leading-relaxed">${olMatch[2]}</li>`);
       continue;
     }
 
-    // 普通空行
     if (trimmedLine === "") {
       closeList();
       continue;
     }
 
-    // 普通文本段落
     closeList();
-    formattedBlocks.push(`<p class="mb-2 last:mb-0 text-[13px] font-medium leading-relaxed">${line}</p>`);
+    formattedBlocks.push(`<p class="mb-1.5 last:mb-0 text-[13px] font-medium leading-relaxed">${line}</p>`);
   }
   
   closeList();
@@ -85,7 +83,6 @@ function formatMessageContent(content) {
 }
 
 export default function F1Chat({ onBack, f1Data }) {
-  // 1. 聊天对话状态：从 localStorage 加载历史记录，无历史则初始化
   const [chatMessages, setChatMessages] = useState(() => {
     try {
       const saved = localStorage.getItem("f1hot:chat_messages");
@@ -99,19 +96,17 @@ export default function F1Chat({ onBack, f1Data }) {
       console.error("加载聊天历史记录失败", e);
     }
     return [
-      { role: "assistant", content: "你好！我是你的 F1 围场 AI 助手。我已经实时获取了赛事日程与车手积分榜等数据。你可以问我任何技术升级、围场爆料、车队历史，或者让我为您总结当前的赛程排名！" }
+      { role: "assistant", content: "你好！我是您的 Paddock AI 围场策略助手。我已经实时获取了 2026 赛季大奖赛日程、车手及车队积分榜等最新的遥测与赛况数据。您可以向我咨询任何赛事分析、车队战略部署，或者让我为您总结当前的赛段状态！" }
     ];
   });
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const chatBottomRef = useRef(null);
 
-  // 2. 聊天选用的模型，支持从 localStorage 恢复，默认 deepseek-v4-flash
   const [chatModel, setChatModel] = useState(() => {
     return localStorage.getItem("f1hot:chat_model") || "deepseek-v4-flash";
   });
 
-  // 3. 自动保存聊天历史与选定模型
   useEffect(() => {
     try {
       localStorage.setItem("f1hot:chat_messages", JSON.stringify(chatMessages));
@@ -128,12 +123,10 @@ export default function F1Chat({ onBack, f1Data }) {
     }
   }, [chatModel]);
 
-  // 4. 自动滚动到底部
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, chatLoading]);
 
-  // 5. 发送请求
   const handleSendChat = async (e) => {
     if (e) e.preventDefault();
     if (!chatInput.trim() || chatLoading) return;
@@ -187,7 +180,7 @@ export default function F1Chat({ onBack, f1Data }) {
   const handleClear = () => {
     if (window.confirm("确定要清空当前的聊天历史记录吗？")) {
       setChatMessages([
-        { role: "assistant", content: "你好！我是你的 F1 围场 AI 助手。我已经实时获取了赛事日程与车手积分榜等数据。你可以问我任何技术升级、围场爆料、车队历史，或者让我为您总结当前的赛程排名！" }
+        { role: "assistant", content: "你好！我是您的 Paddock AI 围场策略助手。我已经实时获取了 2026 赛季大奖赛日程、车手及车队积分榜等最新的遥测与赛况数据。您可以向我咨询任何赛事分析、车队战略部署，或者让我为您总结当前的赛段状态！" }
       ]);
     }
   };
@@ -197,98 +190,107 @@ export default function F1Chat({ onBack, f1Data }) {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl mx-auto">
-      {/* 顶部返回导航 */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-8 animate-in fade-in duration-500 max-w-4xl mx-auto px-4 pb-20">
+      
+      {/* 顶部社论返回栏 */}
+      <div className="flex items-center justify-between border-b border-black/[0.05] pb-6">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 rounded-lg border border-black/10 bg-white/80 px-4 py-2 text-[14px] font-black text-f1-text hover:border-f1-red/40 hover:text-f1-red shadow-sm transition-all"
+          className="inline-flex items-center gap-2 rounded-lg border border-black/[0.05] bg-white px-4 py-2 text-[13px] font-bold text-f1-text hover:bg-f1-bg transition-colors"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={15} />
           返回主页
         </button>
 
-        <span className="text-[11.5px] font-bold text-f1-text-muted bg-black/[0.03] px-2.5 py-1 rounded">
-          🧠 全局赛事数据已加载
+        <span className="font-label-caps text-[9px] text-f1-text-muted bg-black/[0.03] px-3 py-1 rounded-lg">
+          TELEMETRY & RESULTS DATA SYNCED
         </span>
       </div>
 
-      {/* 独立大屏聊天对话框 */}
-      <div className="apple-card p-4 sm:p-6 bg-white/80 flex flex-col h-[calc(100vh-220px)] min-h-[480px] shadow-lg border border-white/40">
+      {/* 独立大屏聊天对话框 (Stitch 画廊静谧风格) */}
+      <div className="apple-card p-6 bg-white flex flex-col h-[calc(100vh-240px)] min-h-[500px]">
         
-        {/* 头部控制区域 */}
-        <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-black/[0.06] mb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-f1-red/10 text-f1-red flex items-center justify-center font-black text-[18px]">
-              🏎️
+        {/* AI 头部状态栏 */}
+        <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-black/[0.05] mb-5">
+          <div className="flex items-center gap-3.5">
+            <div 
+              className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-[14px] text-white"
+              style={{ backgroundColor: '#C5A880' }}
+            >
+              ✦
             </div>
             <div>
-              <h3 className="text-[15.5px] font-black text-f1-text">围场 AI 助手</h3>
-              <p className="text-[10px] font-bold text-f1-text-muted">
-                当前运行: {chatModel === "deepseek-v4-flash" ? "DeepSeek-V4 Flash (极速)" : "DeepSeek-V4 Pro (推理)"}
-              </p>
+              <h2 className="font-headline-md text-[18px] text-f1-text leading-none mb-1">Paddock AI</h2>
+              <span className="font-label-caps text-[9px] text-f1-text-muted tracking-[0.14em]">Strategic Assistant Active</span>
             </div>
           </div>
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-2.5 self-end sm:self-auto">
             <select
               value={chatModel}
               onChange={(e) => setChatModel(e.target.value)}
-              className="text-[11px] font-bold text-f1-text-muted border border-black/10 px-2 py-1.5 rounded-lg bg-white/80 hover:border-f1-red/40 transition-colors outline-none cursor-pointer"
+              className="font-sans text-[11px] font-bold text-f1-text-muted border border-black/[0.05] px-2.5 py-1.5 rounded-lg bg-f1-bg/40 hover:border-black/20 transition-colors outline-none cursor-pointer"
             >
-              <option value="deepseek-v4-flash">DeepSeek-V4 Flash (极速联网)</option>
-              <option value="deepseek-v4-pro">DeepSeek-V4 Pro (深度推理)</option>
+              <option value="deepseek-v4-flash">DeepSeek V4 (极速走势)</option>
+              <option value="deepseek-v4-pro">DeepSeek V4 Pro (深度决策)</option>
             </select>
             <button
               onClick={handleClear}
-              className="inline-flex items-center gap-1 text-[11px] font-bold text-f1-text-muted hover:text-f1-red border border-black/10 px-2.5 py-1.5 rounded-lg bg-white/80 hover:bg-black/[0.02] transition-colors"
+              className="inline-flex items-center gap-1 font-label-caps text-[10px] text-f1-text-muted hover:text-f1-red border border-black/[0.05] px-2.5 py-1.5 rounded-lg bg-white hover:bg-f1-bg transition-colors"
             >
               <Trash2 size={12} />
-              清空
+              CLEAR
             </button>
           </div>
         </div>
 
         {/* 消息历史滚动区 */}
-        <div className="flex-1 overflow-y-auto pr-1 space-y-4 mb-4 custom-scrollbar overscroll-contain">
+        <div className="flex-1 overflow-y-auto pr-2 space-y-6 mb-4 custom-scrollbar overscroll-contain">
           {chatMessages.map((msg, idx) => (
             <div
               key={idx}
-              className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
+              className={`flex items-start gap-4 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
             >
-              <div className={`w-8 h-8 rounded-xl font-bold text-[13px] flex items-center justify-center shadow-sm flex-shrink-0 ${
-                msg.role === "user" ? "bg-f1-red text-white" : "bg-black/[0.04] text-f1-text"
-              }`}>
-                {msg.role === "user" ? "U" : "AI"}
-              </div>
+              {/* 头像 */}
               <div 
-                className={`rounded-2xl px-4 py-3 max-w-[85%] text-[13px] font-medium leading-relaxed shadow-sm border ${
+                className={`w-8 h-8 rounded-lg font-data-numeric text-[13px] flex items-center justify-center shadow-sm flex-shrink-0 ${
+                  msg.role === "user" 
+                    ? "bg-f1-text text-white" 
+                    : "bg-f1-lime text-white"
+                }`}
+              >
+                {msg.role === "user" ? "U" : "A"}
+              </div>
+              
+              {/* 气泡 */}
+              <div 
+                className={`px-5 py-3.5 max-w-[80%] text-[13.5px] leading-relaxed border ${
                   msg.role === "user"
-                    ? "bg-f1-red/5 border-f1-red/15 text-f1-text"
-                    : "bg-white border-white/50 text-f1-text markdown-body text-left"
+                    ? "bg-f1-bg border-black/[0.03] text-f1-text rounded-2xl rounded-tr-none font-medium"
+                    : "bg-white border-black/[0.04] text-f1-text rounded-2xl rounded-tl-none markdown-body text-left"
                 }`}
                 dangerouslySetInnerHTML={{ __html: formatMessageContent(msg.content) }}
               />
             </div>
           ))}
           {chatLoading && (
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-xl bg-black/[0.04] text-f1-text font-bold text-[13px] flex items-center justify-center shadow-sm flex-shrink-0 animate-pulse">
-                AI
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 rounded-lg bg-f1-lime text-white font-data-numeric text-[13px] flex items-center justify-center shadow-sm flex-shrink-0">
+                A
               </div>
-              <div className="rounded-2xl px-4 py-3 bg-white border border-white/50 shadow-sm flex items-center gap-1.5 min-h-[44px]">
-                <span className="w-1.5 h-1.5 bg-f1-text/30 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-1.5 h-1.5 bg-f1-text/30 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-1.5 h-1.5 bg-f1-text/30 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="rounded-2xl rounded-tl-none px-5 py-3.5 bg-white border border-black/[0.04] shadow-sm flex items-center gap-1.5 min-h-[44px]">
+                <span className="w-1.5 h-1.5 bg-f1-text/20 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 bg-f1-text/20 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 bg-f1-text/20 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           )}
           <div ref={chatBottomRef} />
         </div>
 
-        {/* 智能快捷引导问题 (在历史较短时提示) */}
+        {/* 智能快捷引导问题 */}
         {chatMessages.length <= 2 && !chatLoading && (
           <div className="flex-shrink-0 pb-3 flex flex-wrap gap-2 animate-in fade-in duration-300">
-            <span className="text-[11px] font-black text-f1-text-muted flex items-center gap-1 py-1"><HelpCircle size={12}/> 快捷提问:</span>
+            <span className="font-label-caps text-[9px] text-f1-text-muted flex items-center gap-1 py-1">SUGGESTIONS:</span>
             {[
               "帮我看看目前的车手积分榜情况",
               "下一站大奖赛时间与地点是多久？",
@@ -297,7 +299,7 @@ export default function F1Chat({ onBack, f1Data }) {
               <button
                 key={txt}
                 onClick={() => handleSuggestClick(txt)}
-                className="text-[11px] font-bold text-f1-text-muted bg-black/[0.03] hover:bg-f1-red/5 hover:text-f1-red border border-black/[0.05] rounded-full px-3 py-1.5 transition-colors"
+                className="font-sans text-[11px] font-semibold text-f1-text-muted bg-f1-bg/50 hover:bg-f1-lime/10 hover:text-f1-lime border border-black/[0.03] rounded-lg px-3 py-1.5 transition-colors"
               >
                 {txt}
               </button>
@@ -305,20 +307,20 @@ export default function F1Chat({ onBack, f1Data }) {
           </div>
         )}
 
-        {/* 输入区域 */}
-        <form onSubmit={handleSendChat} className="flex-shrink-0 flex gap-2">
+        {/* 输入区域 (Stitch 下边线极简设计) */}
+        <form onSubmit={handleSendChat} className="flex-shrink-0 flex items-center relative border-t border-black/[0.05] pt-4 mt-2">
           <input
             type="text"
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
             disabled={chatLoading}
-            placeholder="问问 AI：例如 谁排在积分榜第一名？"
-            className="flex-1 bg-black/[0.03] border border-black/10 rounded-xl px-4 py-3 text-[13.5px] font-medium focus:outline-none focus:border-f1-red/50 focus:bg-white transition-all disabled:opacity-50"
+            placeholder="Query telemetry or strategy... 输入您的提问"
+            className="w-full bg-f1-bg/20 border-b border-black/[0.06] focus:border-f1-text px-4 py-3.5 rounded-t-lg text-[13.5px] font-sans font-medium text-f1-text placeholder-black/30 focus:outline-none transition-colors border-x-0 border-t-0 shadow-none ring-0 focus:ring-0 disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={chatLoading || !chatInput.trim()}
-            className="px-5 py-3 rounded-xl bg-f1-red text-white text-[13px] font-black hover:bg-f1-red/90 transition-colors disabled:opacity-40 shadow-md shadow-f1-red/10 flex items-center justify-center"
+            className="absolute right-4 top-1/2 transform -translate-y-[10%] text-f1-text-muted hover:text-f1-text transition-colors disabled:opacity-20 cursor-pointer"
           >
             <Send size={15} />
           </button>

@@ -6,43 +6,44 @@ export default function Footer({ lastUpdated }) {
   const [fact] = useState(() => FUN_FACTS[Math.floor(Math.random() * FUN_FACTS.length)]);
 
   return (
-    <footer className="mt-16 bg-white border-t border-gray-100 py-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* 冷知识 */}
-        <div className="mb-8 py-4 px-5 bg-black/[0.02] rounded-xl border border-black/[0.04]">
-          <div className="text-[10px] font-bold text-f1-text-muted uppercase tracking-[0.15em] mb-1.5">F1 冷知识</div>
-          <p className="text-[13px] text-f1-text/70 leading-relaxed">{fact}</p>
+    <footer className="w-full relative bg-f1-bg border-t border-black/[0.05] py-12 md:py-16 mt-20">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8">
+        
+        {/* 高雅社论冷知识展示区 */}
+        <div className="mb-12 p-6 bg-white rounded-xl border border-black/[0.03] shadow-[0_4px_16px_rgba(0,0,0,0.005)]">
+          <div className="font-label-caps text-f1-lime mb-2 tracking-[0.18em]">Paddock Trivia · 围场冷知识</div>
+          <p className="font-sans text-[13px] text-f1-text-muted leading-relaxed font-medium">{fact}</p>
         </div>
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          {/* 品牌信息 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           <div>
-            <div className="flex items-center space-x-2 mb-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M2.5 21.5C2.5 11.0066 11.0066 2.5 21.5 2.5" stroke="#8E8E93" strokeWidth="3.2" strokeLinecap="round" />
-                <circle cx="21.5" cy="2.5" r="2.5" fill="#C83232" />
-              </svg>
-              <span className="text-[14px] font-bold text-f1-text-muted">Barley Grid</span>
+            <div className="flex items-center space-x-2 mb-3">
+              <span className="font-headline-md text-[18px] font-bold text-f1-text tracking-tight">Barley Grid</span>
+              <span className="w-1 h-1 rounded-full bg-f1-lime"></span>
             </div>
-            <p className="text-[13px] text-black/30 max-w-sm leading-relaxed">
-              F1 赛季数据看板 · 仅供学习和展示用途
+            <p className="font-sans text-[13px] text-f1-text-muted max-w-sm leading-relaxed">
+              F1 赛季全景数据看板 · 精英围场策略与表现追踪。
             </p>
-            <p className="text-[12px] text-black/20 mt-1">
-              数据来源：Ergast F1 API · © {new Date().getFullYear()} Barley Grid
+            <p className="font-sans text-[11px] text-black/30 mt-4 leading-relaxed">
+              数据来源：Ergast F1 API · © {new Date().getFullYear()} Barley Grid.
               {lastUpdated && (
-                <span className="ml-2">· 数据更新于 {new Date(lastUpdated).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</span>
+                <span className="ml-1.5">更新于 {new Date(lastUpdated).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</span>
               )}
             </p>
           </div>
           
-          {/* 链接 */}
-          <div className="flex items-center gap-6 text-[13px] text-black/30">
-            <a href="https://ergast.com/mrd/" target="_blank" rel="noreferrer" className="hover:text-f1-text transition-colors">
-              数据接口
+          <div className="flex flex-wrap md:justify-end gap-x-8 gap-y-3 font-sans text-[12px] text-f1-text-muted">
+            <a href="https://ergast.com/mrd/" target="_blank" rel="noreferrer" className="hover:text-f1-red transition-colors pb-1 border-b border-transparent hover:border-f1-red/30">
+              数据接口 API
             </a>
-            <span className="text-black/10">|</span>
-            <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-f1-text transition-colors">
-              开源代码
+            <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-f1-red transition-colors pb-1 border-b border-transparent hover:border-f1-red/30">
+              开源代码 Code
+            </a>
+            <a href="#" className="hover:text-f1-red transition-colors pb-1 border-b border-transparent hover:border-f1-red/30">
+              社论条款 Privacy
+            </a>
+            <a href="#" className="hover:text-f1-red transition-colors pb-1 border-b border-transparent hover:border-f1-red/30">
+              联系围场 Contact
             </a>
           </div>
         </div>

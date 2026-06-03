@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Barley Grid | 2026 Season Panorama</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Playfair+Display:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-container": "#700410",
+                    "secondary": "#aa3434",
+                    "surface-container": "#efeeeb",
+                    "background": "#fbf9f6",
+                    "on-background": "#1b1c1a",
+                    "tertiary-fixed": "#fedeb2",
+                    "on-primary-fixed": "#1c1b19",
+                    "on-error": "#ffffff",
+                    "outline": "#7a776f",
+                    "on-tertiary-fixed": "#281800",
+                    "inverse-on-surface": "#f2f0ed",
+                    "secondary-fixed-dim": "#ffb3af",
+                    "on-primary": "#ffffff",
+                    "tertiary-container": "#2a1a01",
+                    "tertiary-fixed-dim": "#e0c298",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-highest": "#e4e2df",
+                    "on-secondary-fixed-variant": "#891b20",
+                    "outline-variant": "#cbc6bd",
+                    "inverse-surface": "#30312f",
+                    "surface-container-high": "#eae8e5",
+                    "secondary-fixed": "#ffdad7",
+                    "primary": "#030302",
+                    "on-secondary-fixed": "#410005",
+                    "surface-bright": "#fbf9f6",
+                    "on-primary-fixed-variant": "#484644",
+                    "on-tertiary-container": "#9b815c",
+                    "primary-fixed-dim": "#cac6c2",
+                    "tertiary": "#060200",
+                    "error-container": "#ffdad6",
+                    "on-error-container": "#93000a",
+                    "primary-fixed": "#e6e2de",
+                    "on-tertiary-fixed-variant": "#584323",
+                    "surface-container-lowest": "#ffffff",
+                    "surface": "#fbf9f6",
+                    "on-primary-container": "#878582",
+                    "on-surface": "#1b1c1a",
+                    "on-surface-variant": "#494740",
+                    "error": "#ba1a1a",
+                    "inverse-primary": "#cac6c2",
+                    "surface-dim": "#dbdad7",
+                    "on-secondary": "#ffffff",
+                    "surface-container-low": "#f5f3f0",
+                    "surface-tint": "#605e5b",
+                    "surface-variant": "#e4e2df",
+                    "primary-container": "#1e1d1b",
+                    "secondary-container": "#fe716d"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "8px",
+                    "margin-tablet": "32px",
+                    "margin-mobile": "20px",
+                    "margin-desktop": "64px",
+                    "container-max": "1440px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "headline-lg": [
+                            "Playfair Display"
+                    ],
+                    "display-hero": [
+                            "Playfair Display"
+                    ],
+                    "data-numeric": [
+                            "Playfair Display"
+                    ],
+                    "label-caps": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Playfair Display"
+                    ],
+                    "headline-lg-mobile": [
+                            "Playfair Display"
+                    ]
+            },
+            "fontSize": {
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-lg": [
+                            "48px",
+                            {
+                                    "lineHeight": "56px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "display-hero": [
+                            "72px",
+                            {
+                                    "lineHeight": "80px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "data-numeric": [
+                            "24px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "label-caps": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.15em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-md": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "headline-lg-mobile": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "fontWeight": "600"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-grid-pattern {
+            background-image: linear-gradient(to right, rgba(203, 198, 189, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(203, 198, 189, 0.05) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen font-body-md overflow-x-hidden selection:bg-tertiary-fixed selection:text-on-tertiary-fixed">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-md border-b border-outline-variant/10">
+<div class="flex justify-between items-center h-16 px-margin-desktop max-w-container-max mx-auto">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">Barley Grid</div>
+<div class="hidden md:flex space-x-8">
+<a class="text-primary dark:text-primary-fixed border-b border-primary dark:border-primary-fixed pb-1 font-body-md text-body-md tracking-tight" href="#">Paddock</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors font-body-md text-body-md tracking-tight hover:opacity-70 transition-opacity" href="#">Telemetry</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors font-body-md text-body-md tracking-tight hover:opacity-70 transition-opacity" href="#">Journal</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors font-body-md text-body-md tracking-tight hover:opacity-70 transition-opacity" href="#">Scuderia</a>
+</div>
+<div class="flex items-center space-x-4 cursor-pointer transition-all duration-300">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed" data-icon="search">search</span>
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed" data-icon="account_circle">account_circle</span>
+</div>
+</div>
+</nav>
+<!-- SideNavBar (Hidden on Web per instructions, using TopNavBar instead for destination 'Paddock') -->
+<main class="pt-24 pb-24 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto space-y-16">
+<!-- Hero Section -->
+<section class="relative rounded-xl overflow-hidden bg-primary-container text-on-primary min-h-[500px] flex items-center bg-grid-pattern border border-outline-variant/20 shadow-none">
+<div class="absolute inset-0 z-0">
+<img alt="Hero Background" class="w-full h-full object-cover opacity-30 mix-blend-luminosity" data-alt="A striking digital installation art piece featuring glowing, generative geometric shapes suspended in a vast, minimalist gallery space. The room is illuminated by high-key, soft white lighting that creates a bright, modern light-mode aesthetic. The artwork relies on a sophisticated palette of deep blacks and pristine whites, punctuated by intense accents of vibrant red. The mood is serene yet technologically advanced." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNFWZwbtu3NeXPlNzM9Kb44xw0rNersiWVZSYnJZtY56lMC1-wLZLdlexVcEz4LvNZmAQTfRBjDeCiT8a5Kv8xqyf1Y_FsTqtacVqxofkG7AUJeqAn8NDMIT6jzm_RwEFZ0h-L1ypNFgk98cpDGyVCSmsUL-w5TeH4v0Qz-jeTto6oEFBmu1zuBm510rasK_aBVAeup9ErwSoJWPI6GpjtirJo7T_TfMKBrYHk51d0ktXWDe5_j6M_FJ7GbV3bsM2H5PWRtMHFbUE"/>
+</div>
+<div class="relative z-10 p-12 md:p-24 max-w-3xl">
+<p class="font-label-caps text-label-caps text-tertiary-fixed mb-4">The Inner Circle</p>
+<h1 class="font-display-hero text-display-hero mb-8 text-on-primary leading-tight">2026 SEASON PANORAMA</h1>
+<p class="font-body-lg text-body-lg text-on-primary-container mb-12 max-w-xl">A curated perspective on the pinnacle of motorsport. Precision engineering meets strategic mastery.</p>
+<div class="flex flex-wrap gap-4">
+<button class="bg-on-primary text-primary px-8 py-3 rounded-lg font-body-md text-body-md hover:bg-surface-container transition-colors">Race Tracker</button>
+<button class="bg-transparent border border-outline-variant text-on-primary px-8 py-3 rounded-lg font-body-md text-body-md hover:bg-surface-container/10 transition-colors">Standings</button>
+<button class="bg-transparent border border-tertiary-fixed text-tertiary-fixed px-8 py-3 rounded-lg font-body-md text-body-md hover:bg-tertiary-fixed/10 transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="auto_awesome">auto_awesome</span> AI Paddock
+                    </button>
+</div>
+</div>
+</section>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Next Race & Countdown (Span 8) -->
+<section class="md:col-span-8 bg-surface-container-lowest rounded-xl p-8 border border-outline-variant/10 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-center mb-8 border-b border-outline-variant/10 pb-4">
+<h2 class="font-headline-md text-headline-md text-primary">Gran Premio D'Italia</h2>
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full font-label-caps text-label-caps">Round 15</span>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+<div class="flex flex-col border-l border-outline-variant/20 pl-4">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-2">Days</span>
+<span class="font-data-numeric text-display-hero text-primary">04</span>
+</div>
+<div class="flex flex-col border-l border-outline-variant/20 pl-4">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-2">Hours</span>
+<span class="font-data-numeric text-display-hero text-primary">12</span>
+</div>
+<div class="flex flex-col border-l border-outline-variant/20 pl-4">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-2">Minutes</span>
+<span class="font-data-numeric text-display-hero text-primary">45</span>
+</div>
+<div class="flex flex-col border-l border-outline-variant/20 pl-4">
+<span class="font-label-caps text-label-caps text-secondary mb-2">Seconds</span>
+<span class="font-data-numeric text-display-hero text-secondary">22</span>
+</div>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-end mb-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant">Season Progress</span>
+<span class="font-data-numeric text-data-numeric text-primary">15 / 24</span>
+</div>
+<div class="w-full h-1 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[62.5%] rounded-full"></div>
+</div>
+</div>
+</section>
+<!-- Hot News (Span 4) -->
+<section class="md:col-span-4 bg-surface-container-lowest rounded-xl p-8 border border-outline-variant/10 flex flex-col">
+<div class="flex justify-center mb-8">
+<div class="bg-surface-container-high rounded-full p-1 flex">
+<button class="bg-surface text-primary rounded-full px-6 py-2 font-label-caps text-label-caps shadow-sm">Hot</button>
+<button class="text-on-surface-variant px-6 py-2 font-label-caps text-label-caps hover:text-primary transition-colors">Daily</button>
+</div>
+</div>
+<div class="space-y-6 flex-grow">
+<article class="border-b border-outline-variant/10 pb-6">
+<p class="font-label-caps text-label-caps text-tertiary-container mb-2 tracking-widest">2H AGO • SCUDERIA</p>
+<h3 class="font-body-lg text-body-lg text-primary hover:text-secondary transition-colors cursor-pointer">Aerodynamic upgrades analyzed for Monza high-speed characteristics.</h3>
+</article>
+<article class="border-b border-outline-variant/10 pb-6">
+<p class="font-label-caps text-label-caps text-tertiary-container mb-2 tracking-widest">5H AGO • MARKET</p>
+<h3 class="font-body-lg text-body-lg text-primary hover:text-secondary transition-colors cursor-pointer">Driver contract negotiations enter critical phase ahead of European leg.</h3>
+</article>
+<article>
+<p class="font-label-caps text-label-caps text-tertiary-container mb-2 tracking-widest">12H AGO • TELEMETRY</p>
+<h3 class="font-body-lg text-body-lg text-primary hover:text-secondary transition-colors cursor-pointer">Tire degradation models suggest unexpected two-stop strategy.</h3>
+</article>
+</div>
+</section>
+<!-- Paddock AI Chat (Span 12) -->
+<section class="md:col-span-12 bg-surface-container-lowest rounded-xl border border-outline-variant/10 p-8 flex flex-col h-[600px]">
+<div class="flex items-center gap-4 mb-8 border-b border-outline-variant/10 pb-4">
+<div class="w-10 h-10 rounded-full bg-tertiary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-on-tertiary-fixed" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-primary leading-none">Paddock AI</h2>
+<span class="font-label-caps text-label-caps text-on-surface-variant">Strategic Assistant Active</span>
+</div>
+</div>
+<div class="flex-grow overflow-y-auto space-y-8 mb-8 pr-4">
+<!-- User Message -->
+<div class="flex justify-end">
+<div class="bg-surface-container-high text-on-surface max-w-2xl p-6 rounded-2xl rounded-tr-none border border-outline-variant/5">
+<p class="font-body-md text-body-md">Analyze the impact of the new front wing iteration on turbulent air wake in medium-speed corners.</p>
+</div>
+</div>
+<!-- AI Message -->
+<div class="flex justify-start">
+<div class="bg-surface text-on-surface max-w-2xl p-6 rounded-2xl rounded-tl-none border border-outline-variant/10 shadow-sm">
+<p class="font-body-md text-body-md mb-4">Based on CFD telemetry from FP1, the revised endplates demonstrate a 14% reduction in outwash volume. This effectively narrows the turbulent wake envelope.</p>
+<p class="font-body-md text-body-md text-on-surface-variant">In medium-speed corners (120-160 km/h), this translates to improved aerodynamic consistency for the following car, although initial sensor data indicates a marginal drag penalty of +0.02 Cd.</p>
+</div>
+</div>
+</div>
+<div class="relative">
+<input class="w-full bg-surface-container-low border-b border-outline-variant/20 focus:border-primary px-4 py-4 rounded-t-lg font-body-md text-body-md text-primary placeholder-on-surface-variant focus:outline-none transition-colors border-x-0 border-t-0 shadow-none ring-0 focus:ring-0" placeholder="Query telemetry or strategy..." type="text"/>
+<button class="absolute right-4 top-1/2 transform -translate-y-1/2 text-tertiary-container hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="send">send</span>
+</button>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full relative bg-background dark:bg-background border-t border-outline-variant/10">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter py-16 px-margin-desktop max-w-container-max mx-auto">
+<div>
+<h4 class="font-headline-md text-headline-md text-primary mb-4">Barley Grid</h4>
+<p class="text-on-surface-variant dark:text-on-surface-variant font-body-md text-body-md">© 2024 Barley Grid. All Rights Reserved. Engineered for the Inner Circle.</p>
+</div>
+<div class="flex gap-8 justify-end items-start pt-2 md:pt-0">
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary transition-colors ease-in-out duration-300 font-body-md text-body-md" href="#">Privacy</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary transition-colors ease-in-out duration-300 font-body-md text-body-md" href="#">Terms</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary transition-colors ease-in-out duration-300 font-body-md text-body-md" href="#">Editorial Policy</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary transition-colors ease-in-out duration-300 font-body-md text-body-md" href="#">Contact</a>
+</div>
+</div>
+</footer>
+</body></html>

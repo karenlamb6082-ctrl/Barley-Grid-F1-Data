@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Barley Grid - Race Schedule</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Playfair+Display:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#1b1c1a",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#e4e2df",
+                        "primary": "#030302",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#aa3434",
+                        "on-secondary-fixed": "#410005",
+                        "outline-variant": "#cbc6bd",
+                        "background": "#fbf9f6",
+                        "secondary-fixed": "#ffdad7",
+                        "secondary-container": "#fe716d",
+                        "surface": "#fbf9f6",
+                        "outline": "#7a776f",
+                        "inverse-on-surface": "#f2f0ed",
+                        "on-primary-fixed-variant": "#484644",
+                        "surface-tint": "#605e5b",
+                        "on-surface-variant": "#494740",
+                        "inverse-surface": "#30312f",
+                        "surface-container-low": "#f5f3f0",
+                        "on-surface": "#1b1c1a",
+                        "tertiary-fixed-dim": "#e0c298",
+                        "surface-dim": "#dbdad7",
+                        "on-tertiary-fixed": "#281800",
+                        "secondary-fixed-dim": "#ffb3af",
+                        "primary-container": "#1e1d1b",
+                        "on-tertiary-container": "#9b815c",
+                        "on-primary": "#ffffff",
+                        "on-primary-container": "#878582",
+                        "surface-variant": "#e4e2df",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#2a1a01",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed-variant": "#891b20",
+                        "inverse-primary": "#cac6c2",
+                        "error-container": "#ffdad6",
+                        "surface-bright": "#fbf9f6",
+                        "on-tertiary-fixed-variant": "#584323",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#700410",
+                        "on-primary-fixed": "#1c1b19",
+                        "tertiary": "#060200",
+                        "tertiary-fixed": "#fedeb2",
+                        "on-secondary": "#ffffff",
+                        "surface-container": "#efeeeb",
+                        "primary-fixed": "#e6e2de",
+                        "primary-fixed-dim": "#cac6c2",
+                        "surface-container-high": "#eae8e5",
+                        "champagne-gold": "#C1A68D"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "20px",
+                        "unit": "8px",
+                        "margin-tablet": "32px",
+                        "container-max": "1440px",
+                        "margin-desktop": "64px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "headline-lg": ["Playfair Display"],
+                        "display-hero": ["Playfair Display"],
+                        "headline-lg-mobile": ["Playfair Display"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Playfair Display"],
+                        "data-numeric": ["Playfair Display"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.15em", "fontWeight": "600" }],
+                        "headline-lg": ["48px", { "lineHeight": "56px", "fontWeight": "600" }],
+                        "display-hero": ["72px", { "lineHeight": "80px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-md": ["32px", { "lineHeight": "40px", "fontWeight": "500" }],
+                        "data-numeric": ["24px", { "lineHeight": "24px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Smooth scrolling */
+        html { scroll-behavior: smooth; }
+        
+        /* Hide scrollbar for gallery horizontal scroll if needed */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased selection:bg-champagne-gold selection:text-white min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="bg-surface/80 dark:bg-surface/80 backdrop-blur-md fixed top-0 w-full z-50 border-b border-outline-variant/10">
+<div class="flex justify-between items-center h-16 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">Barley Grid</div>
+<div class="hidden md:flex gap-gutter font-body-md text-body-md tracking-tight">
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors hover:opacity-70" href="#">Paddock</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors hover:opacity-70" href="#">Telemetry</a>
+<a class="text-primary dark:text-primary-fixed border-b border-primary dark:border-primary-fixed pb-1 hover:opacity-70 transition-opacity" href="#">Journal</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors hover:opacity-70" href="#">Scuderia</a>
+</div>
+<div class="flex items-center cursor-pointer transition-all duration-300 hover:opacity-70 text-primary dark:text-primary-fixed">
+<span class="material-symbols-outlined">account_circle</span>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-[120px] pb-margin-desktop px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full">
+<!-- Header Section -->
+<header class="mb-16 md:mb-24 flex flex-col md:flex-row md:justify-between md:items-end gap-8">
+<div class="max-w-2xl">
+<h1 class="font-display-hero text-headline-lg-mobile md:text-display-hero text-primary mb-4">The 2024 Calender.</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">A curated exhibition of elite motorsport venues. Strategic battlegrounds meticulously selected for the inner circle.</p>
+</div>
+<!-- Filters -->
+<div class="flex gap-4 border-b border-outline-variant/20 pb-2">
+<button class="font-label-caps text-label-caps uppercase text-primary border-b-2 border-champagne-gold pb-2 -mb-[10px] transition-all">Upcoming</button>
+<button class="font-label-caps text-label-caps uppercase text-on-surface-variant hover:text-primary pb-2 -mb-[10px] transition-all">Completed</button>
+</div>
+</header>
+<!-- Gallery Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+<!-- Race Card 1 -->
+<article class="bg-surface-container-lowest p-6 rounded-lg border border-outline-variant/10 flex flex-col justify-between h-[400px] group hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/80 to-transparent z-10"></div>
+<img alt="Race venue" class="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-multiply group-hover:opacity-50 transition-opacity duration-500 z-0 grayscale" data-alt="A high-contrast, minimalist architectural detail of a modern grandstand structure, featuring sleek geometric lines and smooth concrete surfaces. Soft, diffused lighting creates an art gallery atmosphere against a bright Champagne White background. Accentuated with subtle bronze and carbon black tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZmv12oE-6JUqQ8Q9omtUEzehwY2rDZ48X00wryVAay74ThWjSXKodInsTETb1QblkNkDpfQjfOfBD3vCjLlS4hQaHI4ORcFVVFMnwYByQODJ3x-5mlnU1ZDgF8laLaQ_U-c0doBKYZbMx9-Yltxp7Zkbg7X_piCxaa83NkW44D4ZkgzQLISb4ct-Mlyip1ZxvgRmtjRHDl94FqEW1sLFd7rOqFz2NI1KVZQHmphacHnFq-6hn4XQ9K6Ttg7rY1ChnUpbOeHa4npA"/>
+<div class="relative z-20 flex justify-between items-start">
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-secondary/10 text-secondary font-label-caps text-label-caps uppercase tracking-wider backdrop-blur-md">
+<span class="w-2 h-2 rounded-full bg-secondary mr-2 animate-pulse"></span> Next
+                    </span>
+<span class="font-data-numeric text-data-numeric text-primary/80">Rd 05</span>
+</div>
+<div class="relative z-20 mt-auto">
+<div class="mb-2 font-label-caps text-label-caps uppercase text-on-surface-variant tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">calendar_month</span> MAY 03 - 05
+                    </div>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-md text-primary mb-1">Miami Grand Prix</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">location_on</span> Miami International Autodrome
+                    </p>
+<button class="w-full py-3 px-6 bg-primary text-on-primary font-label-caps text-label-caps uppercase rounded flex justify-center items-center gap-2 hover:bg-primary/90 transition-colors">
+                        View Details <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Race Card 2 -->
+<article class="bg-surface-container-lowest p-6 rounded-lg border border-outline-variant/10 flex flex-col justify-between h-[400px] group hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
+<img alt="Race venue" class="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-500 z-0 grayscale" data-alt="A minimalist, top-down abstract view of an empty race track curving gracefully through an arid landscape. The lighting is bright and flat, evoking a Swiss modernist poster design. Dominated by Champagne White and Carbon Black hues, creating a quiet, editorial mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyHobSYSbiE5oL0k3vmsAOhtXKfTHbV6NDchpxLZ5vXsPMVTFGU5Js-n1pQKx-5aJ0ZiUOPI9zyDGzuIg4NqeS8mPVMkv8pteiwQBrrz9I5k2xxn7kEgkxp_1zw-Mkq6tx8Mmf6DLYSRvU0Y1aPzvYZQ3FimJdaq6eULzXWVsIk2b88Evu0CZQHJEWKjfwgU9Iq7hYmCF51w2VjXvPHpACkLTsZfHnPr4NbMz2owNqQ2wBwM7ZCua3n-9zSUN9TNDaRVS991gbDHU"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/90 to-transparent z-10"></div>
+<div class="relative z-20 flex justify-between items-start">
+<span class="inline-flex items-center px-3 py-1 rounded-full border border-outline-variant/30 text-on-surface-variant font-label-caps text-label-caps uppercase tracking-wider bg-surface/50 backdrop-blur-md">
+                        Upcoming
+                    </span>
+<span class="font-data-numeric text-data-numeric text-primary/80">Rd 06</span>
+</div>
+<div class="relative z-20 mt-auto">
+<div class="mb-2 font-label-caps text-label-caps uppercase text-on-surface-variant tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">calendar_month</span> MAY 17 - 19
+                    </div>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-md text-primary mb-1">Emilia-Romagna GP</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">location_on</span> Autodromo Enzo e Dino Ferrari
+                    </p>
+<button class="w-full py-3 px-6 border border-primary text-primary font-label-caps text-label-caps uppercase rounded flex justify-center items-center gap-2 hover:bg-surface-container transition-colors">
+                        View Details <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Race Card 3 -->
+<article class="bg-surface-container-lowest p-6 rounded-lg border border-outline-variant/10 flex flex-col justify-between h-[400px] group hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
+<div class="absolute inset-0 bg-surface-container-lowest z-10"></div>
+<div class="relative z-20 flex justify-between items-start">
+<span class="inline-flex items-center px-3 py-1 rounded-full border border-outline-variant/30 text-on-surface-variant font-label-caps text-label-caps uppercase tracking-wider">
+                        Upcoming
+                    </span>
+<span class="font-data-numeric text-data-numeric text-primary/80">Rd 07</span>
+</div>
+<div class="relative z-20 mt-auto">
+<div class="mb-2 font-label-caps text-label-caps uppercase text-on-surface-variant tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">calendar_month</span> MAY 24 - 26
+                    </div>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-md text-primary mb-1">Monaco Grand Prix</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">location_on</span> Circuit de Monaco
+                    </p>
+<button class="w-full py-3 px-6 border border-primary text-primary font-label-caps text-label-caps uppercase rounded flex justify-center items-center gap-2 hover:bg-surface-container transition-colors">
+                        View Details <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</article>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-background dark:bg-background w-full relative border-t border-outline-variant/10 mt-auto">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter py-16 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<div class="flex flex-col gap-4">
+<div class="font-headline-md text-headline-md text-primary">Barley Grid</div>
+<p class="font-body-md text-body-md text-on-surface-variant dark:text-on-surface-variant">© 2024 Barley Grid. All Rights Reserved. Engineered for the Inner Circle.</p>
+</div>
+<div class="flex flex-wrap gap-6 md:justify-end items-end font-body-md text-body-md">
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary transition-colors ease-in-out duration-300" href="#">Privacy</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary transition-colors ease-in-out duration-300" href="#">Terms</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary transition-colors ease-in-out duration-300" href="#">Editorial Policy</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-secondary transition-colors ease-in-out duration-300" href="#">Contact</a>
+</div>
+</div>
+</footer>
+</body></html>

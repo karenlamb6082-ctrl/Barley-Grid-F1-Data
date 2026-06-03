@@ -84,24 +84,24 @@ export default function FavoriteDriverCard({ data, onDriverClick }) {
         >
           <div className="absolute inset-0 timing-grid opacity-[0.03]"></div>
           <div className="absolute bottom-0 left-0 h-0.5 w-full bg-f1-red/60"></div>
-          <div className="absolute right-4 top-5 text-[96px] font-black leading-none text-white/[0.06] sm:right-5 sm:text-[108px]">
+          <div className="absolute right-4 top-5 font-data-numeric text-[96px] text-white/[0.04] sm:right-5 sm:text-[108px] leading-none select-none">
             {selectedDriver.number || selectedDriver.code}
           </div>
           {driverImage && (
             <img
               src={driverImage}
               alt={`${selectedDriver.firstName} ${selectedDriver.lastName}`}
-              className="absolute bottom-5 right-6 h-[112px] w-auto object-contain drop-shadow-[0_18px_28px_rgba(0,0,0,0.35)] sm:bottom-3 sm:right-5 sm:h-[170px]"
+              className="absolute bottom-5 right-6 h-[112px] w-auto object-contain drop-shadow-[0_18px_28px_rgba(0,0,0,0.25)] sm:bottom-3 sm:right-5 sm:h-[170px] grayscale"
               loading="lazy"
             />
           )}
           <div className="relative z-10 max-w-[62%] sm:max-w-[68%]">
-            <div className="mb-4 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-f1-lime sm:text-[12px] sm:tracking-[0.24em]">
-              <Star size={14} fill="currentColor" />
-              我的关注车手
+            <div className="mb-4 flex items-center gap-2 font-label-caps text-f1-lime sm:text-[11px]">
+              <Star size={12} fill="currentColor" />
+              MY FAVORITE DRIVER
             </div>
-            <div className="text-[13px] font-bold text-white/60 sm:text-[14px]">{selectedDriver.firstName}</div>
-            <h2 className="mt-1 text-[31px] font-black uppercase leading-[0.9] tracking-tight sm:text-[42px]">
+            <div className="font-sans text-[13px] font-semibold text-white/50">{selectedDriver.firstName}</div>
+            <h2 className="mt-1 font-headline-lg text-[30px] sm:text-[38px] uppercase leading-tight tracking-tight">
               {selectedDriver.lastName}
             </h2>
             <div className="mt-4 inline-flex items-center gap-3 rounded-md bg-white/10 px-3 py-2 text-[13px] font-black sm:mt-5">
@@ -129,9 +129,9 @@ export default function FavoriteDriverCard({ data, onDriverClick }) {
 
           <div className="mt-5 grid grid-cols-2 gap-3">
             {statTiles.map(([label, value]) => (
-              <div key={label} className="rounded-lg border border-black/10 bg-black/[0.025] px-4 py-3">
-                <div className="text-[12px] font-bold text-f1-text-muted">{label}</div>
-                <div className="mt-1 text-[26px] font-black leading-none text-f1-text tabular-nums">{value}</div>
+              <div key={label} className="rounded-xl border border-black/[0.04] bg-f1-bg/20 px-4 py-3">
+                <div className="font-label-caps text-[10px] text-f1-text-muted">{label}</div>
+                <div className="mt-1 font-data-numeric text-[24px] text-f1-text tabular-nums">{value}</div>
               </div>
             ))}
           </div>
@@ -175,11 +175,11 @@ export default function FavoriteDriverCard({ data, onDriverClick }) {
               >
                 <span className="min-w-0">
                   <span className="block truncate text-[13px] font-black text-f1-text">{race.name}</span>
-                  <span className="mt-1 block text-[11px] font-bold text-f1-text-muted">R{String(race.round).padStart(2, "0")} · +{race.points} pts</span>
+                  <span className="font-label-caps text-[9px] text-f1-text-muted leading-none">R{String(race.round).padStart(2, "0")} · +{race.points} PTS</span>
                 </span>
                 <span
-                  className="rounded px-2 py-1 text-[13px] font-black text-f1-text"
-                  style={{ backgroundColor: race.position <= 3 ? selectedDriver.teamColor : "rgba(0,0,0,0.06)" }}
+                  className="rounded-lg px-2.5 py-1 font-data-numeric text-[13px] text-f1-text"
+                  style={{ backgroundColor: race.position <= 3 ? selectedDriver.teamColor + "15" : "rgba(0,0,0,0.03)", color: race.position <= 3 ? selectedDriver.teamColor : "inherit" }}
                 >
                   P{race.position}
                 </span>
