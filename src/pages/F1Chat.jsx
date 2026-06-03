@@ -195,7 +195,7 @@ export default function F1Chat({ onBack, f1Data }) {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 max-w-4xl mx-auto px-4 pb-20 pt-20">
+    <div className="space-y-8 animate-in fade-in duration-500 max-w-6xl mx-auto px-4 pb-20 pt-20">
       
       {/* 顶部社论返回栏 */}
       <div className="flex items-center justify-between border-b border-black/[0.05] pb-6">
@@ -213,7 +213,7 @@ export default function F1Chat({ onBack, f1Data }) {
       </div>
 
       {/* 独立大屏聊天对话框 (Stitch 画廊静谧风格) */}
-      <div className="apple-card p-6 bg-white flex flex-col h-[calc(100vh-240px)] min-h-[500px]">
+      <div className="apple-card p-6 bg-white flex flex-col h-[calc(100vh-190px)] min-h-[650px]">
         
         {/* AI 头部状态栏 */}
         <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-black/[0.05] mb-5">
