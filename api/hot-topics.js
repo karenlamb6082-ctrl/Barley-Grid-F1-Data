@@ -71,10 +71,10 @@ export default async function handler(req, res) {
       try {
         console.log('[DeepSeek] 正在通过 DeepSeek 模型分析日报并进行全量资讯汉化重写...');
         
-        // 构建轻量 payload 传给大模型
+        // 将文章列表转换为带有序号 (0, 1, 2...) 的临时大模型载荷，根除乱码 ID 带来的翻译混淆
         const payload = {
-          featured: featured.map(e => ({ id: e.id, title: e.title, url: e.url, source: e.sourceLabel, qualityScore: e.qualityScore })),
-          lowScore: lowScore.map(e => ({ id: e.id, title: e.title }))
+          featured: featured.map((e, idx) => ({ id: String(idx), title: e.title, url: e.url, source: e.sourceLabel, qualityScore: e.qualityScore })),
+          lowScore: lowScore.map((e, idx) => ({ id: String(featured.length + idx), title: e.title }))
         };
 
         const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -106,7 +106,7 @@ export default async function handler(req, res) {
     "paddockVoice": [ ... ]
   },
   "translations": {
-    "传入文章的ID": "（高保真、流畅的中文翻译及润色标题）"
+    "传入文章的序号ID": "（高保真、流畅的中文翻译及润色标题）"
   }
 }`
               },
@@ -133,11 +133,13 @@ export default async function handler(req, res) {
               
               // 应用 AI 中文标题翻译结果
               const trans = aiJson.translations || {};
-              featured.forEach(e => {
-                if (trans[e.id]) e.titleCN = trans[e.id];
+              featured.forEach((e, idx) => {
+                const key = String(idx);
+                if (trans[key]) e.titleCN = trans[key];
               });
-              lowScore.forEach(e => {
-                if (trans[e.id]) e.titleCN = trans[e.id];
+              lowScore.forEach((e, idx) => {
+                const key = String(featured.length + idx);
+                if (trans[key]) e.titleCN = trans[key];
               });
               console.log('[DeepSeek] 日报生成与资讯列表汉化翻译成功！');
             } else {

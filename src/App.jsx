@@ -9,11 +9,12 @@ import { LOADING_QUOTES } from "./data/f1Fun"
 const Schedule = lazy(() => import("./pages/Schedule"));
 const Standings = lazy(() => import("./pages/Standings"));
 const F1Hot = lazy(() => import("./pages/F1Hot"));
+const F1Chat = lazy(() => import("./pages/F1Chat"));
 const DriverDrawer = lazy(() => import("./components/DriverDrawer"));
 const TeamDrawer = lazy(() => import("./components/TeamDrawer"));
 const RaceDrawer = lazy(() => import("./components/RaceDrawer"));
 
-const APP_VIEWS = new Set(["home", "f1hot", "schedule", "standings"]);
+const APP_VIEWS = new Set(["home", "f1hot", "chat", "schedule", "standings"]);
 const LIVE_REFRESH_INTERVAL = 60 * 1000;
 const RACE_WEEK_REFRESH_INTERVAL = 2 * 60 * 1000;
 const DEFAULT_REFRESH_INTERVAL = 15 * 60 * 1000;
@@ -255,6 +256,12 @@ function App() {
               <Suspense fallback={<ViewFallback />}>
                 {currentView === "f1hot" && (
                   <F1Hot
+                    onBack={() => setCurrentView("home")}
+                    f1Data={data}
+                  />
+                )}
+                {currentView === "chat" && (
+                  <F1Chat
                     onBack={() => setCurrentView("home")}
                     f1Data={data}
                   />

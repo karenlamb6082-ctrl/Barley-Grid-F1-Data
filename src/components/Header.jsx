@@ -6,6 +6,7 @@ export default function Header({ currentView, setCurrentView }) {
   const tabs = [
     { id: 'home', label: '概览' },
     { id: 'f1hot', label: 'F1HOT 热点' },
+    { id: 'chat', label: '围场 AI' },
     { id: 'schedule', label: '赛程追踪' },
     { id: 'standings', label: '战果与积分' }
   ];
@@ -56,7 +57,7 @@ export default function Header({ currentView, setCurrentView }) {
       </div>
       
       {/* 移动端下拉菜单 */}
-      <div className={`md:hidden overflow-hidden transition-all duration-300 ease-out ${menuOpen ? 'max-h-48 border-t border-black/[0.04]' : 'max-h-0'}`}>
+      <div className={`md:hidden overflow-hidden transition-all duration-300 ease-out ${menuOpen ? 'max-h-60 border-t border-black/[0.04]' : 'max-h-0'}`}>
         <nav className="px-4 py-3 space-y-1 bg-[#171717] text-white">
           {tabs.map(tab => (
             <button
