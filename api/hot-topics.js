@@ -127,25 +127,47 @@ export default async function handler(req, res) {
               messages: [
                 {
                   role: 'system',
-                  content: `你是一个专业的 F1（一级方程式）围场资深技术分析师与新闻主编。你的任务是根据提供的一批 F1 英文热点资讯，运用你的专业知识对其进行分类与中文精炼总结，生成一份高质量的 F1 围场日报，并对所有给出的资讯标题进行高质量的中文翻译与润色。
+                  content: `你是一个专业的 F1（一级方程式）围场资深技术分析师与新闻主编。你的任务是根据提供的一批 F1 英文热点资讯，运用你的专业知识对其进行分类与中文精炼总结，生成一份高质量的 F1 围场日报，并对所有给出的资讯标题进行高质量的中文翻译与润色。另外，你还需要对传入的精选热点（featured 列表中的文章）进行专业复审，重新评估并给它们打分。
 
 日报包含三个板块：
 1. "raceSpeed"：🏁 赛事前沿与官方重磅（规则变化、正赛及排位赛战况、官方处罚通告等）
 2. "techDig"：🔧 技术解构与升级分析（车队底板升级、悬挂几何、风洞数据、空气动力学更新等）
 3. "paddockVoice"：💬 围场声音与转会传闻（车手及领队采访、车手转会流言、车队收购传闻等）
 
+【重新评估打分要求】
+请针对传入的 featured 列表中的每一篇文章，根据其内容主题，重新评估并给出其以下 5 个维度的专业评分（均为 1 到 10 的整数）：
+- "technicalDepth"：技术深度（如底板升级、风洞、空气动力学等高专业度探讨）
+- "breakingValue"：突发指数（重大官宣、撞车事故、FIA处罚、红旗等）
+- "audienceValue"：受众价值（车迷关注度、话题度等）
+- "dramaIndex"：冲突戏剧性（言语交锋、争议传闻、车手八卦流言等）
+- "truthfulness"：权威可信度（官方公告/Tier1媒体得高分，传闻八卦得低分）
+
+并根据你的打分，使用加权公式计算最终的质量分 "qualityScore" (QS，为 1 到 100 之间的整数)：
+QS = Math.round(((technicalDepth * 2.0) + (breakingValue * 2.5) + (audienceValue * 2.5) + (dramaIndex * 1.5) + (truthfulness * 1.5)) * 原始信源权重)
+（注：信源权重如果是 T1 权威媒体请乘以 1.25，T2 乘以 0.75，其余为 1.0。若算出的 QS 超过 100 则限制为 100）。请在返回结果的 'scores' 字段中返回你的修正评估打分。
+
 请挑选出最典型、最具代表性的 2-3 个焦点事件进行深度总结重写，作为 dailyBriefing 板块的内容。对所有传入的资讯，生成其 ID 到 中文翻译标题 的映射 translations。
-输出必须严格为 JSON 格式，不能包含 any markdown 标记（如 \`\`\`json 标签），结构如下：
+输出必须严格为 JSON 格式，不能包含 any markdown 标记，结构如下：
 {
   "dailyBriefing": {
     "raceSpeed": [
-      { "title": "（中文总结标题，需兼具技术专业性与新闻可读性）", "url": "（关联的原始 url）", "sources": ["DeepSeek-AI"], "qualityScore": 90 }
+      { "title": "（中文总结标题）", "url": "（关联的原始 url）", "sources": ["DeepSeek-AI"], "qualityScore": 90 }
     ],
     "techDig": [ ... ],
     "paddockVoice": [ ... ]
   },
   "translations": {
-    "传入文章的序号ID": "（高保真、流畅的中文翻译及润色标题）"
+    "传入文章的序号ID": "（中文翻译及润色标题）"
+  },
+  "scores": {
+    "传入文章的序号ID": {
+      "technicalDepth": 8,
+      "breakingValue": 7,
+      "audienceValue": 8,
+      "dramaIndex": 5,
+      "truthfulness": 9,
+      "qualityScore": 77
+    }
   }
 }`
                 },
@@ -182,7 +204,26 @@ export default async function handler(req, res) {
                 const key = String(featured.length + idx);
                 if (trans[key]) e.titleCN = trans[key];
               });
-              console.log('[DeepSeek] 日报生成与资讯列表汉化翻译成功！');
+
+              // 应用 AI 重新打分的评估结果覆盖
+              const aiScores = aiJson.scores || {};
+              featured.forEach((e, idx) => {
+                const key = String(idx);
+                if (aiScores[key]) {
+                  const s = aiScores[key];
+                  // 边界安全校验与覆盖
+                  e.dimensions = {
+                    technicalDepth: Math.max(1, Math.min(10, parseInt(s.technicalDepth) || e.dimensions.technicalDepth)),
+                    breakingValue: Math.max(1, Math.min(10, parseInt(s.breakingValue) || e.dimensions.breakingValue)),
+                    audienceValue: Math.max(1, Math.min(10, parseInt(s.audienceValue) || e.dimensions.audienceValue)),
+                    dramaIndex: Math.max(1, Math.min(10, parseInt(s.dramaIndex) || e.dimensions.dramaIndex)),
+                    truthfulness: Math.max(1, Math.min(10, parseInt(s.truthfulness) || e.dimensions.truthfulness)),
+                  };
+                  e.qualityScore = Math.max(1, Math.min(100, parseInt(s.qualityScore) || e.qualityScore));
+                }
+              });
+
+              console.log('[DeepSeek] 日报生成、资讯列表汉化与五维打分评估成功！');
             } else {
               throw new Error('AI 返回 JSON 结构不完整');
             }
