@@ -68,25 +68,28 @@ export default function F1Hot({ onBack, f1Data }) {
     paddockVoice: true
   });
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
+  const refresh = useCallback(async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     setError(null);
     try {
       const res = await fetchHotTopics();
       if (res) {
         setData(res);
       } else {
-        setError("AI 流量引擎同步失败，请重试");
+        if (!isSilent) setError("AI 流量引擎同步失败，请重试");
       }
     } catch (e) {
-      setError("网络链接异常");
+      if (!isSilent) setError("网络链接异常");
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (!data) refresh();
+    // 无论有没有本地缓存，在组件挂载时都发起刷新以保证数据最新。
+    // 如果已有本地缓存，则采用静默方式在后台刷新，不闪烁 loading 动画，实现秒开且保新。
+    const hasCache = !!data;
+    refresh(hasCache);
   }, []);
 
   // 收藏/点赞交互逻辑
