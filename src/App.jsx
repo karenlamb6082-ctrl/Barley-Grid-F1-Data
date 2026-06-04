@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useEffect, useCallback } from "react";
-import { getSavedScrollY } from "./utils/scrollLock";
+import { getSavedScrollY, forceUnlockScroll } from "./utils/scrollLock";
 import Header from "./components/Header"
 import Footer from "./components/Footer"
 import Home from "./pages/Home"
@@ -89,6 +89,14 @@ function App() {
 
   // 封装 setCurrentView：切换页面时保存当前滚动位置 + 滚回顶部 + 推入浏览器历史
   const setCurrentView = useCallback((view, scrollTarget) => {
+    // 切换视图时，强制清除所有潜在的滚动锁定样式，防止卡死
+    forceUnlockScroll();
+
+    // 切换视图时关闭所有打开的 Drawer，防止幽灵组件挂载
+    setSelectedDriverId(null);
+    setSelectedTeamId(null);
+    setSelectedRaceRound(null);
+
     // 保存当前页面的滚动位置到当前 history state
     const currentState = window.history.state || {};
     window.history.replaceState({ ...currentState, scrollY: window.scrollY }, '');
@@ -113,6 +121,9 @@ function App() {
     window.history.replaceState({ view: initialView, scrollY: window.scrollY }, '', getPathForView(initialView));
 
     const handlePopState = (e) => {
+      // 浏览器返回/前进时，强制清除所有潜在的滚动锁定样式，防止卡死
+      forceUnlockScroll();
+
       const view = e.state?.view || getViewFromLocation();
       setCurrentViewRaw(view);
       // 滚动恢复由 unlockScroll() 自动处理，无需手动 scrollTo

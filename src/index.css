@@ -132,7 +132,14 @@
     animation-name: fadeInUp;
   }
 
-
+  /* 隐藏滚动条 */
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 /* ========== 动画关键帧 ========== */

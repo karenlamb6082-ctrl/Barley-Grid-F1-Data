@@ -45,8 +45,24 @@ export function unlockScroll() {
 }
 
 /**
+ * 强力解锁页面滚动（无条件还原 body 样式）
+ * 用于视图/路由切换时，防呆防止滚动锁定状态残留
+ */
+export function forceUnlockScroll() {
+  isLocked = false;
+
+  const body = document.body;
+  body.style.position = '';
+  body.style.top = '';
+  body.style.left = '';
+  body.style.right = '';
+  body.style.overflow = '';
+}
+
+/**
  * 获取当前保存的滚动位置（供外部读取，如 history state）
  */
 export function getSavedScrollY() {
   return isLocked ? savedScrollY : window.scrollY;
 }
+

@@ -197,10 +197,10 @@ export default function F1Chat({ onBack, f1Data }) {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 max-w-6xl mx-auto px-4 pb-20 pt-20">
+    <div className="space-y-4 sm:space-y-8 animate-in fade-in duration-500 max-w-6xl mx-auto px-3 sm:px-4 pb-4 sm:pb-20 pt-16 sm:pt-20">
       
       {/* 顶部社论返回栏 */}
-      <div className="flex items-center justify-between border-b border-black/[0.05] pb-6">
+      <div className="flex items-center justify-between border-b border-black/[0.05] pb-4 sm:pb-6">
         <button
           onClick={onBack}
           className="inline-flex items-center gap-2 rounded-lg border border-black/[0.05] bg-white px-4 py-2 text-[13px] font-bold text-f1-text hover:bg-f1-bg transition-colors"
@@ -215,7 +215,7 @@ export default function F1Chat({ onBack, f1Data }) {
       </div>
 
       {/* 独立大屏聊天对话框 (Stitch 画廊静谧风格) */}
-      <div className="apple-card p-6 bg-white flex flex-col h-[calc(100vh-190px)] min-h-[650px]">
+      <div className="apple-card p-4 sm:p-6 bg-white flex flex-col h-[calc(100vh-160px)] sm:h-[calc(100vh-190px)] min-h-[420px] sm:min-h-[650px]">
         
         {/* AI 头部状态栏 */}
         <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-black/[0.05] mb-5">
@@ -270,7 +270,7 @@ export default function F1Chat({ onBack, f1Data }) {
               
               {/* 气泡 */}
               <div 
-                className={`px-5 py-3.5 max-w-[80%] text-[13.5px] leading-relaxed border ${
+                className={`px-3.5 py-2.5 sm:px-5 sm:py-3.5 max-w-[88%] sm:max-w-[80%] text-[13px] sm:text-[13.5px] leading-relaxed border ${
                   msg.role === "user"
                     ? "bg-f1-bg border-black/[0.03] text-f1-text rounded-2xl rounded-tr-none font-medium"
                     : "bg-white border-black/[0.04] text-f1-text rounded-2xl rounded-tl-none markdown-body text-left"
@@ -295,21 +295,23 @@ export default function F1Chat({ onBack, f1Data }) {
 
         {/* 智能快捷引导问题 */}
         {chatMessages.length <= 2 && !chatLoading && (
-          <div className="flex-shrink-0 pb-3 flex flex-wrap gap-2 animate-in fade-in duration-300">
-            <span className="font-label-caps text-[9px] text-f1-text-muted flex items-center gap-1 py-1">SUGGESTIONS:</span>
-            {[
-              "帮我看看目前的车手积分榜情况",
-              "下一站大奖赛时间与地点是多久？",
-              "今年目前完成了多少站？"
-            ].map(txt => (
-              <button
-                key={txt}
-                onClick={() => handleSuggestClick(txt)}
-                className="font-sans text-[11px] font-semibold text-f1-text-muted bg-f1-bg/50 hover:bg-f1-lime/10 hover:text-f1-lime border border-black/[0.03] rounded-lg px-3 py-1.5 transition-colors"
-              >
-                {txt}
-              </button>
-            ))}
+          <div className="flex-shrink-0 pb-3 flex flex-col sm:flex-row sm:items-center gap-2 animate-in fade-in duration-300 overflow-hidden">
+            <span className="font-label-caps text-[9px] text-f1-text-muted flex items-center gap-1 py-1 flex-shrink-0">SUGGESTIONS:</span>
+            <div className="flex flex-row overflow-x-auto scrollbar-none whitespace-nowrap gap-2 pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth snap-x">
+              {[
+                "帮我看看目前的车手积分榜情况",
+                "下一站大奖赛时间与地点是多久？",
+                "今年目前完成了多少站？"
+              ].map(txt => (
+                <button
+                  key={txt}
+                  onClick={() => handleSuggestClick(txt)}
+                  className="font-sans text-[11.5px] font-semibold text-f1-text-muted bg-f1-bg/50 hover:bg-f1-lime/10 hover:text-f1-lime border border-black/[0.03] rounded-lg px-3 py-1.5 transition-colors inline-block flex-shrink-0 snap-start"
+                >
+                  {txt}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -320,8 +322,8 @@ export default function F1Chat({ onBack, f1Data }) {
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
             disabled={chatLoading}
-            placeholder="Query telemetry or strategy... 输入您的提问"
-            className="w-full bg-f1-bg/20 border-b border-black/[0.06] focus:border-f1-text px-4 py-3.5 rounded-t-lg text-[13.5px] font-sans font-medium text-f1-text placeholder-black/30 focus:outline-none transition-colors border-x-0 border-t-0 shadow-none ring-0 focus:ring-0 disabled:opacity-50"
+            placeholder="Query telemetry... 输入您的提问"
+            className="w-full bg-f1-bg/20 border-b border-black/[0.06] focus:border-f1-text px-3.5 py-3 sm:px-4 sm:py-3.5 rounded-t-lg text-[13px] sm:text-[13.5px] font-sans font-medium text-f1-text placeholder-black/30 focus:outline-none transition-colors border-x-0 border-t-0 shadow-none ring-0 focus:ring-0 disabled:opacity-50"
           />
           <button
             type="submit"

@@ -1,5 +1,13 @@
-// POST /api/chat — 围场 AI 助手聊天接口
-// 支持接收前端对话上下文与赛事静态 Context，共享 hot-topics 全局缓存，实现实时联网新闻检索与大模型选择
+// 模型转换映射 —— 官方 API 目前支持 deepseek-chat 和 deepseek-reasoner
+// 任何包含 v4、flash、pro、chat 等非官方或第三方的模型名，都自动安全映射为官方合法的 'deepseek-chat'
+function mapModelName(modelName) {
+  if (!modelName) return 'deepseek-chat';
+  const name = modelName.toLowerCase();
+  if (name.includes('reasoner') || name.includes('deepseek-r1')) {
+    return 'deepseek-reasoner';
+  }
+  return 'deepseek-chat';
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -108,30 +116,39 @@ ${realtimeNewsText || '（暂无今日全网最新实时新闻数据）'}
   const deepseekModel = model || process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash';
 
   try {
-    console.log(`[DeepSeek] 收到聊天请求，正在通过模型 [${deepseekModel}] 进行联网分析解答...`);
+    const targetModel = mapModelName(deepseekModel);
+    console.log(`[DeepSeek] 收到聊天请求，正在通过模型 [${targetModel}]（原始输入: ${deepseekModel}）进行联网分析解答...`);
     
-    // 4. 向 DeepSeek 大模型发起请求
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: deepseekModel,
-        messages: [
-          {
-            role: 'system',
-            content: systemPromptContent
-          },
-          ...messages
-        ],
-        temperature: 0.7
-      })
-    });
+    // 4. 向 DeepSeek 大模型发起请求，设定 15 秒超时保护
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    let response;
+    try {
+      response = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: targetModel,
+          messages: [
+            {
+              role: 'system',
+              content: systemPromptContent
+            },
+            ...messages
+          ],
+          temperature: 0.7
+        })
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
-    if (!response.ok) {
-      throw new Error(`HTTP 异常 ${response.status}`);
+    if (!response || !response.ok) {
+      throw new Error(response ? `HTTP 异常 ${response.status}` : '连接超时/未响应');
     }
 
     const data = await response.json();

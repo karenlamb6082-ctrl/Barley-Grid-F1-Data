@@ -25,6 +25,40 @@ function runRegexClassification(featured, dailyBriefing) {
   });
 }
 
+// 模型转换映射 —— 官方 API 目前支持 deepseek-chat 和 deepseek-reasoner
+// 任何包含 v4、flash、pro、chat 等非官方或第三方的模型名，都自动安全映射为官方合法的 'deepseek-chat'
+function mapModelName(modelName) {
+  if (!modelName) return 'deepseek-chat';
+  const name = modelName.toLowerCase();
+  if (name.includes('reasoner') || name.includes('deepseek-r1')) {
+    return 'deepseek-reasoner';
+  }
+  return 'deepseek-chat';
+}
+
+// 鲁棒的 JSON 提取器 —— 避免 LLM 在 JSON 外包裹额外的闲聊文字或 Markdown 标记
+function extractJSON(text) {
+  if (!text) return null;
+  try {
+    const startIdx = text.indexOf('{');
+    const endIdx = text.lastIndexOf('}');
+    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+      const jsonStr = text.substring(startIdx, endIdx + 1);
+      return JSON.parse(jsonStr);
+    }
+  } catch (e) {
+    console.error('[JSON Extract] 提取结构化数据失败:', e);
+  }
+
+  // 兜底方案
+  try {
+    const clean = text.replace(/```json\n?/, '').replace(/```\n?$/, '').trim();
+    return JSON.parse(clean);
+  } catch (e) {
+    throw new Error('无法解析 JSON 文本: ' + e.message);
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -77,18 +111,23 @@ export default async function handler(req, res) {
           lowScore: lowScore.map((e, idx) => ({ id: String(featured.length + idx), title: e.title }))
         };
 
-        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-          },
-          body: JSON.stringify({
-            model: process.env.DEEPSEEK_MODEL || 'deepseek-chat',
-            messages: [
-              {
-                role: 'system',
-                content: `你是一个专业的 F1（一级方程式）围场资深技术分析师与新闻主编。你的任务是根据提供的一批 F1 英文热点资讯，运用你的专业知识对其进行分类与中文精炼总结，生成一份高质量的 F1 围场日报，并对所有给出的资讯标题进行高质量的中文翻译与润色。
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        let response;
+        try {
+          response = await fetch('https://api.deepseek.com/chat/completions', {
+            method: 'POST',
+            signal: controller.signal,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: mapModelName(process.env.DEEPSEEK_MODEL || 'deepseek-chat'),
+              messages: [
+                {
+                  role: 'system',
+                  content: `你是一个专业的 F1（一级方程式）围场资深技术分析师与新闻主编。你的任务是根据提供的一批 F1 英文热点资讯，运用你的专业知识对其进行分类与中文精炼总结，生成一份高质量的 F1 围场日报，并对所有给出的资讯标题进行高质量的中文翻译与润色。
 
 日报包含三个板块：
 1. "raceSpeed"：🏁 赛事前沿与官方重磅（规则变化、正赛及排位赛战况、官方处罚通告等）
@@ -96,7 +135,7 @@ export default async function handler(req, res) {
 3. "paddockVoice"：💬 围场声音与转会传闻（车手及领队采访、车手转会流言、车队收购传闻等）
 
 请挑选出最典型、最具代表性的 2-3 个焦点事件进行深度总结重写，作为 dailyBriefing 板块的内容。对所有传入的资讯，生成其 ID 到 中文翻译标题 的映射 translations。
-输出必须严格为 JSON 格式，不能包含任何 markdown 标记（如 \`\`\`json 标签），结构如下：
+输出必须严格为 JSON 格式，不能包含 any markdown 标记（如 \`\`\`json 标签），结构如下：
 {
   "dailyBriefing": {
     "raceSpeed": [
@@ -109,26 +148,28 @@ export default async function handler(req, res) {
     "传入文章的序号ID": "（高保真、流畅的中文翻译及润色标题）"
   }
 }`
-              },
-              {
-                role: 'user',
-                content: JSON.stringify(payload)
-              }
-            ],
-            temperature: 0.3
-          })
-        });
+                },
+                {
+                  role: 'user',
+                  content: JSON.stringify(payload)
+                }
+              ],
+              temperature: 0.3
+            })
+          });
+        } finally {
+          clearTimeout(timeoutId);
+        }
 
-        if (response.ok) {
+        if (response && response.ok) {
           const rawText = await response.text();
           const data = JSON.parse(rawText);
           const aiContent = data.choices?.[0]?.message?.content;
           
           if (aiContent) {
-            const cleanJsonText = aiContent.replace(/```json\n?/, '').replace(/```\n?$/, '').trim();
-            const aiJson = JSON.parse(cleanJsonText);
+            const aiJson = extractJSON(aiContent);
             
-            if (aiJson.dailyBriefing && aiJson.translations) {
+            if (aiJson && aiJson.dailyBriefing && aiJson.translations) {
               dailyBriefing = aiJson.dailyBriefing;
               
               // 应用 AI 中文标题翻译结果
