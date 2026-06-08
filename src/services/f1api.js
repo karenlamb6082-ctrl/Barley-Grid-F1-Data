@@ -1,5 +1,5 @@
 const API_BASE = "https://api.jolpi.ca/ergast/f1/current";
-const ALL_DATA_CACHE_KEY = "barley-grid:f1-data:v1";
+const ALL_DATA_CACHE_KEY = "barley-grid:f1-data:v3";
 const ALL_DATA_CACHE_MAX_AGE = 30 * 60 * 1000;
 
 function canUseStorage() {
