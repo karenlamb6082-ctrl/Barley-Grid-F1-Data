@@ -1,7 +1,42 @@
 import { useState, useEffect } from 'react';
 import { useDrawer } from '../hooks/useDrawer';
-import { getTeamColor, fetchRaceWeekend, fetchPracticeResults, getRaceNameCN, getCountryNameCN, getCircuitNameCN } from '../services/f1api';
-import { EMPTY_STATE_MESSAGES } from '../data/f1Fun';
+import { getTeamColor, fetchRaceWeekend, fetchPracticeResults, getRaceNameCN, getCountryNameCN, getCircuitNameCN, fetchHotTopics } from '../services/f1api';
+import { EMPTY_STATE_MESSAGES, HISTORICAL_RACE_HOTSPOTS } from '../data/f1Fun';
+import { TrendingUp, Heart, Star, ExternalLink } from 'lucide-react';
+
+// 过滤与当前分站相关的实时热点
+function filterRealtimeHotspots(topics, raceName, country) {
+  if (!topics || topics.length === 0) return [];
+  const keywords = [];
+  if (raceName) {
+    const cleanName = raceName.replace(' Grand Prix', '');
+    keywords.push(cleanName.toLowerCase());
+  }
+  if (country) {
+    keywords.push(country.toLowerCase());
+  }
+  const raceCN = getRaceNameCN(raceName);
+  if (raceCN) {
+    const cleanCN = raceCN.replace('大奖赛', '');
+    keywords.push(cleanCN);
+  }
+  const countryCN = getCountryNameCN(country);
+  if (countryCN) {
+    keywords.push(countryCN);
+  }
+
+  return topics.filter(topic => {
+    const text = ((topic.titleCN || '') + ' ' + (topic.title || '')).toLowerCase();
+    return keywords.some(kw => text && kw && text.includes(kw));
+  });
+}
+
+function formatTimeAgo(minutes) {
+  if (!minutes) return '';
+  if (minutes < 60) return `${minutes}分钟前`;
+  if (minutes < 1440) return `${Math.floor(minutes / 60)}小时前`;
+  return `${Math.floor(minutes / 1440)}天前`;
+}
 
 export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) {
   const { isOpen, activeId, handleClose, isVisible } = useDrawer(raceRound, onClose);
@@ -11,6 +46,55 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
   const [practiceData, setPracticeData] = useState({ fp1: null, fp2: null, fp3: null });
   const [practiceError, setPracticeError] = useState(null);
   const [loadingPractice, setLoadingPractice] = useState(true);
+
+  // 围场热点状态
+  const [hotspots, setHotspots] = useState([]);
+  const [loadingHotspots, setLoadingHotspots] = useState(false);
+
+  // 收藏与点赞状态 (保存在 LocalStorage)
+  const [collectedIds, setCollectedIds] = useState(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem("f1hot:collected") || "[]"));
+    } catch { return new Set(); }
+  });
+  const [likedIds, setLikedIds] = useState(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem("f1hot:liked") || "[]"));
+    } catch { return new Set(); }
+  });
+  const [expandedEventId, setExpandedEventId] = useState(null);
+
+  const toggleCollect = (id) => {
+    const next = new Set(collectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setCollectedIds(next);
+    localStorage.setItem("f1hot:collected", JSON.stringify([...next]));
+  };
+
+  const toggleLike = (id) => {
+    const next = new Set(likedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setLikedIds(next);
+    localStorage.setItem("f1hot:liked", JSON.stringify([...next]));
+  };
+
+  // 从 allRaces 获取完整比赛数据
+  const race = data?.allRaces?.find(r => r.round === String(activeId));
+  
+  // 从 schedule 获取赛程信息
+  const scheduleInfo = data?.schedule?.find(s => String(s.round) === String(activeId));
+
+  const results = race?.Results || [];
+  const circuit = race?.Circuit;
+  const isSprint = scheduleInfo?.isSprint;
+
+  const displayRace = race || {};
+  const displayName = displayRace.raceName || scheduleInfo?.name || '';
+  const displayCircuit = circuit?.circuitName || scheduleInfo?.circuit || '';
+  const displayCountry = circuit?.Location?.country || scheduleInfo?.country || '';
+  const displayDate = displayRace.date || scheduleInfo?.date || '';
 
   useEffect(() => {
     if (raceRound) {
@@ -57,17 +141,52 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
     };
   }, [activeId, data?.schedule]);
 
+  // 加载并过滤分站热点数据
+  useEffect(() => {
+    if (!activeId) return;
+    const hasResults = results.length > 0;
+    if (!hasResults) {
+      setHotspots([]);
+      return;
+    }
 
+    let isMounted = true;
+    setLoadingHotspots(true);
 
-  // 从 allRaces 获取完整比赛数据
-  const race = data?.allRaces?.find(r => r.round === String(activeId));
-  
-  // 从 schedule 获取赛程信息
-  const scheduleInfo = data?.schedule?.find(s => String(s.round) === String(activeId));
+    fetchHotTopics().then(res => {
+      if (!isMounted) return;
+      const realtopics = res?.topics || [];
+      const lowtopics = res?.lowScoreTopics || [];
+      const allCloudTopics = [...realtopics, ...lowtopics];
 
-  const results = race?.Results || [];
-  const circuit = race?.Circuit;
-  const isSprint = scheduleInfo?.isSprint;
+      // 实时过滤
+      const filteredRealtime = filterRealtimeHotspots(allCloudTopics, displayName, displayCountry);
+
+      // 历史 Mock
+      const mockList = HISTORICAL_RACE_HOTSPOTS[String(activeId)] || [];
+
+      // 合并与去重
+      const merged = [...filteredRealtime];
+      mockList.forEach(m => {
+        if (!merged.some(item => item.id === m.id)) {
+          merged.push(m);
+        }
+      });
+
+      setHotspots(merged.sort((a, b) => b.qualityScore - a.qualityScore));
+      setLoadingHotspots(false);
+    }).catch(() => {
+      if (!isMounted) return;
+      // 降级只使用 Mock 数据
+      const mockList = HISTORICAL_RACE_HOTSPOTS[String(activeId)] || [];
+      setHotspots(mockList.sort((a, b) => b.qualityScore - a.qualityScore));
+      setLoadingHotspots(false);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeId, results.length, displayName, displayCountry]);
 
   // 计算各车队本站总得分
   const teamPointsMap = {};
@@ -97,6 +216,7 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
   if (weekendData.sprint && isSprint) availableTabs.push({ key: 'sprint', label: '冲刺赛' });
   if (weekendData.qualifying) availableTabs.push({ key: 'qualifying', label: '排位赛' });
   if (results.length > 0) availableTabs.push({ key: 'race', label: '正赛' });
+  if (results.length > 0) availableTabs.push({ key: 'hotspots', label: '围场热点' });
 
   // 时间格式化
   const formatSessionTime = (iso) => {
@@ -224,7 +344,7 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
                   <span className="text-[12px] text-f1-danger font-bold">{r.status}</span>
                 ) : (
                   <>
-                    <div className="text-[13px] font-medium text-f1-text-muted">
+                     <div className="text-[13px] font-medium text-f1-text-muted">
                       {r.position === 1 ? r.time : (r.time || '—')}
                     </div>
                     {r.points > 0 && (
@@ -400,7 +520,7 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
                 return (
                   <div 
                     key={res.Driver.driverId} 
-                    className={`rounded-2xl p-4 border border-white/70 text-center cursor-pointer hover:bg-white/30 transition-colors ${colors[idx].bg}`}
+                    className={`rounded-2xl p-4 border border-white/77 text-center cursor-pointer hover:bg-white/30 transition-colors ${colors[idx].bg}`}
                     onClick={() => onDriverClick && onDriverClick(res.Driver.driverId)}
                   >
                     <div className="text-[22px] mb-2">{colors[idx].label}</div>
@@ -493,13 +613,53 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
     );
   };
 
-  // ========== 主渲染 ==========
+  // ========== 围场热点渲染 ==========
+  const renderHotspots = () => {
+    if (loadingHotspots) {
+      return (
+        <div className="text-center text-f1-text-muted py-12">
+          <div className="inline-block w-5 h-5 border-2 border-f1-red/30 border-t-f1-red rounded-full animate-spin mb-3" />
+          <div className="text-[13px] font-bold">正在同步围场 AI 信号源...</div>
+        </div>
+      );
+    }
+
+    if (hotspots.length === 0) {
+      return (
+        <div className="rounded-2xl p-8 border border-white/70 text-center bg-white/35">
+          <span className="text-[36px] mb-2 block">📡</span>
+          <div className="text-[15px] font-bold text-f1-text mb-2">暂无热议事件</div>
+          <div className="text-[13px] text-f1-text-muted leading-relaxed">
+            当前分站没有检测到聚类的讨论焦点，赛期通常会更加活跃
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        <div className="px-1 text-[11px] font-bold text-f1-text-muted tracking-wide flex justify-between">
+          <span>📡 围场 AI 引擎同步聚类出以下热议焦点：</span>
+          <span>{hotspots.length} 个事件</span>
+        </div>
+        {hotspots.map((event, idx) => (
+          <HotspotCard
+            key={event.id || idx}
+            event={event}
+            rank={idx + 1}
+            isCollected={collectedIds.has(event.id)}
+            isLiked={likedIds.has(event.id)}
+            isExpanded={expandedEventId === event.id}
+            onToggleExpand={() => setExpandedEventId(expandedEventId === event.id ? null : event.id)}
+            onCollect={() => toggleCollect(event.id)}
+            onLike={() => toggleLike(event.id)}
+          />
+        ))}
+      </div>
+    );
+  };
+
   const hasRaceData = race || scheduleInfo;
-  const displayRace = race || {};
-  const displayName = displayRace.raceName || scheduleInfo?.name || '';
-  const displayCircuit = circuit?.circuitName || scheduleInfo?.circuit || '';
-  const displayCountry = circuit?.Location?.country || scheduleInfo?.country || '';
-  const displayDate = displayRace.date || scheduleInfo?.date || '';
 
   return (
     <div className={`fixed inset-0 z-[100] ${isVisible ? 'pointer-events-auto' : 'pointer-events-none'}`}>
@@ -568,11 +728,11 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
 
             {/* Tab 切换 */}
             <div className="flex-shrink-0 px-8 pb-2 relative z-10">
-              <div className="flex gap-1 p-1 rounded-xl bg-black/[0.04] border border-black/[0.04]">
+              <div className="flex gap-1 p-1 rounded-xl bg-black/[0.04] border border-black/[0.04] overflow-x-auto no-scrollbar">
                 {availableTabs.map(tab => (
                   <button
                     key={tab.key}
-                    className={`flex-1 py-2 px-2 rounded-lg text-[12px] font-bold tracking-tight transition-all ${
+                    className={`flex-1 py-2 px-2 rounded-lg text-[12px] font-bold tracking-tight transition-all whitespace-nowrap ${
                       activeTab === tab.key 
                         ? 'bg-white text-f1-text shadow-sm' 
                         : 'text-f1-text-muted hover:text-f1-text'
@@ -604,8 +764,149 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
               {activeTab === 'sprintQual' && !loadingWeekend && renderSprintQualifying()}
               {activeTab === 'sprint' && !loadingWeekend && renderSprint()}
               {activeTab === 'race' && renderRace()}
+              {activeTab === 'hotspots' && renderHotspots()}
 
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
+// ==================== 单个已完赛分站热点卡片组件 ====================
+function HotspotCard({ event, rank, isCollected, isLiked, isExpanded, onToggleExpand, onCollect, onLike }) {
+  const dims = event.dimensions || { technicalDepth: 5, breakingValue: 5, audienceValue: 5, dramaIndex: 5, truthfulness: 5 };
+  return (
+    <div className="rounded-2xl p-4 relative transition-all duration-300 overflow-hidden text-left bg-white/45 border border-white/80 hover:bg-white/60 shadow-sm animate-in fade-in">
+      {/* 侧面标志色 */}
+      <div className={`absolute top-0 left-0 w-1 h-full ${
+        event.tier === "T1" ? "bg-f1-gold" : event.tier === "T1.5" ? "bg-f1-cyan" : "bg-f1-silver"
+      }`} />
+
+      {/* 第一行：序号、QS、Badge 和点赞收藏 */}
+      <div className="flex justify-between items-start gap-4 pl-1.5 mb-2">
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[16px] leading-none text-black/15 tabular-nums">
+            {String(rank).padStart(2, "0")}
+          </span>
+          <div className={`px-2 py-0.5 rounded-lg text-[9px] font-black border flex items-center gap-1 shadow-sm ${
+            event.qualityScore >= 80
+              ? "text-f1-gold border-f1-gold/25 bg-f1-gold/5"
+              : "text-f1-cyan border-f1-cyan/25 bg-f1-cyan/5"
+          }`}>
+            <TrendingUp size={9} />
+            QS {event.qualityScore}
+          </div>
+          {event.badge && (
+            <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${
+              event.badge === "官方重磅"
+                ? "text-f1-red border-f1-red/20 bg-f1-red/5"
+                : event.badge === "深度技术"
+                  ? "text-f1-darkcyan border-f1-darkcyan/20 bg-f1-darkcyan/5"
+                  : event.badge === "突发焦点"
+                    ? "text-orange-600 border-orange-500/20 bg-orange-50"
+                    : "text-f1-text-muted border-black/5 bg-black/[0.01]"
+            }`}>
+              {event.badge}
+            </span>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-0.5">
+          <button 
+            onClick={onLike}
+            className={`p-1 rounded-lg hover:bg-black/[0.04] transition-colors ${
+              isLiked ? "text-f1-red" : "text-f1-text-muted/30"
+            }`}
+          >
+            <Heart size={12} fill={isLiked ? "currentColor" : "none"} />
+          </button>
+          <button 
+            onClick={onCollect}
+            className={`p-1 rounded-lg hover:bg-black/[0.04] transition-colors ${
+              isCollected ? "text-f1-gold" : "text-f1-text-muted/30"
+            }`}
+          >
+            <Star size={12} fill={isCollected ? "currentColor" : "none"} />
+          </button>
+        </div>
+      </div>
+
+      {/* 第二行：标题与译文 */}
+      <div className="pl-1.5">
+        <h4 className="text-[13.5px] sm:text-[14px] font-black text-f1-text leading-snug">
+          {event.titleCN || event.title}
+        </h4>
+        {event.titleCN && (
+          <p className="mt-1 text-[11px] text-f1-text-muted/60 italic leading-relaxed">
+            🇬🇧 EN: {event.title}
+          </p>
+        )}
+        <div className="mt-2.5 flex items-center gap-2 text-[10px] font-bold text-f1-text-muted">
+          <span className="text-f1-red">🔥🔥 {event.sourceCount} 源 · {event.itemCount} 报道</span>
+          {event.ageMinutes && (
+            <>
+              <span>·</span>
+              <span>{formatTimeAgo(event.ageMinutes)}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* 折叠详情 */}
+      <div className="mt-2.5 border-t border-black/[0.04] pt-2 pl-1.5 flex flex-col gap-1.5">
+        <button
+          onClick={onToggleExpand}
+          className="flex items-center gap-1 text-[10.5px] font-bold text-f1-text-muted hover:text-f1-red transition-colors py-0.5 px-1 -ml-1 text-left w-fit"
+        >
+          <span className={`inline-block transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}>▼</span>
+          {isExpanded ? "收起" : "展开"} 维度评分与报道原文 ({event.relatedItems?.length || 0}篇)
+        </button>
+
+        {isExpanded && (
+          <div className="mt-1 space-y-3.5 animate-in fade-in duration-300">
+            {/* 5 维度 */}
+            <div className="rounded-xl border border-black/[0.03] bg-black/[0.01] p-2.5 space-y-1.5 max-w-[260px]">
+              {[
+                { label: "🔧 技术深度", val: dims.technicalDepth, max: 10, color: "bg-f1-cyan" },
+                { label: "⚡ 突发大料", val: dims.breakingValue, max: 10, color: "bg-f1-red" },
+                { label: "🔥 受众吸引", val: dims.audienceValue, max: 10, color: "bg-amber-500" },
+                { label: "💬 戏剧冲突", val: dims.dramaIndex, max: 10, color: "bg-purple-500" },
+                { label: "🤝 权威可信", val: dims.truthfulness, max: 10, color: "bg-emerald-500" }
+              ].map(bar => (
+                <div key={bar.label} className="grid grid-cols-[64px_1fr_12px] items-center gap-1.5 text-[9px] font-bold">
+                  <span className="text-f1-text-muted">{bar.label}</span>
+                  <div className="h-1 rounded-full bg-black/5 overflow-hidden">
+                    <div className={`h-full rounded-full ${bar.color}`} style={{ width: `${(bar.val / bar.max) * 100}%` }} />
+                  </div>
+                  <span className="text-right font-mono">{bar.val}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* 原文链接 */}
+            <div className="space-y-1 border-t border-black/[0.04] pt-2">
+              <div className="text-[9px] font-black text-f1-text-muted uppercase tracking-wider mb-1">📰 聚类合并的同题材报道列表 (点击跳转)：</div>
+              {event.relatedItems?.map((item, i) => (
+                <a
+                  key={item.url || i}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between gap-3 p-1.5 rounded-lg hover:bg-black/[0.03] transition-colors group text-[11px]"
+                >
+                  <div className="min-w-0 flex-1 space-y-0.5 text-left">
+                    <div className="font-bold text-f1-text group-hover:text-f1-red transition-all truncate leading-snug">
+                      {item.title}
+                    </div>
+                    <div className="text-[9px] font-bold text-f1-text-muted">
+                      <span className="text-f1-cyan uppercase">{item.source}</span>
+                    </div>
+                  </div>
+                  <ExternalLink size={10} className="text-f1-text-muted/40 group-hover:text-f1-red transition-colors flex-shrink-0" />
+                </a>
+              ))}
             </div>
           </div>
         )}

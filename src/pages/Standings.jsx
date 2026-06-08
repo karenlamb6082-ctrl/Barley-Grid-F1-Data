@@ -3,14 +3,15 @@ import { ArrowLeft } from "lucide-react";
 import { getDriverImage } from "../services/f1api";
 
 // 领奖台卡片组件 (画廊式高低错落人像排版)
-function PodiumCard({ rank, item, type }) {
+function PodiumCard({ rank, item, type, onClick }) {
   const isP1 = rank === 1;
   const driverImage = type === "driver" ? getDriverImage(item.id) : null;
   const teamColor = item.teamColor || "#CBC6BD";
 
   return (
     <div
-      className={`bg-white rounded-[20px] p-6 border flex flex-col items-center relative group transition-all duration-300 ${
+      onClick={onClick}
+      className={`bg-white rounded-[20px] p-6 border flex flex-col items-center relative group transition-all duration-300 cursor-pointer hover:shadow-md hover:scale-[1.01] ${
         isP1
           ? "border-f1-lime/50 shadow-[0_12px_36px_rgba(0,0,0,0.03)] z-10 md:-translate-y-4"
           : "border-black/[0.045] md:mt-10"
@@ -143,6 +144,7 @@ export default function Standings({ driverData = [], teamData = [], onDriverClic
                 rank={pos.rank}
                 item={pos.item}
                 type={currentTab}
+                onClick={() => currentTab === "driver" ? onDriverClick?.(pos.item.id) : onTeamClick?.(pos.item.id)}
               />
             );
           })}

@@ -119,14 +119,7 @@ export default function DriverDrawer({ driverId, data, onClose }) {
                     <span className="block font-medium text-[30px] text-f1-text/50 capitalize tracking-tight mb-2">{driver.firstName}</span>
                     <span className="break-words">{driver.lastName}</span>
                   </h1>
-                  {/* 车手趣味标签 */}
-                  {DRIVER_TAGS[driver.id] && (
-                    <div className="flex items-center gap-2 mt-2 mb-1">
-                      <span className="text-[16px]">{DRIVER_TAGS[driver.id].emoji}</span>
-                      <span className="text-[13px] font-semibold text-f1-text/60">{DRIVER_TAGS[driver.id].tag}</span>
-                      <span className="text-[11px] text-f1-text-muted">· {DRIVER_TAGS[driver.id].desc}</span>
-                    </div>
-                  )}
+
                   <div className="flex flex-wrap items-center gap-3 text-[14px] font-bold mt-4">
                     <span className="px-3.5 py-1.5 rounded-md uppercase tracking-[0.05em] cursor-default text-white shadow-sm" style={{ backgroundColor: driver.teamColor || '#1C1C1E' }}>
                       #{driver.number}

@@ -189,14 +189,57 @@ export const getDriverImage = (driverId) => {
 const _raceWeekendCache = {};
 const RACE_WEEKEND_CACHE_TTL = 10 * 60 * 1000;
 
+// 通用的分页获取与深度合并辅助函数，解决上游 API 强制 limit 为 100 造成的截断问题
+async function fetchPagedData(endpoint, limit = 100) {
+  let allRaces = [];
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const data = await fetchJson(`${API_BASE}/${endpoint}?limit=${limit}&offset=${offset}`);
+    const races = data?.MRData?.RaceTable?.Races || [];
+    if (races.length === 0) {
+      hasMore = false;
+      break;
+    }
+
+    races.forEach(race => {
+      const existingRace = allRaces.find(r => r.round === race.round);
+      if (existingRace) {
+        if (race.Results) {
+          existingRace.Results = (existingRace.Results || []).concat(race.Results);
+        }
+        if (race.SprintResults) {
+          existingRace.SprintResults = (existingRace.SprintResults || []).concat(race.SprintResults);
+        }
+      } else {
+        allRaces.push({
+          ...race,
+          Results: race.Results ? [...race.Results] : undefined,
+          SprintResults: race.SprintResults ? [...race.SprintResults] : undefined
+        });
+      }
+    });
+
+    const total = parseInt(data?.MRData?.total || "0", 10);
+    const count = parseInt(data?.MRData?.limit || "0", 10);
+    offset += count;
+    if (offset >= total) {
+      hasMore = false;
+    }
+  }
+
+  return allRaces;
+}
+
 export async function fetchAllData() {
   try {
-    const [driversData, teamsData, calendarData, allResultsData, sprintData] = await Promise.all([
+    const [driversData, teamsData, calendarData, allResults, allSprintRaces] = await Promise.all([
       fetchJson(`${API_BASE}/driverStandings.json`),
       fetchJson(`${API_BASE}/constructorStandings.json`),
       fetchJson(`${API_BASE}.json`),
-      fetchJson(`${API_BASE}/results.json?limit=1000`),
-      fetchJson(`${API_BASE}/sprint.json?limit=1000`)
+      fetchPagedData('results.json'),
+      fetchPagedData('sprint.json')
     ]);
 
     // 1. Driver Standings
@@ -259,7 +302,7 @@ export async function fetchAllData() {
     const nextRace = schedule.find(r => r.status === "upcoming") || schedule[schedule.length - 1];
 
     // 4. Recent Results (All completed races this season, reversed so freshest is top)
-    const completedRaces = allResultsData.MRData.RaceTable.Races || [];
+    const completedRaces = allResults || [];
 
     // 补全由于上游 API 数据缺失导致的车手正赛成绩（如加拿大站仅有 12 人）
     completedRaces.forEach(raceItem => {
@@ -314,8 +357,8 @@ export async function fetchAllData() {
       schedule,
       nextRace,
       recentResults,
-      allRaces: allResultsData.MRData.RaceTable.Races || [],
-      allSprintRaces: sprintData.MRData?.RaceTable?.Races || []
+      allRaces: allResults,
+      allSprintRaces: allSprintRaces
     };
     setCachedAllData(data);
     return data;

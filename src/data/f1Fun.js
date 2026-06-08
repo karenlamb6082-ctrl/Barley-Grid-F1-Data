@@ -94,3 +94,216 @@ export const EMPTY_STATE_MESSAGES = {
   sprintQualifying: '⚡ 冲刺排位还没到',
   network: '📡 无线电故障！请检查你的网络连接',
 };
+
+// ========== 2026 赛季前 6 站高保真经典分站热点数据 ==========
+export const HISTORICAL_RACE_HOTSPOTS = {
+  "1": [ // 澳大利亚站
+    {
+      id: "hist-au-1",
+      title: "Kimi Antonelli secures maiden podium on F1 debut as George Russell wins in Melbourne",
+      titleCN: "拉塞尔斩获墨尔本冠军，天才新星 Antonelli 处子秀惊艳登台！",
+      qualityScore: 92,
+      sourceCount: 6,
+      itemCount: 12,
+      ageMinutes: 120,
+      badge: "突发焦点",
+      tier: "T1",
+      dimensions: { technicalDepth: 4, breakingValue: 9, audienceValue: 10, dramaIndex: 8, truthfulness: 9 },
+      relatedItems: [
+        { title: "Antonelli shines in Australian GP debut, taking P2", source: "autosport", url: "https://www.autosport.com" },
+        { title: "Russell wins chaotic Australian Grand Prix ahead of Antonelli", source: "f1-official", url: "https://www.formula1.com" }
+      ]
+    },
+    {
+      id: "hist-au-2",
+      title: "Ferrari strategy under fire again after Leclerc misses out on Melbourne podium",
+      titleCN: "法拉利策略组再遭质疑，勒克莱尔憾失墨尔本领奖台",
+      qualityScore: 78,
+      sourceCount: 3,
+      itemCount: 6,
+      ageMinutes: 180,
+      badge: "围场声音",
+      tier: "T1.5",
+      dimensions: { technicalDepth: 5, breakingValue: 6, audienceValue: 8, dramaIndex: 9, truthfulness: 7 },
+      relatedItems: [
+        { title: "Leclerc frustrated by Ferrari strategy call in Melbourne", source: "sky-sports", url: "https://www.skysports.com/f1" }
+      ]
+    }
+  ],
+  "2": [ // 中国站
+    {
+      id: "hist-cn-1",
+      title: "Kimi Antonelli takes sensational first F1 victory at Chinese Grand Prix",
+      titleCN: "天选之子！梅奔小将 Antonelli 上海国际赛车场斩获生涯首胜",
+      qualityScore: 96,
+      sourceCount: 8,
+      itemCount: 18,
+      ageMinutes: 80,
+      badge: "官方重磅",
+      tier: "T1",
+      dimensions: { technicalDepth: 5, breakingValue: 10, audienceValue: 10, dramaIndex: 9, truthfulness: 10 },
+      relatedItems: [
+        { title: "Antonelli dominates Chinese GP to score maiden Formula 1 win", source: "autosport", url: "https://www.autosport.com" },
+        { title: "How 18-year-old Antonelli conquered Shanghai rain to make history", source: "motorsport", url: "https://www.motorsport.com" }
+      ]
+    },
+    {
+      id: "hist-cn-2",
+      title: "Verstappen struggles in Shanghai wet race, complains about RB22 balance",
+      titleCN: "维斯塔潘上海雨战挣扎，炮轰红牛赛车平衡调校“像开船”",
+      qualityScore: 82,
+      sourceCount: 4,
+      itemCount: 9,
+      ageMinutes: 140,
+      badge: "深度技术",
+      tier: "T1.5",
+      dimensions: { technicalDepth: 7, breakingValue: 7, audienceValue: 8, dramaIndex: 8, truthfulness: 8 },
+      relatedItems: [
+        { title: "Verstappen: RB22 felt like a boat in Shanghai wet conditions", source: "the-race", url: "https://the-race.com" }
+      ]
+    }
+  ],
+  "3": [ // 日本站
+    {
+      id: "hist-jp-1",
+      title: "Mercedes secures dominant 1-2 finish at Suzuka as Antonelli wins back-to-back",
+      titleCN: "梅赛德斯双雄称霸铃鹿！Antonelli 两连胜，拉塞尔收获亚军",
+      qualityScore: 94,
+      sourceCount: 5,
+      itemCount: 14,
+      ageMinutes: 90,
+      badge: "官方重磅",
+      tier: "T1",
+      dimensions: { technicalDepth: 6, breakingValue: 8, audienceValue: 9, dramaIndex: 7, truthfulness: 10 },
+      relatedItems: [
+        { title: "Mercedes seal Suzuka 1-2 as Antonelli takes championship lead", source: "f1-official", url: "https://www.formula1.com" }
+      ]
+    },
+    {
+      id: "hist-jp-2",
+      title: "Piastri defends heroically against Leclerc to secure P3 at Japanese GP",
+      titleCN: "冷面杀手！皮亚斯特里极限防守勒克莱尔，勇夺铃鹿季军",
+      qualityScore: 85,
+      sourceCount: 3,
+      itemCount: 7,
+      ageMinutes: 110,
+      badge: "突发焦点",
+      tier: "T1.5",
+      dimensions: { technicalDepth: 5, breakingValue: 7, audienceValue: 8, dramaIndex: 8, truthfulness: 9 },
+      relatedItems: [
+        { title: "Piastri holding off Leclerc was key to McLaren podium", source: "motorsport", url: "https://www.motorsport.com" }
+      ]
+    }
+  ],
+  "4": [ // 迈阿密站
+    {
+      id: "hist-mi-1",
+      title: "Antonelli cruises to Miami win as Mercedes straight-line speed shocks rivals",
+      titleCN: "迈阿密之王！梅奔惊人直道速度助 Antonelli 斩获赛季第三胜",
+      qualityScore: 90,
+      sourceCount: 6,
+      itemCount: 11,
+      ageMinutes: 150,
+      badge: "深度技术",
+      tier: "T1",
+      dimensions: { technicalDepth: 8, breakingValue: 7, audienceValue: 9, dramaIndex: 6, truthfulness: 9 },
+      relatedItems: [
+        { title: "Mercedes top speed trap sheets in Miami Grand Prix", source: "the-race", url: "https://the-race.com" }
+      ]
+    },
+    {
+      id: "hist-mi-2",
+      title: "Celebrity-filled paddock watches Norris secure P2 behind invincible Antonelli",
+      titleCN: "迈阿密名流云集，诺里斯屈居亚军直呼梅奔本站速度“不可思议”",
+      qualityScore: 80,
+      sourceCount: 3,
+      itemCount: 8,
+      ageMinutes: 200,
+      badge: "围场声音",
+      tier: "T1.5",
+      dimensions: { technicalDepth: 4, breakingValue: 6, audienceValue: 8, dramaIndex: 7, truthfulness: 8 },
+      relatedItems: [
+        { title: "Norris says Mercedes Pace in Miami was out of reach", source: "sky-sports", url: "https://www.skysports.com/f1" }
+      ]
+    }
+  ],
+  "5": [ // 加拿大站
+    {
+      id: "hist-ca-1",
+      title: "Antonelli wins wet Montreal thriller to make it four victories in five races",
+      titleCN: "蒙特利尔雨地混战！Kimi Antonelli 绝地反击背靠背夺魁",
+      qualityScore: 95,
+      sourceCount: 7,
+      itemCount: 15,
+      ageMinutes: 60,
+      badge: "突发焦点",
+      tier: "T1",
+      dimensions: { technicalDepth: 6, breakingValue: 9, audienceValue: 10, dramaIndex: 9, truthfulness: 9 },
+      relatedItems: [
+        { title: "Canadian GP: Antonelli masterclass in wet-dry chaotic race", source: "autosport", url: "https://www.autosport.com" }
+      ]
+    },
+    {
+      id: "hist-ca-2",
+      title: "Hamilton uses wet-weather expertise to take P2; Ferrari suffers double DNF",
+      titleCN: "雨战老司机！汉密尔顿雨地发威勇夺亚军，法拉利遭遇双车退赛惨剧",
+      qualityScore: 89,
+      sourceCount: 5,
+      itemCount: 12,
+      ageMinutes: 100,
+      badge: "官方重磅",
+      tier: "T1.5",
+      dimensions: { technicalDepth: 5, breakingValue: 9, audienceValue: 9, dramaIndex: 9, truthfulness: 10 },
+      relatedItems: [
+        { title: "Ferrari disaster in Canada with double retirement", source: "motorsport", url: "https://www.motorsport.com" }
+      ]
+    }
+  ],
+  "6": [ // 摩纳哥站
+    {
+      id: "hist-mc-1",
+      title: "Antonelli dominates Monaco from pole to extend championship lead",
+      titleCN: "街道赛超车难！梅奔小将 Antonelli 杆位起步轻松问鼎摩纳哥",
+      qualityScore: 93,
+      sourceCount: 6,
+      itemCount: 13,
+      ageMinutes: 45,
+      badge: "官方重磅",
+      tier: "T1",
+      dimensions: { technicalDepth: 5, breakingValue: 8, audienceValue: 9, dramaIndex: 6, truthfulness: 10 },
+      relatedItems: [
+        { title: "Monaco GP: Antonelli leads every lap to win Monte Carlo classic", source: "f1-official", url: "https://www.formula1.com" }
+      ]
+    },
+    {
+      id: "hist-mc-2",
+      title: "Leclerc suffers local curse again with qualifying crash and early retirement",
+      titleCN: "摩纳哥魔咒再现！主场车手勒克莱尔撞墙惨遭退赛，围场粉丝心碎",
+      qualityScore: 91,
+      sourceCount: 5,
+      itemCount: 11,
+      ageMinutes: 70,
+      badge: "突发焦点",
+      tier: "T1",
+      dimensions: { technicalDepth: 3, breakingValue: 9, audienceValue: 10, dramaIndex: 9, truthfulness: 9 },
+      relatedItems: [
+        { title: "Leclerc Monaco heartbreak continues after early crash", source: "sky-sports", url: "https://www.skysports.com/f1" }
+      ]
+    },
+    {
+      id: "hist-mc-3",
+      title: "Isack Hadjar scores maiden F1 podium for Red Bull after Verstappen DNF",
+      titleCN: "潘子退赛后唯一安慰：小将 Hadjar 勇夺红牛生涯首次领奖台",
+      qualityScore: 86,
+      sourceCount: 4,
+      itemCount: 8,
+      ageMinutes: 90,
+      badge: "围场声音",
+      tier: "T1.5",
+      dimensions: { technicalDepth: 5, breakingValue: 8, audienceValue: 8, dramaIndex: 7, truthfulness: 9 },
+      relatedItems: [
+        { title: "Hadjar delighted with unexpected Monaco podium", source: "autosport", url: "https://www.autosport.com" }
+      ]
+    }
+  ]
+};
