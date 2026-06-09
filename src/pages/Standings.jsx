@@ -12,9 +12,9 @@ function PodiumCard({ rank, item, type, onClick }) {
     <div
       onClick={onClick}
       className={`bg-white rounded-[20px] p-6 border flex flex-col items-center relative group transition-all duration-300 cursor-pointer hover:shadow-md hover:scale-[1.01] ${
-        isP1
-          ? "border-f1-lime/50 shadow-[0_12px_36px_rgba(0,0,0,0.03)] z-10 md:-translate-y-4"
-          : "border-black/[0.045] md:mt-10"
+        rank === 1 ? "order-1 md:order-2 border-f1-lime/50 shadow-[0_12px_36px_rgba(0,0,0,0.03)] z-10 md:-translate-y-4" :
+        rank === 2 ? "order-2 md:order-1 border-black/[0.045] md:mt-10" :
+        "order-3 md:order-3 border-black/[0.045] md:mt-10"
       }`}
     >
       {/* 左上角大号衬线体排名 */}

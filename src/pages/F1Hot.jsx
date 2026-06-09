@@ -202,19 +202,22 @@ export default function F1Hot({ onBack, f1Data }) {
                 <span className="text-[14px] font-bold text-f1-text-muted">当前暂无大热点，赛期通常更加活跃</span>
               </div>
             ) : (
-              data.topics.map((event, idx) => (
-                <HotspotCard 
-                  key={event.id || idx}
-                  event={event}
-                  rank={idx + 1}
-                  isCollected={collectedIds.has(event.id)}
-                  isLiked={likedIds.has(event.id)}
-                  isExpanded={expandedEventId === event.id}
-                  onToggleExpand={() => setExpandedEventId(expandedEventId === event.id ? null : event.id)}
-                  onCollect={() => toggleCollect(event.id)}
-                  onLike={() => toggleLike(event.id)}
-                />
-              ))
+              data.topics.map((event, idx) => {
+                const eventUniqueId = event.id || event.title || String(idx);
+                return (
+                  <HotspotCard 
+                    key={eventUniqueId}
+                    event={event}
+                    rank={idx + 1}
+                    isCollected={collectedIds.has(eventUniqueId)}
+                    isLiked={likedIds.has(eventUniqueId)}
+                    isExpanded={expandedEventId === eventUniqueId}
+                    onToggleExpand={() => setExpandedEventId(expandedEventId === eventUniqueId ? null : eventUniqueId)}
+                    onCollect={() => toggleCollect(eventUniqueId)}
+                    onLike={() => toggleLike(eventUniqueId)}
+                  />
+                );
+              })
             )}
           </div>
         )}

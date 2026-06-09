@@ -642,19 +642,22 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
           <span>📡 围场 AI 引擎同步聚类出以下热议焦点：</span>
           <span>{hotspots.length} 个事件</span>
         </div>
-        {hotspots.map((event, idx) => (
-          <HotspotCard
-            key={event.id || idx}
-            event={event}
-            rank={idx + 1}
-            isCollected={collectedIds.has(event.id)}
-            isLiked={likedIds.has(event.id)}
-            isExpanded={expandedEventId === event.id}
-            onToggleExpand={() => setExpandedEventId(expandedEventId === event.id ? null : event.id)}
-            onCollect={() => toggleCollect(event.id)}
-            onLike={() => toggleLike(event.id)}
-          />
-        ))}
+        {hotspots.map((event, idx) => {
+          const eventUniqueId = event.id || event.title || String(idx);
+          return (
+            <HotspotCard
+              key={eventUniqueId}
+              event={event}
+              rank={idx + 1}
+              isCollected={collectedIds.has(eventUniqueId)}
+              isLiked={likedIds.has(eventUniqueId)}
+              isExpanded={expandedEventId === eventUniqueId}
+              onToggleExpand={() => setExpandedEventId(expandedEventId === eventUniqueId ? null : eventUniqueId)}
+              onCollect={() => toggleCollect(eventUniqueId)}
+              onLike={() => toggleLike(eventUniqueId)}
+            />
+          );
+        })}
       </div>
     );
   };
