@@ -305,10 +305,17 @@ const INFORMATION_TYPE_LABELS = {
   community: { label: "社区讨论", className: "text-f1-text-muted border-black/10 bg-black/[0.02]" },
 };
 
+const FRESHNESS_LABELS = {
+  live: { label: "实时更新", className: "bg-f1-red/10 text-f1-red" },
+  today: { label: "今日事件", className: "bg-emerald-50 text-emerald-700" },
+  ongoing: { label: "持续事件", className: "bg-amber-50 text-amber-700" },
+};
+
 function HotspotCard({ event, rank, isCollected, isLiked, onCollect, onLike }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const dims = event.dimensions || { technicalDepth: 5, breakingValue: 5, audienceValue: 5, dramaIndex: 5, truthfulness: 5 };
   const infoType = INFORMATION_TYPE_LABELS[event.informationType] || INFORMATION_TYPE_LABELS.reported;
+  const freshness = FRESHNESS_LABELS[event.freshness] || FRESHNESS_LABELS.today;
 
   return (
     <div className="apple-card p-5 relative transition-all duration-300 hover:shadow-[0_8px_24px_rgba(0,0,0,0.02)] overflow-hidden text-left bg-white/90 border border-black/[0.04]">
@@ -388,11 +395,15 @@ function HotspotCard({ event, rank, isCollected, isLiked, onCollect, onLike }) {
 
         {/* 元数据 */}
         <div className="mt-3 flex flex-wrap items-center gap-3 text-[10.5px] font-bold text-f1-text-muted">
+          <span className={`rounded px-2 py-1 text-[9px] font-black ${freshness.className}`}>{freshness.label}</span>
           <span className="inline-flex items-center gap-1 text-f1-red">
             🔥🔥 {event.sourceCount} 源 · {event.itemCount} 报道
           </span>
           <span>·</span>
-          <span>{formatTimeAgo(event.ageMinutes)}</span>
+          <span>最后更新 {formatTimeAgo(event.ageMinutes)}</span>
+          {Number.isFinite(event.firstSeenAgeMinutes) && event.firstSeenAgeMinutes > event.ageMinutes && (
+            <span>首次发现 {formatTimeAgo(event.firstSeenAgeMinutes)}</span>
+          )}
           {event.importance && <span>重要性 {event.importance}/5</span>}
           {event.confidence && <span>可信度 {event.confidence}/5</span>}
         </div>

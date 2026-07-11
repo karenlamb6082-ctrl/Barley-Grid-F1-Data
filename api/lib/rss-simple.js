@@ -51,8 +51,13 @@ function parseAtom(xml) {
 }
 
 const FEEDS = [
-  // T1: 官方及顶级权威外媒 (权重倍率 1.25)
+  // Official: 规则、处罚和官方公告。FIA feed 覆盖全赛事，后续会由 F1 关键词严格过滤。
+  { url: 'https://www.fia.com/rss/press-release', label: 'FIA', category: 'official', tier: 'T1', weight: 1.35 },
+
+  // T1: 顶级权威外媒 (权重倍率 1.25)
   { url: 'https://www.autosport.com/rss/feed/f1', label: 'Autosport', category: 'news', tier: 'T1', weight: 1.25 },
+  { url: 'https://www.motorsport.com/rss/f1/news/', label: 'Motorsport.com', category: 'news', tier: 'T1', weight: 1.25 },
+  { url: 'https://feeds.bbci.co.uk/sport/motorsport/rss.xml', label: 'BBC Motorsport', category: 'news', tier: 'T1', weight: 1.25 },
   { url: 'https://the-race.com/feed/', label: 'The Race', category: 'news', tier: 'T1', weight: 1.25 },
 
   // T1.5: 专业硬核技术与直观自媒体 (权重倍率 1.0)
@@ -109,6 +114,7 @@ export async function fetchAllRSS() {
             title: item.title,
             url: item.url,
             publishedAt: item.publishedAt,
+            fetchedAt: new Date().toISOString(),
             author: item.author || null,
             description: item.description || null,
             score,
