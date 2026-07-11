@@ -113,7 +113,8 @@ function HotTopicCard({ topic, rank }) {
 }
 
 export default function F1Pulse({ onViewAll }) {
-  const [data, setData] = useState(() => getCachedHotTopics());
+  const [initialData] = useState(() => getCachedHotTopics());
+  const [data, setData] = useState(initialData);
   const [loading, setLoading] = useState(!data);
   const [error, setError] = useState(null);
 
@@ -136,14 +137,14 @@ export default function F1Pulse({ onViewAll }) {
 
   useEffect(() => {
     // 首次加载：有缓存先用缓存，无缓存主动拉
-    if (!data) {
+    if (!initialData) {
       refresh();
     }
 
     // 定时刷新（5 分钟）
     const timer = setInterval(refresh, 5 * 60 * 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [initialData, refresh]);
 
   const topics = data?.topics || [];
   const empty = !loading && topics.length === 0;

@@ -110,6 +110,7 @@ export async function fetchAllRSS() {
             url: item.url,
             publishedAt: item.publishedAt,
             author: item.author || null,
+            description: item.description || null,
             score,
             comments,
             engagementScore: score + comments * 2,

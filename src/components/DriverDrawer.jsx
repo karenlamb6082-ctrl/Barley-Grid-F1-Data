@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useDrawer } from '../hooks/useDrawer';
 import { getDriverImage } from '../services/f1api';
 import { DRIVER_TAGS } from '../data/f1Fun';

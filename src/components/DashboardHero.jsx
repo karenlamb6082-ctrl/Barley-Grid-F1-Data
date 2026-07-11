@@ -1,6 +1,58 @@
 import { useEffect, useState } from "react";
-import { format } from "date-fns";
 import { getCountryNameCN, getRaceNameCN } from "../services/f1api";
+
+const SESSION_LABELS = {
+  fp1: "第一次练习赛",
+  fp2: "第二次练习赛",
+  fp3: "第三次练习赛",
+  sprintQualifying: "冲刺排位赛",
+  sprint: "冲刺赛",
+  qualifying: "排位赛",
+  race: "正赛",
+};
+
+const SESSION_DURATION = {
+  fp1: 60,
+  fp2: 60,
+  fp3: 60,
+  sprintQualifying: 45,
+  sprint: 60,
+  qualifying: 60,
+  race: 120,
+};
+
+function getSessionStatus(race, now = Date.now()) {
+  const sessions = Object.entries(race?.sessions || {})
+    .filter(([, value]) => value)
+    .map(([key, value]) => ({ key, time: new Date(value).getTime() }))
+    .filter(({ time }) => Number.isFinite(time))
+    .sort((a, b) => a.time - b.time);
+
+  const live = sessions.find(({ key, time }) => {
+    const duration = (SESSION_DURATION[key] || 60) * 60 * 1000;
+    return now >= time && now <= time + duration;
+  });
+  if (live) return { ...live, status: "live" };
+
+  const upcoming = sessions.find(({ time }) => time > now);
+  if (upcoming) return { ...upcoming, status: "upcoming" };
+
+  const latest = sessions.at(-1);
+  return latest ? { ...latest, status: "finished" } : null;
+}
+
+function formatShanghaiTime(value) {
+  if (!value) return "--";
+  return new Intl.DateTimeFormat("zh-CN", {
+    timeZone: "Asia/Shanghai",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date(value));
+}
 
 // TOP 3 榜单预览组件 (画廊列表美学)
 function TopThreeList({ title, items, type, onViewAll, onItemClick }) {
@@ -35,7 +87,7 @@ function TopThreeList({ title, items, type, onViewAll, onItemClick }) {
 }
 
 // 倒计时方块组件 (Stitch 高雅门票卡片风格)
-function CountdownStrip({ targetDate }) {
+function CountdownStrip({ targetDate, isLive = false }) {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -55,6 +107,12 @@ function CountdownStrip({ targetDate }) {
 
   return (
     <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-4 border-t border-black/[0.05] pt-5">
+      {isLive && (
+        <div className="col-span-full flex items-center gap-2 text-[12px] font-black text-f1-red">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-f1-red" />
+          SESSION 进行中
+        </div>
+      )}
       {timeBlocks.map((block) => (
         <div key={block.label} className="flex flex-col border-l border-black/[0.08] pl-3.5">
           <span className="font-label-caps text-f1-text-muted tracking-[0.12em] mb-1">{block.label}</span>
@@ -78,12 +136,15 @@ function getCountdown(targetDate, now = Date.now()) {
   };
 }
 
-export default function DashboardHero({ data, setCurrentView, onRaceClick, onDriverClick, onTeamClick }) {
-  const { nextRace, schedule = [], driverStandings = [], teamStandings = [], recentResults = [] } = data;
+export default function DashboardHero({ data, setCurrentView, onRaceClick, onDriverClick }) {
+  const { nextRace, schedule = [], driverStandings = [], recentResults = [] } = data;
   const completed = recentResults.length || schedule.filter((race) => race.status === "completed").length;
   const total = schedule.length || 24;
   const progress = Math.max(0, Math.min(100, Math.round((completed / total) * 100)));
   const raceDate = nextRace?.date ? new Date(nextRace.date) : null;
+  const session = getSessionStatus(nextRace);
+  const sessionLabel = SESSION_LABELS[session?.key] || "正赛";
+  const sessionBadge = session?.status === "live" ? "LIVE" : session?.status === "finished" ? "已结束" : "NEXT SESSION";
 
   return (
     <section className="flex flex-col min-w-0 rounded-[24px] overflow-hidden border border-black/[0.045] shadow-[0_8px_32px_rgba(16,16,16,0.015)] bg-white animate-in">
@@ -143,7 +204,7 @@ export default function DashboardHero({ data, setCurrentView, onRaceClick, onDri
           <div className="flex items-center justify-between gap-4 mb-4">
             <span className="font-label-caps text-f1-text-muted tracking-[0.16em]">{getCountryNameCN(nextRace?.country)}大奖赛</span>
             <span className="bg-f1-red/10 text-f1-red px-3 py-0.5 rounded-full font-label-caps text-[9px] tracking-[0.12em] font-bold">
-              Round {String(nextRace?.round).padStart(2, "0")}
+              {sessionBadge}
             </span>
           </div>
           
@@ -158,19 +219,25 @@ export default function DashboardHero({ data, setCurrentView, onRaceClick, onDri
             </div>
           </button>
           
-          {/* 发车日程卡片 */}
+          {/* 下一场 Session */}
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div className="rounded-xl border border-black/[0.04] bg-f1-bg/20 p-2.5">
-              <span className="font-label-caps text-[9px] text-f1-text-muted tracking-[0.12em]">正赛日期</span>
-              <div className="mt-1 font-data-numeric text-[18px] text-f1-text leading-none">{raceDate ? format(raceDate, "MM/dd") : "--/--"}</div>
+              <span className="font-label-caps text-[9px] text-f1-text-muted tracking-[0.12em]">当前节点</span>
+              <div className="mt-1 text-[15px] font-black text-f1-text leading-none">{sessionLabel}</div>
             </div>
             <div className="rounded-xl border border-black/[0.04] bg-f1-bg/20 p-2.5">
-              <span className="font-label-caps text-[9px] text-f1-text-muted tracking-[0.12em]">发车时间</span>
-              <div className="mt-1 font-data-numeric text-[18px] text-f1-text leading-none">{raceDate ? format(raceDate, "HH:mm") : "--:--"}</div>
+              <span className="font-label-caps text-[9px] text-f1-text-muted tracking-[0.12em]">北京时间</span>
+              <div className="mt-1 text-[13px] font-black text-f1-text leading-tight">{formatShanghaiTime(session?.time || raceDate)}</div>
             </div>
           </div>
           
-          <CountdownStrip targetDate={nextRace?.date} />
+          <CountdownStrip targetDate={session?.time || nextRace?.date} isLive={session?.status === "live"} />
+          <button
+            onClick={() => onRaceClick?.(nextRace?.round)}
+            className="mt-5 w-full rounded-lg bg-f1-text px-4 py-2.5 text-[12px] font-black text-white transition-colors hover:bg-f1-red"
+          >
+            打开比赛周末 · R{String(nextRace?.round || "--").padStart(2, "0")}
+          </button>
         </div>
 
         {/* 第二列：赛季进度追踪 (大留白极简设计) */}

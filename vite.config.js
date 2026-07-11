@@ -28,7 +28,7 @@ export default defineConfig({
                 }
               });
             }
-          } catch (e) {
+          } catch {
             // 忽略 env 加载失败
           }
 

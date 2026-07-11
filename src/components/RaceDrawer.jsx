@@ -62,8 +62,6 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
       return new Set(JSON.parse(localStorage.getItem("f1hot:liked") || "[]"));
     } catch { return new Set(); }
   });
-  const [expandedEventId, setExpandedEventId] = useState(null);
-
   const toggleCollect = (id) => {
     const next = new Set(collectedIds);
     if (next.has(id)) next.delete(id);
@@ -651,8 +649,6 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
               rank={idx + 1}
               isCollected={collectedIds.has(eventUniqueId)}
               isLiked={likedIds.has(eventUniqueId)}
-              isExpanded={expandedEventId === eventUniqueId}
-              onToggleExpand={() => setExpandedEventId(expandedEventId === eventUniqueId ? null : eventUniqueId)}
               onCollect={() => toggleCollect(eventUniqueId)}
               onLike={() => toggleLike(eventUniqueId)}
             />
@@ -778,7 +774,8 @@ export default function RaceDrawer({ raceRound, data, onClose, onDriverClick }) 
 }
 
 // ==================== 单个已完赛分站热点卡片组件 ====================
-function HotspotCard({ event, rank, isCollected, isLiked, isExpanded, onToggleExpand, onCollect, onLike }) {
+function HotspotCard({ event, rank, isCollected, isLiked, onCollect, onLike }) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const dims = event.dimensions || { technicalDepth: 5, breakingValue: 5, audienceValue: 5, dramaIndex: 5, truthfulness: 5 };
   return (
     <div className="rounded-2xl p-4 relative transition-all duration-300 overflow-hidden text-left bg-white/45 border border-white/80 hover:bg-white/60 shadow-sm animate-in fade-in">
@@ -860,7 +857,7 @@ function HotspotCard({ event, rank, isCollected, isLiked, isExpanded, onToggleEx
       {/* 折叠详情 */}
       <div className="mt-2.5 border-t border-black/[0.04] pt-2 pl-1.5 flex flex-col gap-1.5">
         <button
-          onClick={onToggleExpand}
+          onClick={() => setIsExpanded(!isExpanded)}
           className="flex items-center gap-1 text-[10.5px] font-bold text-f1-text-muted hover:text-f1-red transition-colors py-0.5 px-1 -ml-1 text-left w-fit"
         >
           <span className={`inline-block transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}>▼</span>
