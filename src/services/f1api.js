@@ -593,7 +593,7 @@ export async function fetchPracticeResults(round, schedule) {
 
 // ========== 热点追踪 (F1 Pulse) ==========
 const HOT_TOPICS_CACHE_KEY = 'barley-grid:hot-topics:v1';
-const HOT_TOPICS_CACHE_MAX_AGE = 10 * 60 * 1000;
+const HOT_TOPICS_CACHE_MAX_AGE = 3 * 60 * 1000;
 
 export function getCachedHotTopics() {
   if (!canUseStorage()) return null;

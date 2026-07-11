@@ -41,7 +41,10 @@ const TEAM_ENTITIES = [
 ];
 
 // F1 核心词丛（预筛选匹配，过滤互联网纯灌水/非F1噪音）
-const F1_KEY_PATTERN = /f1|formula\s*1|grand\s*prix|gp|fia|fom|paddock|stewards|lap|circuit|tire|tyre|wing|aero|chassis|telemetry|pit\s*stop|overtake|drs|silly\s*season|contract|verstappen|norris|leclerc|hamilton|alonso|perez|piastri|sainz|russell|gasly|ocon|albon|tsunoda|lawson|bearman|hadjar|antonelli|bortoleto|lindblad/i;
+const F1_KEY_PATTERN = /\bf1\b|formula\s*(?:one|1)|grand\s*prix|\bgp\b|\bfia\b|\bfom\b|paddock|stewards|pit\s*stop|overtake|\bdrs\b|silly\s*season|verstappen|norris|leclerc|hamilton|alonso|perez|piastri|sainz|russell|gasly|ocon|albon|tsunoda|lawson|bearman|hadjar|antonelli|bortoleto|lindblad|red\s*bull|ferrari|mclaren|mercedes|aston\s*martin|williams|alpine|haas|racing\s*bulls|audi|cadillac/i;
+const FIA_F1_PATTERN = /\bf1\b|formula\s*(?:one|1)|grand\s*prix|verstappen|norris|leclerc|hamilton|alonso|perez|piastri|sainz|russell|red\s*bull|ferrari|mclaren|mercedes|aston\s*martin|williams|alpine|haas|racing\s*bulls|audi|cadillac/i;
+
+const HOT_TOPIC_MAX_AGE_HOURS = 36;
 
 // N-gram 分词清洗：转小写、去掉标点与虚词，为文本相似度匹配打基础
 function getCleanWords(title) {
@@ -145,7 +148,15 @@ export function detectHotTopics(items, { threshold = 0.28, maxTopics = 12 } = {}
   const scoredItems = items
     .filter(item => {
       // 预筛选：如果与 F1 词丛不相关，直接物理丢弃，零 Token 消耗
-      return F1_KEY_PATTERN.test(item.title);
+      const searchableText = `${item.title} ${item.description || ''}`;
+      if (!F1_KEY_PATTERN.test(searchableText)) return false;
+      if (item.sourceLabel === 'FIA' && !FIA_F1_PATTERN.test(searchableText)) return false;
+
+      // F1HOT 是实时情报流，不让数日前的高互动旧帖长期占据精选。
+      const publishedTime = new Date(item.publishedAt || item.fetchedAt).getTime();
+      if (!Number.isFinite(publishedTime)) return false;
+      const ageHours = (now - publishedTime) / 3600000;
+      return ageHours >= -1 && ageHours <= HOT_TOPIC_MAX_AGE_HOURS;
     })
     .map(item => {
       const dimensions = calculateLocalDimensions(item);
@@ -192,7 +203,9 @@ export function detectHotTopics(items, { threshold = 0.28, maxTopics = 12 } = {}
     const sources = [...new Set(c.items.map(i => i.sourceLabel))];
     const sourceTypes = [...new Set(c.items.map(i => i.source))];
     const totalComments = c.items.reduce((sum, i) => sum + (i.comments || 0), 0);
-    const latestAt = Math.max(...c.items.map(i => new Date(i.publishedAt).getTime()));
+    const itemTimes = c.items.map(i => new Date(i.publishedAt || i.fetchedAt).getTime()).filter(Number.isFinite);
+    const latestAt = Math.max(...itemTimes);
+    const firstSeenAt = Math.min(...itemTimes);
     
     // 综合热度公式：质量分为基底 + 评论数对数增益 + 聚类多源增益
     let heatScore = main.qualityScore + 
@@ -213,6 +226,7 @@ export function detectHotTopics(items, { threshold = 0.28, maxTopics = 12 } = {}
       itemCount: c.items.length,
       totalComments,
       latestAt,
+      firstSeenAt,
       heatScore,
       items: c.items
     };
@@ -250,6 +264,8 @@ export function detectHotTopics(items, { threshold = 0.28, maxTopics = 12 } = {}
         itemCount: c.itemCount,
         totalComments: c.totalComments,
         ageMinutes: Math.round((now - c.latestAt) / 60000),
+        firstSeenAgeMinutes: Math.round((now - c.firstSeenAt) / 60000),
+        freshness: (now - c.latestAt) <= 6 * 3600000 ? 'live' : (now - c.latestAt) <= 18 * 3600000 ? 'today' : 'ongoing',
         relatedItems: c.items
           .sort((a, b) => b.qualityScore - a.qualityScore)
           .map(i => ({

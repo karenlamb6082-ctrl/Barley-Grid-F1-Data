@@ -146,7 +146,7 @@ export default async function handler(req, res) {
 
   // 1. 读取内存缓存，防刷提速
   if (_memoryCache && Date.now() - _memoryCache.time < MEMORY_TTL) {
-    res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
+    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
     res.setHeader('X-Cache', 'memory');
     return res.status(200).json(_memoryCache.data);
   }
@@ -281,7 +281,7 @@ export default async function handler(req, res) {
       global.f1_hot_topics_cache = _memoryCache;
     }
 
-    res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
+    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
     res.setHeader('X-Cache', 'fresh');
     return res.status(200).json(result);
 

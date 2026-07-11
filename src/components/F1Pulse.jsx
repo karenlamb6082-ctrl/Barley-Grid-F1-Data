@@ -141,8 +141,8 @@ export default function F1Pulse({ onViewAll }) {
       refresh();
     }
 
-    // 定时刷新（5 分钟）
-    const timer = setInterval(refresh, 5 * 60 * 1000);
+    // 热点流强调时效，首页每 3 分钟检查一次更新。
+    const timer = setInterval(refresh, 3 * 60 * 1000);
     return () => clearInterval(timer);
   }, [initialData, refresh]);
 
