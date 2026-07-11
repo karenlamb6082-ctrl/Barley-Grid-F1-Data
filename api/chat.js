@@ -9,6 +9,48 @@ function mapModelName(modelName) {
   return 'deepseek-chat';
 }
 
+const MAX_MESSAGES = 12;
+const MAX_MESSAGE_LENGTH = 4000;
+const MAX_TOTAL_LENGTH = 12000;
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const RATE_LIMIT_MAX = 20;
+const rateLimitStore = new Map();
+
+function getClientId(req) {
+  const forwarded = req.headers?.['x-forwarded-for'];
+  return String(Array.isArray(forwarded) ? forwarded[0] : forwarded || req.socket?.remoteAddress || 'unknown')
+    .split(',')[0]
+    .trim();
+}
+
+function isRateLimited(req) {
+  const key = getClientId(req);
+  const now = Date.now();
+  const recent = (rateLimitStore.get(key) || []).filter((time) => now - time < RATE_LIMIT_WINDOW_MS);
+  if (recent.length >= RATE_LIMIT_MAX) {
+    rateLimitStore.set(key, recent);
+    return true;
+  }
+  recent.push(now);
+  rateLimitStore.set(key, recent);
+  return false;
+}
+
+function validateMessages(messages) {
+  if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_MESSAGES) return null;
+  let totalLength = 0;
+  const safeMessages = [];
+  for (const message of messages) {
+    if (!message || !['user', 'assistant'].includes(message.role) || typeof message.content !== 'string') return null;
+    const content = message.content.trim();
+    if (!content || content.length > MAX_MESSAGE_LENGTH) return null;
+    totalLength += content.length;
+    if (totalLength > MAX_TOTAL_LENGTH) return null;
+    safeMessages.push({ role: message.role, content });
+  }
+  return safeMessages;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -19,10 +61,16 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  if (isRateLimited(req)) {
+    res.setHeader('Retry-After', '600');
+    return res.status(429).json({ error: '提问有点太快了，请稍后再试' });
+  }
+
   // 1. 获取前端传入的对话历史、赛事数据 Context 以及模型参数
   const { messages, f1Context, model } = req.body || {};
-  if (!messages || !Array.isArray(messages)) {
-    return res.status(400).json({ error: '缺少或无效的 messages 上下文' });
+  const safeMessages = validateMessages(messages);
+  if (!safeMessages) {
+    return res.status(400).json({ error: '对话内容无效、过长或消息数量过多' });
   }
 
   // 2. 检查 DeepSeek 密钥
@@ -99,7 +147,6 @@ export default async function handler(req, res) {
     });
   }
 
-  const currentYear = new Date().getFullYear();
   const systemPromptContent = `
 你是一个专业的 F1（一级方程式）围场资深技术分析师与围场百事通。
 
@@ -146,7 +193,7 @@ ${realtimeNewsText || '（暂无今日全网最新实时新闻数据）'}
               role: 'system',
               content: systemPromptContent
             },
-            ...messages
+            ...safeMessages
           ],
           temperature: 0.7
         })

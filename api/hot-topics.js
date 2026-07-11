@@ -59,6 +59,86 @@ function extractJSON(text) {
   }
 }
 
+const INFORMATION_TYPES = new Set(['official', 'reported', 'rumour', 'opinion', 'community']);
+const CATEGORIES = new Set(['raceSpeed', 'techDig', 'paddockVoice']);
+
+function clampNumber(value, min, max, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(min, Math.min(max, parsed)) : fallback;
+}
+
+function getTimeliness(ageMinutes) {
+  if (ageMinutes <= 60) return 5;
+  if (ageMinutes <= 180) return 4;
+  if (ageMinutes <= 720) return 3;
+  if (ageMinutes <= 1440) return 2;
+  return 1;
+}
+
+function buildEvidencePackage(event, id) {
+  return {
+    id,
+    sourceCount: event.sourceCount,
+    reportCount: event.itemCount,
+    totalComments: event.totalComments,
+    ageMinutes: event.ageMinutes,
+    localSignals: event.dimensions,
+    reports: (event.relatedItems || []).slice(0, 4).map(item => ({
+      title: item.title,
+      summary: item.description || '',
+      source: item.source,
+      sourceTier: item.tier,
+      publishedAt: item.publishedAt,
+      score: item.score,
+      comments: item.comments,
+      url: item.url,
+    })),
+  };
+}
+
+function applyEditorialEvaluation(event, evaluation = {}) {
+  const importance = clampNumber(evaluation.importance, 1, 5, Math.ceil((event.dimensions.breakingValue || 5) / 2));
+  const confidence = clampNumber(evaluation.confidence, 1, 5, Math.ceil((event.dimensions.truthfulness || 5) / 2));
+  const timeliness = getTimeliness(event.ageMinutes);
+  const sourceStrength = Math.min(5, 1 + Math.max(0, event.sourceCount - 1) * 2);
+  const communityHeat = Math.min(5, Math.max(1, Math.ceil(Math.log10((event.totalComments || 0) + 1) * 2)));
+  const valueScore = Math.round(
+    (importance / 5) * 35 +
+    (confidence / 5) * 25 +
+    (timeliness / 5) * 15 +
+    (sourceStrength / 5) * 15 +
+    (communityHeat / 5) * 10
+  );
+
+  return {
+    ...event,
+    titleCN: typeof evaluation.titleCN === 'string' ? evaluation.titleCN.trim().slice(0, 100) : event.titleCN,
+    whatHappened: typeof evaluation.whatHappened === 'string' ? evaluation.whatHappened.trim().slice(0, 240) : '',
+    whyItMatters: typeof evaluation.whyItMatters === 'string' ? evaluation.whyItMatters.trim().slice(0, 240) : '',
+    confidenceReason: typeof evaluation.confidenceReason === 'string' ? evaluation.confidenceReason.trim().slice(0, 220) : '',
+    informationType: INFORMATION_TYPES.has(evaluation.informationType) ? evaluation.informationType : 'reported',
+    category: CATEGORIES.has(evaluation.category) ? evaluation.category : 'paddockVoice',
+    importance,
+    confidence,
+    timeliness,
+    valueScore,
+    qualityScore: valueScore,
+    confirmedFacts: Array.isArray(evaluation.confirmedFacts) ? evaluation.confirmedFacts.slice(0, 3).map(String) : [],
+    unconfirmedClaims: Array.isArray(evaluation.unconfirmedClaims) ? evaluation.unconfirmedClaims.slice(0, 3).map(String) : [],
+    tags: Array.isArray(evaluation.tags) ? evaluation.tags.slice(0, 5).map(String) : [],
+    evaluationVersion: 'v2',
+  };
+}
+
+function buildDailyBriefing(events) {
+  const briefing = { raceSpeed: [], techDig: [], paddockVoice: [] };
+  events.forEach(event => {
+    const key = CATEGORIES.has(event.category) ? event.category : 'paddockVoice';
+    if (briefing[key].length < 3) briefing[key].push(event);
+  });
+  return briefing;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -88,31 +168,21 @@ export default async function handler(req, res) {
       maxTopics: 50 // 拉取足够多的事件以便拆分精选和低标
     });
 
-    // 3. 拆分“精选热点 (Score >= 60)”与“低标博文 (30 <= Score < 60)”
-    const featured = allEvents.filter(e => e.qualityScore >= 60).slice(0, 12);
-    const lowScore = allEvents.filter(e => e.qualityScore < 60 && e.qualityScore >= 30).slice(0, 15);
-
-    // 4. 构建 F1HOT 极简日报 (Daily Briefing)
-    let dailyBriefing = {
-      raceSpeed: [],    // 🏁 赛事前沿与官方公告
-      techDig: [],      // 🔧 技术深挖与数据分析
-      paddockVoice: []  // 💬 围场声音与转会传闻
-    };
+    // 3. 将本地引擎选出的较宽候选池全部交给 AI 复审，避免在 AI 评估前过早淘汰。
+    let evaluatedEvents = allEvents.slice(0, 24).map(event => applyEditorialEvaluation(event));
 
     // 检查是否配置了 DeepSeek 大模型密钥
     const apiKey = process.env.DEEPSEEK_API_KEY;
-    if (apiKey && (featured.length > 0 || lowScore.length > 0)) {
+    if (apiKey && evaluatedEvents.length > 0) {
       try {
-        console.log('[DeepSeek] 正在通过 DeepSeek 模型分析日报并进行全量资讯汉化重写...');
+        console.log('[DeepSeek] 正在对候选事件执行证据驱动的编辑价值评估...');
         
-        // 将文章列表转换为带有序号 (0, 1, 2...) 的临时大模型载荷，根除乱码 ID 带来的翻译混淆
         const payload = {
-          featured: featured.map((e, idx) => ({ id: String(idx), title: e.title, url: e.url, source: e.sourceLabel, qualityScore: e.qualityScore })),
-          lowScore: lowScore.map((e, idx) => ({ id: String(featured.length + idx), title: e.title }))
+          events: evaluatedEvents.map((event, index) => buildEvidencePackage(event, String(index))),
         };
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
         let response;
         try {
           response = await fetch('https://api.deepseek.com/chat/completions', {
@@ -127,49 +197,23 @@ export default async function handler(req, res) {
               messages: [
                 {
                   role: 'system',
-                  content: `你是一个专业的 F1（一级方程式）围场资深技术分析师与新闻主编。你的任务是根据提供的一批 F1 英文热点资讯，运用你的专业知识对其进行分类与中文精炼总结，生成一份高质量的 F1 围场日报，并对所有给出的资讯标题进行高质量的中文翻译与润色。另外，你还需要对传入的精选热点（featured 列表中的文章）进行专业复审，重新评估并给它们打分。
+                  content: `你是严谨的 F1 中文新闻主编。输入是已经初步聚类的事件证据包，每个事件可能包含多篇报道及摘要。你的职责不是制造热闹标题，而是判断这个事件是否值得车迷花时间阅读。
 
-日报包含三个板块：
-1. "raceSpeed"：🏁 赛事前沿与官方重磅（规则变化、正赛及排位赛战况、官方处罚通告等）
-2. "techDig"：🔧 技术解构与升级分析（车队底板升级、悬挂几何、风洞数据、空气动力学更新等）
-3. "paddockVoice"：💬 围场声音与转会传闻（车手及领队采访、车手转会流言、车队收购传闻等）
+逐个事件完成：
+1. titleCN：克制、准确的中文标题，不增加原文没有的事实。
+2. whatHappened：一句话说明已发生或被报道的核心内容。
+3. whyItMatters：一句话解释它对比赛、积分、规则、技术或车手市场的实际影响；没有明确影响时如实说明。
+4. informationType：只能是 official（官方确认）、reported（媒体报道）、rumour（传闻）、opinion（观点）、community（社区讨论）。仅凭 T1 媒体不能标为 official。
+5. importance：1-5，衡量对 F1 竞技或围场格局的影响，不等于话题热度。
+6. confidence：1-5，依据来源等级、独立来源数量和证据一致性。单个 Reddit 帖不得高于 2。
+7. confidenceReason：简要写出可信或存疑的依据。
+8. confirmedFacts 与 unconfirmedClaims：严格区分事实和未经证实说法，不确定时放入 unconfirmedClaims。
+9. category：只能是 raceSpeed、techDig、paddockVoice。
+10. tags：最多 5 个简短中文标签。
 
-【重新评估打分要求】
-请针对传入的 featured 列表中的每一篇文章，根据其内容主题，重新评估并给出其以下 5 个维度的专业评分（均为 1 到 10 的整数）：
-- "technicalDepth"：技术深度（如底板升级、风洞、空气动力学等高专业度探讨）
-- "breakingValue"：突发指数（重大官宣、撞车事故、FIA处罚、红旗等）
-- "audienceValue"：受众价值（车迷关注度、话题度等）
-- "dramaIndex"：冲突戏剧性（言语交锋、争议传闻、车手八卦流言等）
-- "truthfulness"：权威可信度（官方公告/Tier1媒体得高分，传闻八卦得低分）
-
-并根据你的打分，使用加权公式计算最终的质量分 "qualityScore" (QS，为 1 到 100 之间的整数)：
-QS = Math.round(((technicalDepth * 2.0) + (breakingValue * 2.5) + (audienceValue * 2.5) + (dramaIndex * 1.5) + (truthfulness * 1.5)) * 原始信源权重)
-（注：信源权重如果是 T1 权威媒体请乘以 1.25，T2 乘以 0.75，其余为 1.0。若算出的 QS 超过 100 则限制为 100）。请在返回结果的 'scores' 字段中返回你的修正评估打分。
-
-请挑选出最典型、最具代表性的 2-3 个焦点事件进行深度总结重写，作为 dailyBriefing 板块的内容。对所有传入的资讯，生成其 ID 到 中文翻译标题 的映射 translations。
-输出必须严格为 JSON 格式，不能包含 any markdown 标记，结构如下：
-{
-  "dailyBriefing": {
-    "raceSpeed": [
-      { "title": "（中文总结标题）", "url": "（关联的原始 url）", "sources": ["DeepSeek-AI"], "qualityScore": 90 }
-    ],
-    "techDig": [ ... ],
-    "paddockVoice": [ ... ]
-  },
-  "translations": {
-    "传入文章的序号ID": "（中文翻译及润色标题）"
-  },
-  "scores": {
-    "传入文章的序号ID": {
-      "technicalDepth": 8,
-      "breakingValue": 7,
-      "audienceValue": 8,
-      "dramaIndex": 5,
-      "truthfulness": 9,
-      "qualityScore": 77
-    }
-  }
-}`
+不要自行计算最终排名或总分，服务端会结合来源、时效与真实热度计算。不得把摘要缺失理解为事实已确认。
+只返回 JSON，不要 Markdown：
+{"evaluations":{"事件ID":{"titleCN":"","whatHappened":"","whyItMatters":"","informationType":"reported","importance":3,"confidence":3,"confidenceReason":"","confirmedFacts":[],"unconfirmedClaims":[],"category":"raceSpeed","tags":[]}}}`
                 },
                 {
                   role: 'user',
@@ -191,39 +235,11 @@ QS = Math.round(((technicalDepth * 2.0) + (breakingValue * 2.5) + (audienceValue
           if (aiContent) {
             const aiJson = extractJSON(aiContent);
             
-            if (aiJson && aiJson.dailyBriefing && aiJson.translations) {
-              dailyBriefing = aiJson.dailyBriefing;
-              
-              // 应用 AI 中文标题翻译结果
-              const trans = aiJson.translations || {};
-              featured.forEach((e, idx) => {
-                const key = String(idx);
-                if (trans[key]) e.titleCN = trans[key];
-              });
-              lowScore.forEach((e, idx) => {
-                const key = String(featured.length + idx);
-                if (trans[key]) e.titleCN = trans[key];
-              });
-
-              // 应用 AI 重新打分的评估结果覆盖
-              const aiScores = aiJson.scores || {};
-              featured.forEach((e, idx) => {
-                const key = String(idx);
-                if (aiScores[key]) {
-                  const s = aiScores[key];
-                  // 边界安全校验与覆盖
-                  e.dimensions = {
-                    technicalDepth: Math.max(1, Math.min(10, parseInt(s.technicalDepth) || e.dimensions.technicalDepth)),
-                    breakingValue: Math.max(1, Math.min(10, parseInt(s.breakingValue) || e.dimensions.breakingValue)),
-                    audienceValue: Math.max(1, Math.min(10, parseInt(s.audienceValue) || e.dimensions.audienceValue)),
-                    dramaIndex: Math.max(1, Math.min(10, parseInt(s.dramaIndex) || e.dimensions.dramaIndex)),
-                    truthfulness: Math.max(1, Math.min(10, parseInt(s.truthfulness) || e.dimensions.truthfulness)),
-                  };
-                  e.qualityScore = Math.max(1, Math.min(100, parseInt(s.qualityScore) || e.qualityScore));
-                }
-              });
-
-              console.log('[DeepSeek] 日报生成、资讯列表汉化与五维打分评估成功！');
+            if (aiJson?.evaluations && typeof aiJson.evaluations === 'object') {
+              evaluatedEvents = evaluatedEvents.map((event, index) => (
+                applyEditorialEvaluation(event, aiJson.evaluations[String(index)] || {})
+              ));
+              console.log('[DeepSeek] 事件事实、影响与可信度评估成功！');
             } else {
               throw new Error('AI 返回 JSON 结构不完整');
             }
@@ -235,10 +251,19 @@ QS = Math.round(((technicalDepth * 2.0) + (breakingValue * 2.5) + (audienceValue
         }
       } catch (err) {
         console.error('[DeepSeek] API 异常，已自动降级为正则匹配分类与字典汉化。原因:', err.message);
-        runRegexClassification(featured, dailyBriefing);
+        // 保留本地评估结果继续服务，不能因为 AI 不可用而让页面失效。
       }
     } else {
-      console.log('[F1HOT] 未配置 DEEPSEEK_API_KEY，采用默认正则匹配进行日报分类与字典汉化。');
+      console.log('[F1HOT] 未配置 DEEPSEEK_API_KEY，采用本地评估结果。');
+    }
+
+    // 4. AI 评估完成后重新排序和精选，确保“什么有价值”真正受编辑评估影响。
+    evaluatedEvents.sort((a, b) => b.valueScore - a.valueScore || a.ageMinutes - b.ageMinutes);
+    const featured = evaluatedEvents.slice(0, 12);
+    const lowScore = evaluatedEvents.slice(12, 24);
+    let dailyBriefing = buildDailyBriefing(featured);
+    if (!apiKey) {
+      dailyBriefing = { raceSpeed: [], techDig: [], paddockVoice: [] };
       runRegexClassification(featured, dailyBriefing);
     }
 

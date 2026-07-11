@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ArrowLeft, RefreshCw, Star, Heart, MessageCircle, ExternalLink, FileText, TrendingUp } from "lucide-react";
 import { fetchHotTopics, getCachedHotTopics } from "../services/f1api";
 
@@ -38,8 +38,9 @@ function formatTimeAgo(minutes) {
   return `${Math.floor(minutes / 1440)}天前`;
 }
 
-export default function F1Hot({ onBack, f1Data }) {
-  const [data, setData] = useState(() => getCachedHotTopics());
+export default function F1Hot({ onBack }) {
+  const [initialData] = useState(() => getCachedHotTopics());
+  const [data, setData] = useState(initialData);
   const [loading, setLoading] = useState(!data);
   const [error, setError] = useState(null);
   
@@ -58,9 +59,6 @@ export default function F1Hot({ onBack, f1Data }) {
     } catch { return new Set(); }
   });
 
-  // 聚类展开卡片 ID
-  const [expandedEventId, setExpandedEventId] = useState(null);
-
   // 日报手风琴展开状态
   const [dailyBriefingOpen, setDailyBriefingOpen] = useState({
     raceSpeed: true,
@@ -78,7 +76,7 @@ export default function F1Hot({ onBack, f1Data }) {
       } else {
         if (!isSilent) setError("AI 流量引擎同步失败，请重试");
       }
-    } catch (e) {
+    } catch {
       if (!isSilent) setError("网络链接异常");
     } finally {
       if (!isSilent) setLoading(false);
@@ -88,9 +86,9 @@ export default function F1Hot({ onBack, f1Data }) {
   useEffect(() => {
     // 无论有没有本地缓存，在组件挂载时都发起刷新以保证数据最新。
     // 如果已有本地缓存，则采用静默方式在后台刷新，不闪烁 loading 动画，实现秒开且保新。
-    const hasCache = !!data;
+    const hasCache = !!initialData;
     refresh(hasCache);
-  }, []);
+  }, [initialData, refresh]);
 
   // 收藏/点赞交互逻辑
   const toggleCollect = (id) => {
@@ -144,7 +142,6 @@ export default function F1Hot({ onBack, f1Data }) {
           <button
             onClick={() => {
               setActiveTab("featured");
-              setExpandedEventId(null);
             }}
             className={`flex-1 sm:flex-initial px-6 py-2 rounded-lg text-[13px] font-bold transition-all btn-bounce ${
               activeTab === "featured"
@@ -157,7 +154,6 @@ export default function F1Hot({ onBack, f1Data }) {
           <button
             onClick={() => {
               setActiveTab("daily");
-              setExpandedEventId(null);
             }}
             className={`flex-1 sm:flex-initial px-6 py-2 rounded-lg text-[13px] font-bold transition-all btn-bounce ${
               activeTab === "daily"
@@ -211,8 +207,6 @@ export default function F1Hot({ onBack, f1Data }) {
                     rank={idx + 1}
                     isCollected={collectedIds.has(eventUniqueId)}
                     isLiked={likedIds.has(eventUniqueId)}
-                    isExpanded={expandedEventId === eventUniqueId}
-                    onToggleExpand={() => setExpandedEventId(expandedEventId === eventUniqueId ? null : eventUniqueId)}
                     onCollect={() => toggleCollect(eventUniqueId)}
                     onLike={() => toggleLike(eventUniqueId)}
                   />
@@ -303,9 +297,18 @@ export default function F1Hot({ onBack, f1Data }) {
 }
 
 // ==================== 单个 F1HOT 精选聚类卡片组件 ====================
-function HotspotCard({ event, rank, isCollected, isLiked, isExpanded, onToggleExpand, onCollect, onLike }) {
-  const main = event.mainItem || event;
+const INFORMATION_TYPE_LABELS = {
+  official: { label: "官方确认", className: "text-emerald-700 border-emerald-500/20 bg-emerald-50" },
+  reported: { label: "媒体报道", className: "text-blue-700 border-blue-500/20 bg-blue-50" },
+  rumour: { label: "尚未证实", className: "text-amber-700 border-amber-500/20 bg-amber-50" },
+  opinion: { label: "围场观点", className: "text-purple-700 border-purple-500/20 bg-purple-50" },
+  community: { label: "社区讨论", className: "text-f1-text-muted border-black/10 bg-black/[0.02]" },
+};
+
+function HotspotCard({ event, rank, isCollected, isLiked, onCollect, onLike }) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const dims = event.dimensions || { technicalDepth: 5, breakingValue: 5, audienceValue: 5, dramaIndex: 5, truthfulness: 5 };
+  const infoType = INFORMATION_TYPE_LABELS[event.informationType] || INFORMATION_TYPE_LABELS.reported;
 
   return (
     <div className="apple-card p-5 relative transition-all duration-300 hover:shadow-[0_8px_24px_rgba(0,0,0,0.02)] overflow-hidden text-left bg-white/90 border border-black/[0.04]">
@@ -322,30 +325,19 @@ function HotspotCard({ event, rank, isCollected, isLiked, isExpanded, onToggleEx
             {String(rank).padStart(2, "0")}
           </span>
           
-          {/* 质量分 */}
+          {/* 编辑价值分 */}
           <div className={`px-2.5 py-0.5 rounded-lg font-label-caps text-[9px] border flex items-center gap-1.5 shadow-sm ${
             event.qualityScore >= 80
               ? "text-f1-gold border-f1-gold/25 bg-f1-gold/5"
               : "text-f1-cyan border-f1-cyan/25 bg-f1-cyan/5"
-          }`}>
+            }`}>
             <TrendingUp size={10} />
-            QS {event.qualityScore}
+            价值 {event.valueScore || event.qualityScore}
           </div>
 
-          {/* AI特质徽章 */}
-          {event.badge && (
-            <span className={`px-2 py-0.5 rounded-lg font-label-caps text-[9px] border tracking-wider ${
-              event.badge === "官方重磅"
-                ? "text-f1-red border-f1-red/20 bg-f1-red/5"
-                : event.badge === "深度技术"
-                  ? "text-f1-cyan border-f1-cyan/20 bg-f1-cyan/5"
-                  : event.badge === "突发焦点"
-                    ? "text-orange-600 border-orange-500/20 bg-orange-50"
-                    : "text-f1-text-muted border-black/5 bg-black/[0.01]"
-            }`}>
-              {event.badge}
-            </span>
-          )}
+          <span className={`px-2 py-0.5 rounded-lg font-label-caps text-[9px] border tracking-wider ${infoType.className}`}>
+            {infoType.label}
+          </span>
         </div>
 
         {/* 收藏/点赞 */}
@@ -374,6 +366,20 @@ function HotspotCard({ event, rank, isCollected, isLiked, isExpanded, onToggleEx
         <h3 className="font-headline-md text-[17px] sm:text-[18px] text-f1-text leading-snug hover:text-f1-red transition-all cursor-pointer">
           {event.titleCN || event.title}
         </h3>
+
+        {event.whatHappened && (
+          <div className="mt-3 rounded-xl border border-black/[0.04] bg-f1-bg/30 px-3.5 py-3">
+            <div className="font-label-caps text-[9px] tracking-[0.12em] text-f1-text-muted">发生了什么</div>
+            <p className="mt-1 text-[13px] font-semibold leading-relaxed text-f1-text">{event.whatHappened}</p>
+          </div>
+        )}
+
+        {event.whyItMatters && (
+          <div className="mt-2 border-l-2 border-f1-red/70 pl-3">
+            <div className="font-label-caps text-[9px] tracking-[0.12em] text-f1-red">为什么值得关注</div>
+            <p className="mt-1 text-[13px] leading-relaxed text-f1-text/80">{event.whyItMatters}</p>
+          </div>
+        )}
         
         {/* 翻译对照 */}
         <p className="mt-2 font-sans text-[12px] text-f1-text-muted/70 italic leading-relaxed">
@@ -387,13 +393,23 @@ function HotspotCard({ event, rank, isCollected, isLiked, isExpanded, onToggleEx
           </span>
           <span>·</span>
           <span>{formatTimeAgo(event.ageMinutes)}</span>
+          {event.importance && <span>重要性 {event.importance}/5</span>}
+          {event.confidence && <span>可信度 {event.confidence}/5</span>}
         </div>
+        {event.confidenceReason && (
+          <p className="mt-2 text-[11px] leading-relaxed text-f1-text-muted">判断依据：{event.confidenceReason}</p>
+        )}
+        {event.tags?.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {event.tags.map(tag => <span key={tag} className="rounded bg-black/[0.035] px-2 py-1 text-[9px] font-bold text-f1-text-muted">{tag}</span>)}
+          </div>
+        )}
       </div>
 
       {/* 手风琴详情折叠 */}
       <div className="mt-3 border-t border-black/[0.04] pt-2.5 pl-2 flex flex-col gap-2">
         <button
-          onClick={onToggleExpand}
+          onClick={() => setIsExpanded(!isExpanded)}
           className="flex items-center gap-1 text-[11px] font-black text-f1-text-muted hover:text-f1-red transition-colors tap-row rounded py-0.5 px-1 -ml-1 text-left w-fit"
         >
           <span className={`inline-block transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}>▼</span>
@@ -402,6 +418,22 @@ function HotspotCard({ event, rank, isCollected, isLiked, isExpanded, onToggleEx
 
         {isExpanded && (
           <div className="mt-1.5 space-y-3.5 animate-in fade-in duration-300">
+            {(event.confirmedFacts?.length > 0 || event.unconfirmedClaims?.length > 0) && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-emerald-500/15 bg-emerald-50/60 p-3">
+                  <div className="text-[10px] font-black text-emerald-700">已确认事实</div>
+                  <ul className="mt-2 space-y-1 text-[11px] leading-relaxed text-f1-text/75">
+                    {event.confirmedFacts?.length > 0 ? event.confirmedFacts.map(fact => <li key={fact}>• {fact}</li>) : <li>暂无可独立确认的事实</li>}
+                  </ul>
+                </div>
+                <div className="rounded-xl border border-amber-500/15 bg-amber-50/60 p-3">
+                  <div className="text-[10px] font-black text-amber-700">仍待证实</div>
+                  <ul className="mt-2 space-y-1 text-[11px] leading-relaxed text-f1-text/75">
+                    {event.unconfirmedClaims?.length > 0 ? event.unconfirmedClaims.map(claim => <li key={claim}>• {claim}</li>) : <li>没有额外的未证实说法</li>}
+                  </ul>
+                </div>
+              </div>
+            )}
             {/* 5 维度评分图表 */}
             <div className="rounded-xl border border-black/[0.04] bg-black/[0.01] p-3 space-y-1.5 max-w-xs">
               {[

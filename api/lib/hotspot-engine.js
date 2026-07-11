@@ -51,7 +51,7 @@ function getCleanWords(title) {
     'this', 'but', 'how', 'why', 'what', 'will', 'has', 'have', 'had', 'been'
   ]);
   return title.toLowerCase()
-    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "")
+    .replace(/[.,/#!$%^&*;:{}=_`~()?"'-]/g, "")
     .split(/\s+/)
     .filter(w => w.length >= 3 && !stopwords.has(w));
 }
@@ -257,6 +257,7 @@ export function detectHotTopics(items, { threshold = 0.28, maxTopics = 12 } = {}
             url: i.url,
             source: i.sourceLabel,
             author: i.author || null,
+            description: i.description || null,
             score: i.score || 0,
             comments: i.comments || 0,
             publishedAt: i.publishedAt,

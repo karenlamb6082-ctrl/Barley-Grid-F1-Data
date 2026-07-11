@@ -9,7 +9,7 @@ function formatMessageContent(content) {
   if (typeof safeContent !== "string") {
     try {
       safeContent = String(safeContent);
-    } catch (e) {
+    } catch {
       return "";
     }
   }

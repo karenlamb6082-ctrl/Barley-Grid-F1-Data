@@ -268,7 +268,6 @@ function App() {
                 {currentView === "f1hot" && (
                   <F1Hot
                     onBack={() => setCurrentView("home")}
-                    f1Data={data}
                   />
                 )}
                 {currentView === "chat" && (
