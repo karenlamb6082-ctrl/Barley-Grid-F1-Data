@@ -4,6 +4,15 @@
 
 import { fetchAllRSS } from './lib/rss-simple.js';
 import { detectHotTopics } from './lib/hotspot-engine.js';
+import { createHash, timingSafeEqual } from 'node:crypto';
+import {
+  consumeAiBudget,
+  readCurrentHotTopics,
+  readEvaluations,
+  writeCurrentHotTopics,
+  writeEvaluations,
+  writeSourceHealth,
+} from './lib/redis.js';
 
 let _memoryCache = null;
 const MEMORY_TTL = 30 * 1000; // 30 秒高吞吐缓存
@@ -139,13 +148,47 @@ function buildDailyBriefing(events) {
   return briefing;
 }
 
+function getEvaluationHash(event) {
+  const evidence = buildEvidencePackage(event, '');
+  delete evidence.id;
+  return createHash('sha256').update(JSON.stringify(evidence)).digest('hex').slice(0, 32);
+}
+
+function hasValidJobSecret(req) {
+  const expected = process.env.F1HOT_JOB_SECRET;
+  const supplied = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!expected || !supplied) return false;
+  const left = Buffer.from(expected);
+  const right = Buffer.from(supplied);
+  return left.length === right.length && timingSafeEqual(left, right);
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  const isRefreshJob = String(req.query?.refresh || '') === '1';
+  if (isRefreshJob && !hasValidJobSecret(req)) {
+    return res.status(401).json({ error: 'Unauthorized refresh request' });
+  }
+
+  // 普通访问只读取后台生成的快照；Redis 未就绪时继续走旧链路，保证平滑迁移。
+  if (!isRefreshJob) {
+    try {
+      const persisted = await readCurrentHotTopics();
+      if (persisted?.topics) {
+        res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=180');
+        res.setHeader('X-Cache', 'redis');
+        return res.status(200).json(persisted);
+      }
+    } catch (error) {
+      console.warn('[F1HOT] Redis 快照读取失败，回退到现场聚合:', error.message);
+    }
+  }
+
   // 1. 读取内存缓存，防刷提速
-  if (_memoryCache && Date.now() - _memoryCache.time < MEMORY_TTL) {
+  if (!isRefreshJob && _memoryCache && Date.now() - _memoryCache.time < MEMORY_TTL) {
     res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
     res.setHeader('X-Cache', 'memory');
     return res.status(200).json(_memoryCache.data);
@@ -171,14 +214,28 @@ export default async function handler(req, res) {
     // 3. 将本地引擎选出的较宽候选池全部交给 AI 复审，避免在 AI 评估前过早淘汰。
     let evaluatedEvents = allEvents.slice(0, 24).map(event => applyEditorialEvaluation(event));
 
-    // 检查是否配置了 DeepSeek 大模型密钥
+    // 先应用历史评估缓存，只有证据发生变化的事件才再次调用 DeepSeek。
+    const evaluationHashes = evaluatedEvents.map(getEvaluationHash);
+    const cachedEvaluations = await readEvaluations(evaluationHashes).catch(() => evaluationHashes.map(() => null));
+    const pendingIndices = [];
+    evaluatedEvents = evaluatedEvents.map((event, index) => {
+      const cached = cachedEvaluations[index];
+      if (cached) return applyEditorialEvaluation(event, cached);
+      pendingIndices.push(index);
+      return event;
+    });
+
+    // 检查是否配置了 DeepSeek 大模型密钥和当日调用预算。
     const apiKey = process.env.DEEPSEEK_API_KEY;
-    if (apiKey && evaluatedEvents.length > 0) {
+    const aiBudgetAvailable = apiKey && pendingIndices.length > 0
+      ? await consumeAiBudget(Number(process.env.F1HOT_AI_MAX_CALLS_PER_DAY) || 30).catch(() => true)
+      : false;
+    if (apiKey && pendingIndices.length > 0 && aiBudgetAvailable) {
       try {
-        console.log('[DeepSeek] 正在对候选事件执行证据驱动的编辑价值评估...');
+        console.log(`[DeepSeek] 正在评估 ${pendingIndices.length} 个新增或变化事件...`);
         
         const payload = {
-          events: evaluatedEvents.map((event, index) => buildEvidencePackage(event, String(index))),
+          events: pendingIndices.map(index => buildEvidencePackage(evaluatedEvents[index], String(index))),
         };
 
         const controller = new AbortController();
@@ -236,9 +293,14 @@ export default async function handler(req, res) {
             const aiJson = extractJSON(aiContent);
             
             if (aiJson?.evaluations && typeof aiJson.evaluations === 'object') {
-              evaluatedEvents = evaluatedEvents.map((event, index) => (
-                applyEditorialEvaluation(event, aiJson.evaluations[String(index)] || {})
-              ));
+              const cacheEntries = [];
+              pendingIndices.forEach(index => {
+                const evaluation = aiJson.evaluations[String(index)];
+                if (!evaluation) return;
+                evaluatedEvents[index] = applyEditorialEvaluation(evaluatedEvents[index], evaluation);
+                cacheEntries.push([evaluationHashes[index], evaluation]);
+              });
+              await writeEvaluations(cacheEntries).catch(error => console.warn('[F1HOT] 评估缓存写入失败:', error.message));
               console.log('[DeepSeek] 事件事实、影响与可信度评估成功！');
             } else {
               throw new Error('AI 返回 JSON 结构不完整');
@@ -253,8 +315,12 @@ export default async function handler(req, res) {
         console.error('[DeepSeek] API 异常，已自动降级为正则匹配分类与字典汉化。原因:', err.message);
         // 保留本地评估结果继续服务，不能因为 AI 不可用而让页面失效。
       }
-    } else {
+    } else if (!apiKey) {
       console.log('[F1HOT] 未配置 DEEPSEEK_API_KEY，采用本地评估结果。');
+    } else if (pendingIndices.length === 0) {
+      console.log('[F1HOT] 所有事件命中评估缓存，本轮不调用 DeepSeek。');
+    } else {
+      console.log('[F1HOT] 已达到当日 AI 调用上限，本轮使用本地评估。');
     }
 
     // 4. AI 评估完成后重新排序和精选，确保“什么有价值”真正受编辑评估影响。
@@ -273,13 +339,25 @@ export default async function handler(req, res) {
       lowScoreTopics: lowScore,
       dailyBriefing,
       totalItems: allItems.length,
-      generatedAt: Date.now()
+      generatedAt: Date.now(),
+      lastCollectedAt: Date.now(),
+      processingMode: apiKey ? 'ai-assisted' : 'local',
+      persistence: 'redis-v2',
     };
 
     _memoryCache = { time: Date.now(), data: result };
     if (typeof global !== 'undefined') {
       global.f1_hot_topics_cache = _memoryCache;
     }
+    await Promise.allSettled([
+      writeCurrentHotTopics(result),
+      writeSourceHealth({
+        status: 'healthy',
+        lastCollectedAt: result.lastCollectedAt,
+        totalItems: allItems.length,
+        activeEvents: featured.length,
+      }),
+    ]);
 
     res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
     res.setHeader('X-Cache', 'fresh');
@@ -287,6 +365,15 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('hot-topics API 故障:', error);
+    try {
+      const persisted = await readCurrentHotTopics();
+      if (persisted?.topics) {
+        res.setHeader('X-Cache', 'redis-stale');
+        return res.status(200).json({ ...persisted, stale: true });
+      }
+    } catch {
+      // Redis 也不可用时继续使用进程内缓存。
+    }
     if (_memoryCache) {
       res.setHeader('X-Cache', 'error-fallback');
       return res.status(200).json(_memoryCache.data);
