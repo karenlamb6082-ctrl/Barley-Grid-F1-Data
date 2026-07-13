@@ -50,6 +50,15 @@ function parseAtom(xml) {
   return items;
 }
 
+function createStableId(value) {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `rss-${(hash >>> 0).toString(36)}`;
+}
+
 const FEEDS = [
   // Official: 规则、处罚和官方公告。FIA feed 覆盖全赛事，后续会由 F1 关键词严格过滤。
   { url: 'https://www.fia.com/rss/press-release', label: 'FIA', category: 'official', tier: 'T1', weight: 1.35 },
@@ -105,7 +114,7 @@ async function fetchAllRSSLegacy() {
           }
 
           return {
-            id: btoa(item.url).slice(0, 12),
+            id: createStableId(item.url),
             source: feed.label.startsWith('r/') ? 'reddit' : 'rss',
             sourceLabel: feed.label,
             sourceCategory: feed.category,
@@ -160,7 +169,7 @@ export async function fetchAllRSSWithHealth() {
       if (parsed.length === 0) parsed = parseAtom(xml);
       const items = parsed.map(item => {
         const recentBoost = feed.category === 'new' && item.publishedAt && Date.now() - new Date(item.publishedAt).getTime() < 30 * 60000 ? 15 : 0;
-        return { id: btoa(item.url).slice(0, 12), source: feed.label.startsWith('r/') ? 'reddit' : 'rss', sourceLabel: feed.label, sourceCategory: feed.category, tier: feed.tier, weight: feed.weight, title: item.title, url: item.url, publishedAt: item.publishedAt, fetchedAt: collectedAt, author: item.author || null, description: item.description || null, score: 1 + recentBoost, comments: 0, engagementScore: 1 + recentBoost };
+        return { id: createStableId(item.url), source: feed.label.startsWith('r/') ? 'reddit' : 'rss', sourceLabel: feed.label, sourceCategory: feed.category, tier: feed.tier, weight: feed.weight, title: item.title, url: item.url, publishedAt: item.publishedAt, fetchedAt: collectedAt, author: item.author || null, description: item.description || null, score: 1 + recentBoost, comments: 0, engagementScore: 1 + recentBoost };
       });
       const latestItemAt = items.map(item => item.publishedAt).filter(Boolean).sort().at(-1) || null;
       return { items, health: { ...base, status: items.length ? 'healthy' : 'empty', itemCount: items.length, latestItemAt, latencyMs: Date.now() - startedAt, error: null } };

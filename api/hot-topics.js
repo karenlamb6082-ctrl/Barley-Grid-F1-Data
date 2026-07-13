@@ -151,6 +151,37 @@ function buildDailyBriefing(events) {
   return briefing;
 }
 
+function dedupeEvaluatedEvents(events) {
+  const groups = new Map();
+  events.forEach(event => {
+    const normalizedTitle = String(event.titleCN || event.title)
+      .toLowerCase()
+      .replace(/[\s\p{P}\p{S}]+/gu, '');
+    const existing = groups.get(normalizedTitle);
+    if (!existing) {
+      groups.set(normalizedTitle, { ...event, relatedItems: [...(event.relatedItems || [])] });
+      return;
+    }
+
+    const primary = existing.valueScore >= event.valueScore ? existing : event;
+    const secondary = primary === existing ? event : existing;
+    const relatedItems = [...(primary.relatedItems || []), ...(secondary.relatedItems || [])]
+      .filter((item, index, list) => list.findIndex(candidate => candidate.url === item.url) === index);
+    groups.set(normalizedTitle, {
+      ...primary,
+      sources: [...new Set([...(primary.sources || []), ...(secondary.sources || [])])],
+      sourceTypes: [...new Set([...(primary.sourceTypes || []), ...(secondary.sourceTypes || [])])],
+      relatedItems,
+      sourceCount: new Set([...(primary.sources || []), ...(secondary.sources || [])]).size,
+      itemCount: relatedItems.length,
+      totalComments: (primary.totalComments || 0) + (secondary.totalComments || 0),
+      ageMinutes: Math.min(primary.ageMinutes, secondary.ageMinutes),
+      firstSeenAgeMinutes: Math.max(primary.firstSeenAgeMinutes || 0, secondary.firstSeenAgeMinutes || 0),
+    });
+  });
+  return [...groups.values()];
+}
+
 function getEvaluationHash(event) {
   const evidence = buildEvidencePackage(event, '');
   delete evidence.id;
@@ -327,6 +358,7 @@ export default async function handler(req, res) {
     }
 
     // 4. AI 评估完成后重新排序和精选，确保“什么有价值”真正受编辑评估影响。
+    evaluatedEvents = dedupeEvaluatedEvents(evaluatedEvents);
     evaluatedEvents.sort((a, b) => b.valueScore - a.valueScore || a.ageMinutes - b.ageMinutes);
     const featured = evaluatedEvents.slice(0, 12);
     const lowScore = evaluatedEvents.slice(12, 24);
