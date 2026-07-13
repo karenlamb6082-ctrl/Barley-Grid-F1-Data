@@ -69,7 +69,7 @@ const FEEDS = [
   { url: 'https://www.reddit.com/r/formula1/new.rss?limit=15', label: 'r/formula1', category: 'new', tier: 'T2', weight: 0.75 }
 ];
 
-export async function fetchAllRSS() {
+async function fetchAllRSSLegacy() {
   const results = await Promise.allSettled(
     FEEDS.map(async feed => {
       try {
@@ -142,6 +142,42 @@ export async function fetchAllRSS() {
   }
 
   return all;
+}
+
+export async function fetchAllRSSWithHealth() {
+  const collectedAt = new Date().toISOString();
+  const results = await Promise.all(FEEDS.map(async (feed, index) => {
+    const startedAt = Date.now();
+    const base = { id: `${feed.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${feed.category}-${index}`, label: feed.label, category: feed.category, tier: feed.tier, lastAttemptAt: collectedAt };
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 5000);
+      const res = await fetch(feed.url, { headers: { 'User-Agent': 'BarleyGrid/1.0', 'Accept': 'application/rss+xml, text/xml, */*' }, signal: ctrl.signal });
+      clearTimeout(timer);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const xml = await res.text();
+      let parsed = parseRSS(xml);
+      if (parsed.length === 0) parsed = parseAtom(xml);
+      const items = parsed.map(item => {
+        const recentBoost = feed.category === 'new' && item.publishedAt && Date.now() - new Date(item.publishedAt).getTime() < 30 * 60000 ? 15 : 0;
+        return { id: btoa(item.url).slice(0, 12), source: feed.label.startsWith('r/') ? 'reddit' : 'rss', sourceLabel: feed.label, sourceCategory: feed.category, tier: feed.tier, weight: feed.weight, title: item.title, url: item.url, publishedAt: item.publishedAt, fetchedAt: collectedAt, author: item.author || null, description: item.description || null, score: 1 + recentBoost, comments: 0, engagementScore: 1 + recentBoost };
+      });
+      const latestItemAt = items.map(item => item.publishedAt).filter(Boolean).sort().at(-1) || null;
+      return { items, health: { ...base, status: items.length ? 'healthy' : 'empty', itemCount: items.length, latestItemAt, latencyMs: Date.now() - startedAt, error: null } };
+    } catch (error) {
+      console.error(`[RSS] ${feed.label}/${feed.category} failed:`, error.message);
+      return { items: [], health: { ...base, status: 'offline', itemCount: 0, latestItemAt: null, latencyMs: Date.now() - startedAt, error: error.name === 'AbortError' ? 'timeout' : String(error.message || 'request failed').slice(0, 120) } };
+    }
+  }));
+  let items = results.flatMap(result => result.items);
+  const sources = results.map(result => result.health);
+  let usedFallback = false;
+  if (items.length === 0) { items = await fetchAllRSSLegacy(); usedFallback = true; }
+  return { items, sources, usedFallback };
+}
+
+export async function fetchAllRSS() {
+  return (await fetchAllRSSWithHealth()).items;
 }
 
 export { FEEDS, parseRSS, parseAtom };

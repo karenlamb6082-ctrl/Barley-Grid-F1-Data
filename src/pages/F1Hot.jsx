@@ -38,6 +38,12 @@ function formatTimeAgo(minutes) {
   return `${Math.floor(minutes / 1440)}天前`;
 }
 
+function formatCollectedAt(timestamp) {
+  if (!timestamp) return "等待首次云端采集";
+  const minutes = Math.max(0, Math.floor((Date.now() - Number(timestamp)) / 60000));
+  return minutes < 1 ? "刚刚采集" : `${formatTimeAgo(minutes)}采集`;
+}
+
 export default function F1Hot({ onBack }) {
   const [initialData] = useState(() => getCachedHotTopics());
   const [data, setData] = useState(initialData);
@@ -137,6 +143,13 @@ export default function F1Hot({ onBack }) {
       </div>
 
       {/* 顶部高保真胶囊式分段切换菜单 (代替原先繁杂的侧边栏，实现手机端极致手感) */}
+      {data?.sourceHealth && (
+        <div className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border px-4 py-3 text-[11.5px] font-bold ${data.sourceHealth.status === "healthy" ? "border-emerald-500/15 bg-emerald-50/60 text-emerald-800" : "border-amber-500/20 bg-amber-50/70 text-amber-800"}`}>
+          <span>云端自动采集 · {formatCollectedAt(data.lastCollectedAt)}</span>
+          <span>数据源 {data.sourceHealth.healthy}/{data.sourceHealth.total} 正常{data.sourceHealth.offline > 0 ? ` · ${data.sourceHealth.offline} 个暂时离线` : ""}</span>
+        </div>
+      )}
+
       <div className="flex justify-center">
         <div className="inline-flex p-1.5 bg-f1-graphite rounded-xl border border-white/[0.06] shadow-md w-full sm:w-auto">
           <button
