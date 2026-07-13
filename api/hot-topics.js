@@ -182,10 +182,51 @@ function dedupeEvaluatedEvents(events) {
   return [...groups.values()];
 }
 
-function getEvaluationHash(event) {
+export function getEvaluationHash(event) {
+  // 只让会改变编辑结论的内容进入缓存键。ageMinutes、互动量和本地热度会在
+  // 每轮采集时变化，把它们放进哈希会让同一篇报道每 5 分钟重新消耗一次 AI 预算。
   const evidence = buildEvidencePackage(event, '');
-  delete evidence.id;
-  return createHash('sha256').update(JSON.stringify(evidence)).digest('hex').slice(0, 32);
+  const stableEvidence = {
+    localSignals: evidence.localSignals,
+    reports: evidence.reports.map(report => ({
+      title: report.title,
+      summary: report.summary,
+      source: report.source,
+      sourceTier: report.sourceTier,
+      publishedAt: report.publishedAt,
+      url: report.url,
+    })),
+  };
+  return createHash('sha256').update(JSON.stringify(stableEvidence)).digest('hex').slice(0, 32);
+}
+
+function getEventIdentityKeys(event) {
+  return [event?.id, event?.url, ...(event?.relatedItems || []).map(item => item?.url)].filter(Boolean);
+}
+
+export function restorePreviousEditorialEvaluations(events, previousSnapshot) {
+  const previousEvents = [
+    ...(previousSnapshot?.topics || []),
+    ...(previousSnapshot?.lowScoreTopics || []),
+  ];
+  const previousByIdentity = new Map();
+  previousEvents.forEach(event => {
+    if (!event.titleCN) return;
+    getEventIdentityKeys(event).forEach(key => previousByIdentity.set(key, event));
+  });
+
+  let restoredCount = 0;
+  const restoredEvents = events.map(event => {
+    if (event.titleCN) return event;
+    const previous = getEventIdentityKeys(event)
+      .map(key => previousByIdentity.get(key))
+      .find(Boolean);
+    if (!previous) return event;
+    restoredCount += 1;
+    return applyEditorialEvaluation(event, previous);
+  });
+
+  return { events: restoredEvents, restoredCount };
 }
 
 function hasValidJobSecret(req) {
@@ -205,6 +246,11 @@ export default async function handler(req, res) {
   const isRefreshJob = String(req.query?.refresh || '') === '1';
   if (isRefreshJob && !hasValidJobSecret(req)) {
     return res.status(401).json({ error: 'Unauthorized refresh request' });
+  }
+
+  let previousSnapshot = null;
+  if (isRefreshJob) {
+    previousSnapshot = await readCurrentHotTopics().catch(() => null);
   }
 
   // 普通访问只读取后台生成的快照；Redis 未就绪时继续走旧链路，保证平滑迁移。
@@ -252,6 +298,7 @@ export default async function handler(req, res) {
     const evaluationHashes = evaluatedEvents.map(getEvaluationHash);
     const cachedEvaluations = await readEvaluations(evaluationHashes).catch(() => evaluationHashes.map(() => null));
     const pendingIndices = [];
+    const cachedEvaluationCount = cachedEvaluations.filter(Boolean).length;
     evaluatedEvents = evaluatedEvents.map((event, index) => {
       const cached = cachedEvaluations[index];
       if (cached) return applyEditorialEvaluation(event, cached);
@@ -261,6 +308,8 @@ export default async function handler(req, res) {
 
     // 检查是否配置了 DeepSeek 大模型密钥和当日调用预算。
     const apiKey = process.env.DEEPSEEK_API_KEY;
+    let aiStatus = !apiKey ? 'unconfigured' : pendingIndices.length === 0 ? 'cache-hit' : 'pending';
+    let newlyEvaluatedCount = 0;
     const aiBudgetAvailable = apiKey && pendingIndices.length > 0
       ? await consumeAiBudget(Number(process.env.F1HOT_AI_MAX_CALLS_PER_DAY) || 30).catch(() => true)
       : false;
@@ -334,6 +383,8 @@ export default async function handler(req, res) {
                 evaluatedEvents[index] = applyEditorialEvaluation(evaluatedEvents[index], evaluation);
                 cacheEntries.push([evaluationHashes[index], evaluation]);
               });
+              newlyEvaluatedCount = cacheEntries.length;
+              aiStatus = newlyEvaluatedCount === pendingIndices.length ? 'evaluated' : 'partial';
               await writeEvaluations(cacheEntries).catch(error => console.warn('[F1HOT] 评估缓存写入失败:', error.message));
               console.log('[DeepSeek] 事件事实、影响与可信度评估成功！');
             } else {
@@ -346,6 +397,7 @@ export default async function handler(req, res) {
           throw new Error(`API HTTP 错误，状态码: ${response.status}`);
         }
       } catch (err) {
+        aiStatus = 'error';
         console.error('[DeepSeek] API 异常，已自动降级为正则匹配分类与字典汉化。原因:', err.message);
         // 保留本地评估结果继续服务，不能因为 AI 不可用而让页面失效。
       }
@@ -354,8 +406,13 @@ export default async function handler(req, res) {
     } else if (pendingIndices.length === 0) {
       console.log('[F1HOT] 所有事件命中评估缓存，本轮不调用 DeepSeek。');
     } else {
+      aiStatus = 'budget-exhausted';
       console.log('[F1HOT] 已达到当日 AI 调用上限，本轮使用本地评估。');
     }
+
+    // AI 暂时不可用时沿用同一事件上一份中文编辑结果，避免空字段覆盖线上中文快照。
+    const restored = restorePreviousEditorialEvaluations(evaluatedEvents, previousSnapshot);
+    evaluatedEvents = restored.events;
 
     // 4. AI 评估完成后重新排序和精选，确保“什么有价值”真正受编辑评估影响。
     evaluatedEvents = dedupeEvaluatedEvents(evaluatedEvents);
@@ -378,7 +435,14 @@ export default async function handler(req, res) {
       totalItems: allItems.length,
       generatedAt: Date.now(),
       lastCollectedAt: Date.now(),
-      processingMode: apiKey ? 'ai-assisted' : 'local',
+      processingMode: evaluatedEvents.some(event => event.titleCN) ? 'ai-assisted' : 'local',
+      aiStatus,
+      aiEvaluationStats: {
+        cached: cachedEvaluationCount,
+        evaluated: newlyEvaluatedCount,
+        restored: restored.restoredCount,
+        pending: evaluatedEvents.filter(event => !event.titleCN).length,
+      },
       persistence: 'redis-v2',
       sourceHealth,
     };
