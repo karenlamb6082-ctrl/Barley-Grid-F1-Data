@@ -142,6 +142,9 @@ function applyEditorialEvaluation(event, evaluation = {}) {
 function buildDailyBriefing(events) {
   const briefing = { raceSpeed: [], techDig: [], paddockVoice: [] };
   events.forEach(event => {
+    // 日报是中文编辑产品。尚未完成 AI 中文审校的事件继续留在热点流，
+    // 但不进入日报，避免把英文原始标题直接冒充成中文日报。
+    if (!event.titleCN) return;
     const key = CATEGORIES.has(event.category) ? event.category : 'paddockVoice';
     if (briefing[key].length < 3) briefing[key].push(event);
   });

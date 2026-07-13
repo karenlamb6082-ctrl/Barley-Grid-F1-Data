@@ -283,8 +283,9 @@ export default function F1Hot({ onBack }) {
                             <div className="flex justify-between items-start gap-4">
                               <div className="space-y-1 min-w-0">
                                 <div className="text-[13.5px] font-bold text-f1-text group-hover:text-f1-red transition-all leading-snug">
-                                  {item.title}
+                                  {item.titleCN || translateF1Title(item.title)}
                                 </div>
+                                {item.titleCN && <div className="text-[10px] text-f1-text-muted/60 line-clamp-1">EN: {item.title}</div>}
                                 <div className="text-[11px] font-semibold text-f1-text-muted flex items-center gap-2">
                                   <span className="text-f1-red">★</span> {item.sources?.[0] || "AI-Summarized"}
                                   <span>·</span>
