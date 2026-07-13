@@ -2,7 +2,7 @@
 // 整合 T1/T1.5/T2 多级信源，实现精选、低标及极简日报（F1HOT Briefing）的后端分发
 // 已集成 DeepSeek 大模型分析与全网资讯 AI 汉化翻译，支持无密钥状态下正则智能匹配优雅降级
 
-import { fetchAllRSS } from './lib/rss-simple.js';
+import { fetchAllRSSWithHealth } from './lib/rss-simple.js';
 import { detectHotTopics } from './lib/hotspot-engine.js';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import {
@@ -195,7 +195,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const allItems = await fetchAllRSS();
+    const { items: allItems, sources, usedFallback } = await fetchAllRSSWithHealth();
 
     if (allItems.length === 0) {
       if (_memoryCache) {
@@ -334,6 +334,8 @@ export default async function handler(req, res) {
     }
 
     // 5. 整合结果
+    const sourceHealth = { healthy: sources.filter(source => source.status === 'healthy').length, empty: sources.filter(source => source.status === 'empty').length, offline: sources.filter(source => source.status === 'offline').length, total: sources.length, usedFallback };
+    sourceHealth.status = sourceHealth.offline === sourceHealth.total ? 'offline' : sourceHealth.offline > 0 || sourceHealth.empty > 0 ? 'degraded' : 'healthy';
     const result = {
       topics: featured,
       lowScoreTopics: lowScore,
@@ -343,6 +345,7 @@ export default async function handler(req, res) {
       lastCollectedAt: Date.now(),
       processingMode: apiKey ? 'ai-assisted' : 'local',
       persistence: 'redis-v2',
+      sourceHealth,
     };
 
     _memoryCache = { time: Date.now(), data: result };
@@ -352,10 +355,12 @@ export default async function handler(req, res) {
     await Promise.allSettled([
       writeCurrentHotTopics(result),
       writeSourceHealth({
-        status: 'healthy',
+        status: sourceHealth.status,
         lastCollectedAt: result.lastCollectedAt,
         totalItems: allItems.length,
         activeEvents: featured.length,
+        summary: sourceHealth,
+        sources,
       }),
     ]);
 
