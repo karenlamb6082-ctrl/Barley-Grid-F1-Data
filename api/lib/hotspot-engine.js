@@ -43,6 +43,9 @@ const TEAM_ENTITIES = [
 // F1 核心词丛（预筛选匹配，过滤互联网纯灌水/非F1噪音）
 const F1_KEY_PATTERN = /\bf1\b|formula\s*(?:one|1)|grand\s*prix|\bgp\b|\bfia\b|\bfom\b|paddock|stewards|pit\s*stop|overtake|\bdrs\b|silly\s*season|verstappen|norris|leclerc|hamilton|alonso|perez|piastri|sainz|russell|gasly|ocon|albon|tsunoda|lawson|bearman|hadjar|antonelli|bortoleto|lindblad|red\s*bull|ferrari|mclaren|mercedes|aston\s*martin|williams|alpine|haas|racing\s*bulls|audi|cadillac/i;
 const FIA_F1_PATTERN = /\bf1\b|formula\s*(?:one|1)|grand\s*prix|verstappen|norris|leclerc|hamilton|alonso|perez|piastri|sainz|russell|red\s*bull|ferrari|mclaren|mercedes|aston\s*martin|williams|alpine|haas|racing\s*bulls|audi|cadillac/i;
+// 综合赛车媒体也发布 MotoGP、IndyCar、WEC 等内容。"GP" 和 "Grand Prix"
+// 并不是 F1 独占词，因此先排除明确属于其他赛事的报道，避免围场日报串台。
+const NON_F1_SERIES_PATTERN = /motogp|moto2|moto3|marc\s+marquez|alex\s+marquez|ducati|aprilia|superbike|nascar|indycar|indy\s*500|formula\s*e|world\s+endurance|\bwec\b|le\s+mans|imsa|wrc|world\s+rally/i;
 
 const HOT_TOPIC_MAX_AGE_HOURS = 36;
 
@@ -149,6 +152,7 @@ export function detectHotTopics(items, { threshold = 0.28, maxTopics = 12 } = {}
     .filter(item => {
       // 预筛选：如果与 F1 词丛不相关，直接物理丢弃，零 Token 消耗
       const searchableText = `${item.title} ${item.description || ''}`;
+      if (NON_F1_SERIES_PATTERN.test(searchableText)) return false;
       if (!F1_KEY_PATTERN.test(searchableText)) return false;
       if (item.sourceLabel === 'FIA' && !FIA_F1_PATTERN.test(searchableText)) return false;
 
