@@ -301,8 +301,11 @@ export default async function handler(req, res) {
     const apiKey = process.env.DEEPSEEK_API_KEY;
     let aiStatus = !apiKey ? 'unconfigured' : pendingIndices.length === 0 ? 'cache-hit' : 'pending';
     let newlyEvaluatedCount = 0;
+    // QStash refreshes every five minutes (up to 288 runs/day). Keep legacy
+    // production values such as 30 from cutting off Chinese coverage mid-day.
+    const aiDailyLimit = Math.max(Number(process.env.F1HOT_AI_MAX_CALLS_PER_DAY) || 0, 300);
     const aiBudgetAvailable = apiKey && pendingIndices.length > 0
-      ? await consumeAiBudget(Number(process.env.F1HOT_AI_MAX_CALLS_PER_DAY) || 72).catch(() => true)
+      ? await consumeAiBudget(aiDailyLimit).catch(() => true)
       : false;
     if (apiKey && pendingIndices.length > 0 && aiBudgetAvailable) {
       try {

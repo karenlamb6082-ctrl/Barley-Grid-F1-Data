@@ -51,7 +51,7 @@ function getAiBudgetKey() {
   return `f1hot:ai-usage:v2:${day}`;
 }
 
-export async function consumeAiBudget(limit = 72) {
+export async function consumeAiBudget(limit = 300) {
   const redis = getRedis();
   if (!redis) return true;
   const key = getAiBudgetKey();
