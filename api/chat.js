@@ -1,13 +1,4 @@
-// 模型转换映射 —— 官方 API 目前支持 deepseek-chat 和 deepseek-reasoner
-// 任何包含 v4、flash、pro、chat 等非官方或第三方的模型名，都自动安全映射为官方合法的 'deepseek-chat'
-function mapModelName(modelName) {
-  if (!modelName) return 'deepseek-chat';
-  const name = modelName.toLowerCase();
-  if (name.includes('reasoner') || name.includes('deepseek-r1')) {
-    return 'deepseek-reasoner';
-  }
-  return 'deepseek-chat';
-}
+import { DEEPSEEK_FLASH_MODEL, mapDeepSeekModel } from './lib/deepseek-model.js';
 
 const MAX_MESSAGES = 12;
 const MAX_MESSAGE_LENGTH = 4000;
@@ -168,10 +159,10 @@ ${realtimeNewsText || '（暂无今日全网最新实时新闻数据）'}
 请使用专业、客观且风趣幽默的中文，结合上述联网注入的最新实时资讯、全年赛历、各完赛分站详细成绩单与积分排行榜，回答用户的问题。如果用户询问关于“F1HOT 的评分机制”、“F1HOT 是什么”、“今日有什么新爆料”等问题，请直接从上面提供的数据中以及内置的 F1HOT 板块介绍中提取并给出极其精准的解答！
 `;
 
-  const deepseekModel = model || process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash';
+  const deepseekModel = model || process.env.DEEPSEEK_MODEL || DEEPSEEK_FLASH_MODEL;
 
   try {
-    const targetModel = mapModelName(deepseekModel);
+    const targetModel = mapDeepSeekModel(deepseekModel);
     console.log(`[DeepSeek] 收到聊天请求，正在通过模型 [${targetModel}]（原始输入: ${deepseekModel}）进行联网分析解答...`);
     
     // 4. 向 DeepSeek 大模型发起请求，设定 15 秒超时保护

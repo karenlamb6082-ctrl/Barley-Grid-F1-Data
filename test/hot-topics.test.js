@@ -2,6 +2,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { getEvaluationHash, restorePreviousEditorialEvaluations } from '../api/hot-topics.js';
+import { mapDeepSeekModel } from '../api/lib/deepseek-model.js';
+
+test('legacy and missing model names safely use DeepSeek V4 Flash', () => {
+  assert.equal(mapDeepSeekModel(), 'deepseek-v4-flash');
+  assert.equal(mapDeepSeekModel('deepseek-chat'), 'deepseek-v4-flash');
+  assert.equal(mapDeepSeekModel('deepseek-v4-flash'), 'deepseek-v4-flash');
+});
+
+test('explicit deep reasoning models use DeepSeek V4 Pro', () => {
+  assert.equal(mapDeepSeekModel('deepseek-v4-pro'), 'deepseek-v4-pro');
+  assert.equal(mapDeepSeekModel('deepseek-reasoner'), 'deepseek-v4-pro');
+});
 
 function makeEvent(overrides = {}) {
   return {

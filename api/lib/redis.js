@@ -46,14 +46,30 @@ export async function writeEvaluations(entries) {
   await pipeline.exec();
 }
 
-export async function consumeAiBudget(limit = 30) {
+function getAiBudgetKey() {
+  const day = new Date().toISOString().slice(0, 10);
+  return `f1hot:ai-usage:v2:${day}`;
+}
+
+export async function consumeAiBudget(limit = 72) {
   const redis = getRedis();
   if (!redis) return true;
-  const day = new Date().toISOString().slice(0, 10);
-  const key = `f1hot:ai-usage:${day}`;
+  const key = getAiBudgetKey();
   const count = await redis.incr(key);
   if (count === 1) await redis.expire(key, 48 * 60 * 60);
-  return count <= limit;
+  if (count <= limit) return true;
+
+  // A rejected refresh must not keep increasing the counter indefinitely.
+  await redis.decr(key);
+  return false;
+}
+
+export async function refundAiBudget() {
+  const redis = getRedis();
+  if (!redis) return;
+  const key = getAiBudgetKey();
+  const count = await redis.decr(key);
+  if (count < 0) await redis.set(key, 0, { ex: 48 * 60 * 60 });
 }
 
 export async function writeSourceHealth(data) {

@@ -4,9 +4,11 @@
 
 import { fetchAllRSSWithHealth } from './lib/rss-simple.js';
 import { detectHotTopics } from './lib/hotspot-engine.js';
+import { DEEPSEEK_FLASH_MODEL, mapDeepSeekModel } from './lib/deepseek-model.js';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import {
   consumeAiBudget,
+  refundAiBudget,
   readCurrentHotTopics,
   readEvaluations,
   writeCurrentHotTopics,
@@ -32,17 +34,6 @@ function runRegexClassification(featured, dailyBriefing) {
       dailyBriefing.paddockVoice.push(event);
     }
   });
-}
-
-// 模型转换映射 —— 官方 API 目前支持 deepseek-chat 和 deepseek-reasoner
-// 任何包含 v4、flash、pro、chat 等非官方或第三方的模型名，都自动安全映射为官方合法的 'deepseek-chat'
-function mapModelName(modelName) {
-  if (!modelName) return 'deepseek-chat';
-  const name = modelName.toLowerCase();
-  if (name.includes('reasoner') || name.includes('deepseek-r1')) {
-    return 'deepseek-reasoner';
-  }
-  return 'deepseek-chat';
 }
 
 // 鲁棒的 JSON 提取器 —— 避免 LLM 在 JSON 外包裹额外的闲聊文字或 Markdown 标记
@@ -311,7 +302,7 @@ export default async function handler(req, res) {
     let aiStatus = !apiKey ? 'unconfigured' : pendingIndices.length === 0 ? 'cache-hit' : 'pending';
     let newlyEvaluatedCount = 0;
     const aiBudgetAvailable = apiKey && pendingIndices.length > 0
-      ? await consumeAiBudget(Number(process.env.F1HOT_AI_MAX_CALLS_PER_DAY) || 30).catch(() => true)
+      ? await consumeAiBudget(Number(process.env.F1HOT_AI_MAX_CALLS_PER_DAY) || 72).catch(() => true)
       : false;
     if (apiKey && pendingIndices.length > 0 && aiBudgetAvailable) {
       try {
@@ -333,7 +324,7 @@ export default async function handler(req, res) {
               'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-              model: mapModelName(process.env.DEEPSEEK_MODEL || 'deepseek-chat'),
+              model: mapDeepSeekModel(process.env.DEEPSEEK_MODEL || DEEPSEEK_FLASH_MODEL),
               messages: [
                 {
                   role: 'system',
@@ -397,6 +388,7 @@ export default async function handler(req, res) {
           throw new Error(`API HTTP 错误，状态码: ${response.status}`);
         }
       } catch (err) {
+        await refundAiBudget().catch(error => console.warn('[F1HOT] AI 预算回退失败:', error.message));
         aiStatus = 'error';
         console.error('[DeepSeek] API 异常，已自动降级为正则匹配分类与字典汉化。原因:', err.message);
         // 保留本地评估结果继续服务，不能因为 AI 不可用而让页面失效。

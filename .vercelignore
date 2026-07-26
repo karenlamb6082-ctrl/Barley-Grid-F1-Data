@@ -1,0 +1,5 @@
+android/
+*.apk
+.codex-remote-attachments/
+.env.android
+test/
