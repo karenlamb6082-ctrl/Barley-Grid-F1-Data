@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Trash2, HelpCircle, Send } from "lucide-react";
+import { apiUrl } from "../config/api";
 
 // 简易 Markdown 正则解析器，支持段落、加粗、无序/有序列表、换行以及代码块等，附带基本 XSS 安全防御
 function formatMessageContent(content) {
@@ -155,7 +156,7 @@ export default function F1Chat({ onBack, f1Data }) {
     };
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch(apiUrl('/api/chat'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -197,7 +198,7 @@ export default function F1Chat({ onBack, f1Data }) {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-8 animate-in fade-in duration-500 max-w-6xl mx-auto px-3 sm:px-4 pb-4 sm:pb-20 pt-16 sm:pt-20">
+    <div className="app-page-top mx-auto max-w-6xl space-y-4 px-3 pb-4 animate-in fade-in sm:space-y-8 sm:px-4 sm:pb-20">
       
       {/* 顶部社论返回栏 */}
       <div className="flex items-center justify-between border-b border-black/[0.05] pb-4 sm:pb-6">
@@ -295,7 +296,7 @@ export default function F1Chat({ onBack, f1Data }) {
 
         {/* 智能快捷引导问题 */}
         {chatMessages.length <= 2 && !chatLoading && (
-          <div className="flex-shrink-0 pb-3 flex flex-col sm:flex-row sm:items-center gap-2 animate-in fade-in duration-300 overflow-hidden">
+          <div className="flex flex-shrink-0 flex-col gap-2 overflow-hidden pb-3 animate-in fade-in sm:flex-row sm:items-center">
             <span className="font-label-caps text-[9px] text-f1-text-muted flex items-center gap-1 py-1 flex-shrink-0">SUGGESTIONS:</span>
             <div className="flex flex-row overflow-x-auto scrollbar-none whitespace-nowrap gap-2 pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth snap-x">
               {[

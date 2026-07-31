@@ -1,3 +1,5 @@
+import { apiUrl } from "../config/api";
+
 const API_BASE = "https://api.jolpi.ca/ergast/f1/current";
 const ALL_DATA_CACHE_KEY = "barley-grid:f1-data:v3";
 const ALL_DATA_CACHE_MAX_AGE = 30 * 60 * 1000;
@@ -155,30 +157,30 @@ const CIRCUIT_NAMES_CN = {
 export const getCountryNameCN = (name) => COUNTRY_NAMES_CN[name] || name;
 export const getCircuitNameCN = (name) => CIRCUIT_NAMES_CN[name] || name;
 
-// 车手 driverId → 图片文件名映射（public/drivers/ 下）
+// 车手 driverId → 2026 Q 版人物资源（public/drivers/2026/ 下）
 const DRIVER_IMAGES = {
-  max_verstappen: "3VER.png",
-  norris: "4NOR.png",
-  leclerc: "16LEC.png",
-  hamilton: "44HAM.png",
-  sainz: "55SAI.png",
-  russell: "63RUSSL.png",
-  piastri: "81PIA.png",
-  alonso: "14ALO.png",
-  stroll: "18STR.png",
-  gasly: "10GAS.png",
-  ocon: "31OCO.png",
-  albon: "23ALB.png",
-  hulkenberg: "27HUL.png",
-  bottas: "77BOT.png",
-  perez: "11PER.png",
-  lawson: "30LAW.png",
-  bearman: "87BEA.png",
-  colapinto: "43COL.png",
-  hadjar: "6HAD.png",
-  antonelli: "12KIMI.png",
-  bortoleto: "5BOR.png",
-  arvid_lindblad: "41LIN.png",
+  max_verstappen: "2026/3VER.webp",
+  norris: "2026/4NOR.webp",
+  leclerc: "2026/16LEC.webp",
+  hamilton: "2026/44HAM.webp",
+  sainz: "2026/55SAI.webp",
+  russell: "2026/63RUSSL.webp",
+  piastri: "2026/81PIA.webp",
+  alonso: "2026/14ALO.webp",
+  stroll: "2026/18STR.webp",
+  gasly: "2026/10GAS.webp",
+  ocon: "2026/31OCO.webp",
+  albon: "2026/23ALB.webp",
+  hulkenberg: "2026/27HUL.webp",
+  bottas: "2026/77BOT.webp",
+  perez: "2026/11PER.webp",
+  lawson: "2026/30LAW.webp",
+  bearman: "2026/87BEA.webp",
+  colapinto: "2026/43COL.webp",
+  hadjar: "2026/6HAD.webp",
+  antonelli: "2026/12KIMI.webp",
+  bortoleto: "2026/5BOR.webp",
+  arvid_lindblad: "2026/41LIN.webp",
 };
 
 export const getDriverImage = (driverId) => {
@@ -479,10 +481,13 @@ const DRIVER_BY_NUMBER = {
 
 // 构建 LiveTiming 请求 URL（本地走 Vite 代理，线上走 Vercel API route）
 function buildTimingUrl(path) {
+  if (import.meta.env.VITE_BACKEND_ORIGIN) {
+    return apiUrl(`/api/f1proxy?path=${encodeURIComponent(path)}`);
+  }
   if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
     return `/f1timing/${path}`;
   }
-  return `/api/f1proxy?path=${encodeURIComponent(path)}`;
+  return apiUrl(`/api/f1proxy?path=${encodeURIComponent(path)}`);
 }
 
 let _indexCache = null;
@@ -594,14 +599,17 @@ export async function fetchPracticeResults(round, schedule) {
 // ========== 热点追踪 (F1 Pulse) ==========
 const HOT_TOPICS_CACHE_KEY = 'barley-grid:hot-topics:v1';
 const HOT_TOPICS_CACHE_MAX_AGE = 3 * 60 * 1000;
+const HOT_TOPICS_STALE_MAX_AGE = 24 * 60 * 60 * 1000;
+const HOT_TOPICS_REQUEST_TIMEOUT = 10 * 1000;
+const HOT_TOPICS_FALLBACK_ORIGIN = 'https://www.barley2.xyz';
 
-export function getCachedHotTopics() {
+export function getCachedHotTopics(maxAge = HOT_TOPICS_CACHE_MAX_AGE) {
   if (!canUseStorage()) return null;
   try {
     const raw = window.localStorage.getItem(HOT_TOPICS_CACHE_KEY);
     if (!raw) return null;
     const cached = JSON.parse(raw);
-    if (!cached?.topics || Date.now() - cached.cachedAt > HOT_TOPICS_CACHE_MAX_AGE) return null;
+    if (!cached?.topics || Date.now() - cached.cachedAt > maxAge) return null;
     return cached;
   } catch {
     return null;
@@ -621,16 +629,34 @@ function setCachedHotTopics(data) {
 }
 
 export async function fetchHotTopics() {
-  try {
-    const res = await fetch('/api/hot-topics');
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    if (data?.topics) {
+  const path = '/api/hot-topics';
+  const candidates = [...new Set([
+    apiUrl(path),
+    `${HOT_TOPICS_FALLBACK_ORIGIN}${path}`,
+  ])];
+  let lastError = null;
+
+  for (const url of candidates) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), HOT_TOPICS_REQUEST_TIMEOUT);
+    try {
+      const res = await fetch(url, {
+        signal: controller.signal,
+        cache: 'no-store',
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (!Array.isArray(data?.topics)) throw new Error('Invalid hot topics payload');
       setCachedHotTopics(data);
+      return data;
+    } catch (error) {
+      lastError = error;
+    } finally {
+      clearTimeout(timeoutId);
     }
-    return data;
-  } catch (error) {
-    console.warn('Hot topics fetch failed:', error);
-    return getCachedHotTopics();
   }
+
+  console.warn('Hot topics fetch failed on every origin:', lastError);
+  const cached = getCachedHotTopics(HOT_TOPICS_STALE_MAX_AGE);
+  return cached ? { ...cached, stale: true } : null;
 }

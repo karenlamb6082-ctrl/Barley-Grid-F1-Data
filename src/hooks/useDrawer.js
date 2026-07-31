@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { lockScroll, unlockScroll } from '../utils/scrollLock';
 
 /**
@@ -11,6 +11,8 @@ import { lockScroll, unlockScroll } from '../utils/scrollLock';
 export function useDrawer(triggerId, onClose) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeId, setActiveId] = useState(null);
+  const panelRef = useRef(null);
+  const gestureRef = useRef(null);
 
   useEffect(() => {
     if (triggerId) {
@@ -27,7 +29,7 @@ export function useDrawer(triggerId, onClose) {
       unlockScroll();
       const timer = setTimeout(() => {
         setActiveId(null);
-      }, 450);
+      }, 280);
       return () => clearTimeout(timer);
     }
   }, [triggerId]);
@@ -39,10 +41,84 @@ export function useDrawer(triggerId, onClose) {
 
   const handleClose = () => {
     setIsOpen(false);
-    setTimeout(onClose, 320);
+    setTimeout(onClose, 260);
+  };
+
+  const resetPanelStyle = () => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    panel.style.removeProperty('transition');
+    panel.style.removeProperty('transform');
+    panel.style.removeProperty('will-change');
+  };
+
+  const drawerProps = {
+    ref: panelRef,
+    style: { touchAction: 'pan-y' },
+    onPointerDown: (event) => {
+      if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+      if (!isOpen || gestureRef.current || event.pointerType === 'mouse' && event.button !== 0) return;
+      const panel = panelRef.current;
+      if (!panel) return;
+      const rect = panel.getBoundingClientRect();
+      if (event.clientX > rect.left + 32) return;
+      gestureRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        lastX: event.clientX,
+        lastTime: performance.now(),
+        velocity: 0,
+        dragging: false,
+      };
+    },
+    onPointerMove: (event) => {
+      const gesture = gestureRef.current;
+      const panel = panelRef.current;
+      if (!gesture || !panel || gesture.pointerId !== event.pointerId) return;
+      const dx = Math.max(0, event.clientX - gesture.startX);
+      const dy = Math.abs(event.clientY - gesture.startY);
+      if (!gesture.dragging) {
+        if (dx < 10 && dy < 10) return;
+        if (dy > dx) { gestureRef.current = null; return; }
+        gesture.dragging = true;
+        panel.setPointerCapture(event.pointerId);
+        panel.style.transition = 'none';
+        panel.style.willChange = 'transform';
+      }
+      const now = performance.now();
+      const elapsed = Math.max(1, now - gesture.lastTime);
+      gesture.velocity = (event.clientX - gesture.lastX) / elapsed;
+      gesture.lastX = event.clientX;
+      gesture.lastTime = now;
+      panel.style.transform = `translateX(${dx}px)`;
+    },
+    onPointerUp: (event) => {
+      const gesture = gestureRef.current;
+      const panel = panelRef.current;
+      if (!gesture || !panel || gesture.pointerId !== event.pointerId) return;
+      gestureRef.current = null;
+      if (!gesture.dragging) return;
+      const distance = Math.max(0, event.clientX - gesture.startX);
+      const shouldClose = distance >= Math.min(panel.offsetWidth * 0.28, 130) || gesture.velocity > 0.11;
+      panel.style.transition = 'transform 260ms cubic-bezier(0.32, 0.72, 0, 1)';
+      panel.style.transform = shouldClose ? 'translateX(100%)' : 'translateX(0)';
+      window.setTimeout(() => {
+        resetPanelStyle();
+        if (shouldClose) handleClose();
+      }, 260);
+    },
+    onPointerCancel: () => {
+      const panel = panelRef.current;
+      gestureRef.current = null;
+      if (!panel) return;
+      panel.style.transition = 'transform 220ms cubic-bezier(0.23, 1, 0.32, 1)';
+      panel.style.transform = 'translateX(0)';
+      window.setTimeout(resetPanelStyle, 220);
+    },
   };
 
   const isVisible = !!(isOpen || activeId);
 
-  return { isOpen, activeId, handleClose, isVisible };
+  return { isOpen, activeId, handleClose, isVisible, drawerProps };
 }

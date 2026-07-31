@@ -1,234 +1,91 @@
-import { useDrawer } from '../hooks/useDrawer';
-import { getDriverImage } from '../services/f1api';
-import { DRIVER_TAGS } from '../data/f1Fun';
+import { ArrowLeft } from "lucide-react";
+import { useDrawer } from "../hooks/useDrawer";
+import { getDriverImage, getRaceNameCN } from "../services/f1api";
+
+function getDriverSeason(driverId, data) {
+  let wins = 0;
+  let podiums = 0;
+  let dnfs = 0;
+
+  const results = (data?.allRaces || []).map((race) => {
+    const result = race.Results?.find((entry) => entry.Driver?.driverId === driverId);
+    if (!result) return null;
+    const position = Number(result.position);
+    const finished = result.status === "Finished" || result.status?.includes("Lap");
+    if (position === 1) wins += 1;
+    if (position <= 3) podiums += 1;
+    if (!finished) dnfs += 1;
+    return {
+      round: race.round,
+      name: getRaceNameCN(race.raceName) || race.raceName,
+      position: result.position,
+      points: Number(result.points) || 0,
+      finished,
+    };
+  }).filter(Boolean).slice(-6).reverse();
+
+  return { wins, podiums, dnfs, results };
+}
 
 export default function DriverDrawer({ driverId, data, onClose }) {
-  const { isOpen, activeId, handleClose, isVisible } = useDrawer(driverId, onClose);
-
-  const driver = data?.driverStandings?.find(d => d.id === activeId);
-
-  let seasonWins = 0;
-  let seasonPodiums = 0;
-  let seasonDNFs = 0;
-  let seasonPoints = driver?.points || 0;
-
-  // 冲刺赛数据按 round 索引
-  const sprintByRound = {};
-  (data?.allSprintRaces || []).forEach(sr => {
-    sprintByRound[sr.round] = sr.SprintResults || [];
-  });
-
-  let history = [];
-  if (driver && data?.allRaces) {
-    history = data.allRaces.map(race => {
-      const res = race.Results?.find(r => r.Driver?.driverId === activeId);
-      const sprintResults = sprintByRound[race.round] || [];
-      const sprintRes = sprintResults.find(r => r.Driver?.driverId === activeId);
-      const hasSprint = sprintResults.length > 0;
-      
-      let bgColor = 'bg-black/[0.04] text-f1-text-muted'; 
-      if (res) {
-        const pos = parseInt(res.position, 10);
-        if (pos === 1) { bgColor = 'bg-f1-gold/20 text-f1-gold/90'; seasonWins++; seasonPodiums++; }
-        else if (pos === 2 || pos === 3) { bgColor = 'bg-f1-silver/20 text-f1-silver/90'; seasonPodiums++; }
-        else if (pos <= 10) bgColor = 'bg-f1-darkcyan/10 text-f1-cyan'; 
-        if (res.status !== 'Finished' && !res.status?.includes('Lap')) { bgColor = 'bg-f1-danger/10 text-f1-danger'; seasonDNFs++; }
-      }
-
-      const racePts = res ? parseFloat(res.points) || 0 : 0;
-      const sprintPts = sprintRes ? parseFloat(sprintRes.points) || 0 : 0;
-      const sprintPos = sprintRes ? parseInt(sprintRes.position, 10) : null;
-      
-      return {
-        round: race.round,
-        raceName: race.raceName,
-        circuit: race.Circuit?.circuitName || 'Unknown Circuit',
-        position: res ? res.position : 'DNS',
-        status: res ? res.status : '未开始',
-        racePts,
-        sprintPts,
-        sprintPos,
-        totalPts: racePts + sprintPts,
-        hasSprint,
-        bgColor,
-        isFinished: !!res,
-        isPodium: res && parseInt(res.position, 10) <= 3
-      };
-    });
-  }
+  const { isOpen, activeId, handleClose, isVisible, drawerProps } = useDrawer(driverId, onClose);
+  const driver = data?.driverStandings?.find((entry) => entry.id === activeId);
+  const season = getDriverSeason(activeId, data);
 
   if (!data) return null;
 
   return (
-    <div className={`fixed inset-0 z-[100] ${isVisible ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-      
-      {/* 第一层：暗色遮罩 — 仅 opacity 动画，GPU 零成本 */}
-      <div 
-        className={`absolute inset-0 bg-black/36 transition-opacity duration-300 ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
-        onClick={handleClose}
-      />
+    <div className={`fixed inset-0 z-[100] ${isVisible ? "pointer-events-auto" : "pointer-events-none"}`}>
+      <button type="button" aria-label="关闭车手详情" className={`absolute inset-0 bg-black/30 transition-opacity duration-[220ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${isOpen ? "opacity-100" : "opacity-0"}`} onClick={handleClose} />
 
-      {/* 第二层：毛玻璃层 — 固定定位，仅 opacity 动画，不做 transform → 60fps */}
-      <div 
-        className={`absolute top-0 right-0 w-full max-w-[480px] h-full transition-opacity duration-300 ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
-        style={{ 
-          backdropFilter: 'blur(14px) saturate(135%)',
-          WebkitBackdropFilter: 'blur(14px) saturate(135%)',
-        }}
-      />
-
-      {/* 第三层：内容面板 — transform 滑入 + 半透明底色，本身不做 blur */}
-      <div 
-        className={`absolute top-0 right-0 w-full max-w-[480px] h-full flex flex-col transform-gpu transition-transform duration-300 ease-out will-change-transform ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
-        style={{ 
-          backgroundColor: 'rgba(255,255,255,0.88)',
-          borderLeft: '1px solid rgba(255,255,255,0.5)',
-          boxShadow: '0 0 36px rgba(0,0,0,0.10)',
-        }}
+      <section
+        {...drawerProps}
+        aria-label="车手详情"
+        className={`detail-drawer absolute inset-y-0 right-0 flex transform-gpu flex-col overflow-hidden border-l border-f1-text bg-f1-bg transition-transform duration-[260ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform ${isOpen ? "translate-x-0" : "translate-x-full"}`}
       >
         {driver && (
-          <div className="flex flex-col h-full">
-            {/* 环境光晕 */}
-            <div className="absolute top-0 left-0 w-full h-[400px] pointer-events-none overflow-hidden">
-               <div className="absolute -top-[120px] -right-[50px] w-[350px] h-[350px] rounded-full opacity-[0.2]" style={{ backgroundColor: driver.teamColor || '#1C1C1E', filter: 'blur(90px)' }}></div>
-               <div className="absolute top-[80px] right-[20px] text-[220px] font-black leading-none opacity-[0.04] text-black select-none z-0 tracking-tighter">
-                 {driver.number}
-               </div>
-            </div>
+          <>
+            <header className="relative z-20 flex shrink-0 items-center justify-between px-5 pb-3 pt-[calc(var(--app-safe-top)+14px)]">
+              <button type="button" onClick={handleClose} className="pressable flex h-9 w-9 items-center justify-center rounded-[10px] border border-f1-text" aria-label="返回"><ArrowLeft size={17} /></button>
+              <span className="race-mono text-[9px] font-extrabold tracking-[0.14em] text-f1-text-muted">DRIVER DOSSIER</span>
+              <span className="h-10 w-10" aria-hidden="true" />
+            </header>
 
-            {/* 标题栏 */}
-            <div className="flex-shrink-0 flex items-center justify-between px-8 py-6 relative z-20 border-b border-black/[0.06]" style={{ backgroundColor: 'rgba(255,255,255,0.5)' }}>
-              <div className="flex items-center space-x-3 cursor-pointer group" onClick={handleClose}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-black/40 group-hover:text-f1-text transition-colors"><path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                <span className="text-[14px] font-bold text-f1-text-muted tracking-tight group-hover:text-f1-text transition-colors">返回</span>
-              </div>
-              <div className="flex items-center space-x-2.5">
-                 <span className="text-[11px] font-bold text-f1-text-muted uppercase tracking-[0.1em]">{driver.team}</span>
-                 <div className="w-2.5 h-2.5 rounded-full ring-2 ring-white/60 shadow-sm" style={{ backgroundColor: driver.teamColor || '#1C1C1E' }}></div>
-              </div>
-            </div>
-
-            {/* 正文滚动区 */}
-            <div className="flex-1 overflow-y-auto px-8 py-10 overscroll-contain relative z-10 custom-scrollbar">
-              
-              {/* 大名 + 头像 */}
-              <div className="mb-10 relative">
-                <div className="pr-[120px] sm:pr-[150px]">
-                  <h1 className="text-[48px] sm:text-[60px] font-black text-f1-text tracking-tighter leading-[0.9] mb-4 uppercase">
-                    <span className="block font-medium text-[30px] text-f1-text/50 capitalize tracking-tight mb-2">{driver.firstName}</span>
-                    <span className="break-words">{driver.lastName}</span>
-                  </h1>
-
-                  <div className="flex flex-wrap items-center gap-3 text-[14px] font-bold mt-4">
-                    <span className="px-3.5 py-1.5 rounded-md uppercase tracking-[0.05em] cursor-default text-white shadow-sm" style={{ backgroundColor: driver.teamColor || '#1C1C1E' }}>
-                      #{driver.number}
-                    </span>
-                    <span className="text-[16px] text-f1-text/80 cursor-default">{seasonPoints} PTS</span>
-                    <span className="text-[16px] text-f1-text-muted cursor-default hidden sm:inline-block before:content-['·'] before:mx-3 before:text-black/20">第 {driver.rank} 名</span>
-                  </div>
+            <div className="custom-scrollbar flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(var(--app-safe-bottom)+28px)]">
+              <section className="surface-card relative min-h-[340px] border-l-[5px] p-6" style={{ borderLeftColor: driver.teamColor || "#4c5566" }}>
+                <span className="race-mono absolute -right-2 top-5 text-[124px] font-black leading-none text-[#dedbd2]">#{driver.number}</span>
+                <div className="relative z-10 max-w-[58%] pt-2">
+                  <p className="race-mono text-[9px] font-extrabold tracking-[0.12em] text-f1-text-muted">P{driver.rank} · {driver.team}</p>
+                  <h1 className="mt-3 text-[38px] font-black leading-[0.98] tracking-[-0.055em]">{driver.firstName} {driver.lastName}</h1>
+                  <div className="race-mono mt-5 inline-flex border-b border-f1-text py-1 text-[11px] font-extrabold">DRIVER #{driver.number}</div>
                 </div>
+                <img src={getDriverImage(driver.id)} alt={`${driver.firstName} ${driver.lastName}`} className="absolute bottom-0 right-0 h-[270px] w-[210px] object-contain object-bottom" />
+              </section>
 
-                {/* 车手形象 */}
-                <div className="absolute right-[-10px] bottom-[-10px] w-[150px] h-[150px] sm:w-[180px] sm:h-[180px] z-20 pointer-events-none flex items-end justify-end"
-                  style={{ filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.2))' }}
-                >
-                  <img 
-                    src={getDriverImage(driver.id) || `https://api.dicebear.com/9.x/micah/svg?seed=${driver.id}&flip=true&backgroundColor=transparent`} 
-                    alt={driver.lastName} 
-                    className="w-full h-full object-contain transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                    style={{ opacity: 0, transform: 'translateY(20px) scale(0.95)' }}
-                    onLoad={(e) => { 
-                      e.target.style.opacity = 1; 
-                      e.target.style.transform = 'translateY(0) scale(1)'; 
-                    }}
-                  />
-                </div>
-              </div>
+              <section className="surface-card mt-4 grid grid-cols-3 divide-x divide-black/[0.07] p-5">
+                {[["积分", driver.points], ["胜场", season.wins], ["领奖台", season.podiums]].map(([label, value]) => (
+                  <div key={label} className="text-center"><div className="metric-value text-[25px] font-extrabold">{value}</div><div className="mt-1 text-[9px] font-semibold text-f1-text-muted">{label}</div></div>
+                ))}
+              </section>
 
-              {/* 赛季摘要 */}
-              <div className="grid grid-cols-3 gap-3 mb-12">
-                  <div className="rounded-2xl p-4 border border-white/70 relative overflow-hidden group hover:bg-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
-                    <div className="text-[12px] font-bold text-f1-text-muted uppercase tracking-wider mb-2 relative z-10">Wins</div>
-                    <div className="text-[32px] font-bold text-f1-text tracking-tighter leading-none relative z-10">{seasonWins}</div>
-                  </div>
-                  <div className="rounded-2xl p-4 border border-white/70 relative overflow-hidden group hover:bg-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
-                    <div className="text-[12px] font-bold text-f1-gold/90 uppercase tracking-wider mb-2 relative z-10">Podiums</div>
-                    <div className="text-[32px] font-bold text-f1-text tracking-tighter leading-none relative z-10">{seasonPodiums}</div>
-                  </div>
-                  <div className="rounded-2xl p-4 border border-white/70 relative overflow-hidden group hover:bg-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
-                    <div className="text-[12px] font-bold text-f1-danger uppercase tracking-wider mb-2 relative z-10">DNFs</div>
-                    <div className="text-[32px] font-bold text-f1-text tracking-tighter leading-none relative z-10">{seasonDNFs}</div>
-                  </div>
-              </div>
-
-              {/* 时间线 */}
-              <div className="mb-12">
-                <h3 className="text-[16px] font-bold text-f1-text tracking-tight mb-8 px-1 flex items-center">
-                  赛季分站轨迹
-                  <span className="ml-3 px-2 py-0.5 rounded flex items-center justify-center bg-black/[0.03] text-[11px] text-f1-text-muted tracking-widest border border-black/[0.05]">
-                    {history.length} Races
-                  </span>
-                </h3>
-                
-                <div className="relative border-l-2 border-dashed border-black/[0.08] ml-[23px] space-y-7 pb-4">
-                  {history.map((h) => (
-                    <div key={h.round} className="group flex items-start relative ml-8 cursor-default">
-                      
-                      {/* 节点 */}
-                      <div className={`absolute -left-[40px] top-2 w-3 h-3 rounded-full ring-4 ring-white/80 z-10 transition-transform duration-300 group-hover:scale-125 shadow-sm ${h.isFinished ? (h.isPodium ? 'bg-f1-gold' : 'bg-f1-darkcyan') : 'bg-black/20'}`}></div>
-
-                      {/* 赛事卡片 */}
-                      <div className={`flex-1 min-w-0 rounded-2xl border transition-all duration-300 overflow-hidden ${h.isPodium ? 'border-f1-gold/20 hover:shadow-md' : 'border-white/70 hover:shadow-md'}`} style={{ backgroundColor: 'rgba(255,255,255,0.4)' }}>
-                        <div className="p-5">
-                          <div className="flex items-center justify-between mb-2">
-                             <h4 className="text-[15px] font-bold text-f1-text truncate leading-tight">{h.raceName}</h4>
-                             <div className={`px-2.5 py-1 rounded flex items-center justify-center font-bold text-[12px] tracking-tighter flex-shrink-0 shadow-sm ${h.bgColor}`}>
-                                <span className="opacity-50 font-medium text-[10px] mr-1">P</span>{h.isFinished ? h.position : 'Ret'}
-                             </div>
-                          </div>
-                          
-                          <p className="text-[12px] text-f1-text-muted font-bold uppercase tracking-[0.05em] flex items-center gap-2">
-                            RND {String(h.round).padStart(2, '0')}
-                            {h.hasSprint && <span className="text-f1-gold">冲刺周末</span>}
-                            {h.isFinished && h.racePts > 0 && (
-                              <>
-                                <span className="w-1 h-1 rounded-full bg-black/10"></span>
-                                <span className={h.isPodium ? 'text-f1-gold/90' : 'text-f1-darkcyan'}>正赛 +{h.racePts}</span>
-                              </>
-                            )}
-                            {(h.status !== 'Finished' && !h.status.includes('Lap') && h.status !== '未开始') && (
-                               <>
-                                <span className="w-1 h-1 rounded-full bg-black/10"></span>
-                                <span className="text-f1-danger truncate">{h.status}</span>
-                               </>
-                            )}
-                          </p>
-                        </div>
-
-                        {/* 冲刺赛子行 */}
-                        {h.hasSprint && h.sprintPos && (
-                          <div className="px-5 py-2.5 bg-black/[0.02] border-t border-black/[0.04] flex items-center justify-between">
-                            <span className="text-[11px] text-f1-gold font-bold">↳ 冲刺赛</span>
-                            <div className="flex items-center gap-2">
-                              <span className={`text-[12px] font-bold ${h.sprintPos <= 3 ? 'text-f1-gold/90' : 'text-f1-text/70'}`}>
-                                P{h.sprintPos}
-                              </span>
-                              {h.sprintPts > 0 && (
-                                <span className="text-[11px] text-f1-text-muted">+{h.sprintPts} PTS</span>
-                              )}
-                            </div>
-                          </div>
-                        )}
+              {season.results.length > 0 && (
+                <section className="surface-card mt-4 p-3">
+                  <h2 className="px-3 pb-2 pt-1 text-[12px] font-bold">最近分站</h2>
+                  <div className="divide-y divide-black/[0.07]">
+                    {season.results.map((result) => (
+                      <div key={result.round} className="grid grid-cols-[34px_1fr_auto] items-center gap-3 px-3 py-3">
+                        <span className="metric-value text-[13px] font-bold text-f1-text-muted">{String(result.round).padStart(2, "0")}</span>
+                        <span className="text-[12px] font-bold leading-snug">{result.name}</span>
+                        <span className={`race-mono border-l-2 pl-2 text-[10px] font-black ${result.finished ? "border-f1-text text-f1-text" : "border-f1-red text-f1-red"}`}>P{result.position}{result.points > 0 ? ` · +${result.points}` : ""}</span>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
-          </div>
+          </>
         )}
-      </div>
+      </section>
     </div>
   );
 }

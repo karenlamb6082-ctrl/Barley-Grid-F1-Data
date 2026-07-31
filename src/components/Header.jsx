@@ -1,75 +1,46 @@
-import { useState } from 'react';
+import { createElement } from "react";
+import { CalendarDays, Flame, Gauge, Trophy } from "lucide-react";
+
+const TABS = [
+  { id: "home", label: "总览", icon: Gauge },
+  { id: "f1hot", label: "F1HOT", icon: Flame },
+  { id: "schedule", label: "赛程", icon: CalendarDays },
+  { id: "standings", label: "积分", icon: Trophy },
+];
 
 export default function Header({ currentView, setCurrentView }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  
-  const tabs = [
-    { id: 'home', label: '概览' },
-    { id: 'f1hot', label: 'F1HOT 热点' },
-    { id: 'chat', label: '围场 AI' },
-    { id: 'schedule', label: '赛程追踪' },
-    { id: 'standings', label: '战果与积分' }
-  ];
-
-  const handleNav = (id) => {
-    setCurrentView(id);
-    setMenuOpen(false);
-  };
-
   return (
-    <header className="fixed top-0 left-0 w-full z-50 bg-f1-bg/85 backdrop-blur-md border-b border-black/[0.05]">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 h-16 flex items-center justify-between">
-        <div className="flex items-center space-x-2.5 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => handleNav('home')}>
-          <span className="font-headline-md text-[20px] font-bold text-f1-text tracking-tight pt-[2px]">Barley Grid</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-f1-lime"></span>
+    <>
+      <header className="app-header fixed inset-x-0 top-0 z-50">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <button onClick={() => setCurrentView("home")} className="pressable flex items-center gap-2.5 rounded-xl text-left" aria-label="返回总览">
+            <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-f1-text text-[10px] font-black text-white shadow-sm">BG</span>
+            <span className="text-[14px] font-bold tracking-[-0.025em] text-f1-text">Barley Grid</span>
+          </button>
+
+          <nav className="glass-control hidden items-center gap-1 rounded-[14px] p-1 md:flex" aria-label="主导航">
+            {TABS.map(({ id, label }) => (
+              <button key={id} onClick={() => setCurrentView(id)} aria-current={currentView === id ? "page" : undefined} className={`pressable rounded-[10px] px-4 py-2 text-[12px] font-semibold ${currentView === id ? "bg-white text-f1-text shadow-sm" : "text-f1-text-muted hover:text-f1-text"}`}>
+                {label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="hidden items-center gap-2 text-[11px] font-semibold text-f1-text-muted sm:flex">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.12)]" />
+            LIVE
+          </div>
         </div>
-        
-        {/* 桌面端导航 */}
-        <nav className="hidden md:flex items-center space-x-8">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => handleNav(tab.id)}
-              className={`font-sans text-[14px] pb-1 border-b transition-all duration-200 ${
-                currentView === tab.id 
-                  ? 'text-f1-text border-f1-text font-semibold'
-                  : 'text-f1-text-muted border-transparent hover:text-f1-text'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-        
-        {/* 移动端汉堡菜单按钮 */}
-        <button 
-          className="md:hidden flex flex-col justify-center items-center w-8 h-8 gap-1.5"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="菜单"
-        >
-          <span className={`block w-5 h-0.5 bg-f1-text rounded-full transition-all duration-300 ${menuOpen ? 'rotate-45 translate-y-[4px]' : ''}`} />
-          <span className={`block w-5 h-0.5 bg-f1-text rounded-full transition-all duration-300 ${menuOpen ? '-rotate-45 -translate-y-[4px]' : ''}`} />
-        </button>
-      </div>
-      
-      {/* 移动端下拉菜单 */}
-      <div className={`md:hidden overflow-hidden transition-all duration-300 ease-out bg-f1-bg/95 backdrop-blur-md border-b border-black/[0.04] ${menuOpen ? 'max-h-80' : 'max-h-0'}`}>
-        <nav className="px-6 py-4 space-y-1">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => handleNav(tab.id)}
-              className={`block w-full text-left px-4 py-2.5 rounded-lg text-[14px] font-semibold transition-all ${
-                currentView === tab.id 
-                  ? 'bg-f1-lime/10 text-f1-lime font-bold'
-                  : 'text-f1-text-muted hover:bg-black/[0.02]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </div>
-    </header>
+      </header>
+
+      <nav className="app-mobile-bottom fixed inset-x-3 bottom-2 z-50 grid grid-cols-4 rounded-[22px] border border-white/80 p-1.5 md:hidden" aria-label="移动端导航">
+        {TABS.map(({ id, label, icon: Icon }) => (
+          <button key={id} onClick={() => setCurrentView(id)} aria-current={currentView === id ? "page" : undefined} className={`pressable flex min-h-12 flex-col items-center justify-center gap-1 rounded-[15px] text-[10px] font-semibold ${currentView === id ? "bg-white text-[#007aff] shadow-[0_4px_16px_rgba(42,54,72,0.10)]" : "text-f1-text-muted"}`}>
+            {createElement(Icon, { size: 16, strokeWidth: currentView === id ? 2.5 : 2 })}
+            {label}
+          </button>
+        ))}
+      </nav>
+    </>
   );
 }

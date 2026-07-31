@@ -1,0 +1,15 @@
+{
+  "appId": "com.barleygrid.f1",
+  "appName": "Barley Grid",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "LIGHT",
+      "hidden": false
+    }
+  }
+}

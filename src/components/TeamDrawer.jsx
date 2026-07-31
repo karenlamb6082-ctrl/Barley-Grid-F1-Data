@@ -1,263 +1,78 @@
-import { useDrawer } from '../hooks/useDrawer';
-import { getDriverImage, getTeamAbbr, getRaceNameCN } from '../services/f1api';
+import { ArrowLeft } from "lucide-react";
+import { useDrawer } from "../hooks/useDrawer";
+import { getDriverImage, getRaceNameCN, getTeamAbbr } from "../services/f1api";
+
+function getTeamSeason(team, drivers, data) {
+  let wins = 0;
+  let podiums = 0;
+  const rounds = (data?.allRaces || []).map((race) => {
+    const results = drivers.map((driver) => race.Results?.find((entry) => entry.Driver?.driverId === driver.id)).filter(Boolean);
+    if (!results.length) return null;
+    const best = Math.min(...results.map((result) => Number(result.position)));
+    const points = results.reduce((sum, result) => sum + (Number(result.points) || 0), 0);
+    if (best === 1) wins += 1;
+    if (best <= 3) podiums += 1;
+    return { round: race.round, name: getRaceNameCN(race.raceName) || race.raceName, best, points };
+  }).filter(Boolean).slice(-6).reverse();
+  return { wins, podiums, rounds, points: team?.points || 0 };
+}
 
 export default function TeamDrawer({ teamId, data, onClose }) {
-  const { isOpen, activeId, handleClose, isVisible } = useDrawer(teamId, onClose);
-  const team = data?.teamStandings?.find(t => t.id === activeId);
-  
-  // 该车队旗下车手（用 constructorId 精确匹配）
-  const teamDrivers = data?.driverStandings?.filter(d => {
-    return d.constructorId === team?.id;
-  }) || [];
-
-  // 构建每场比赛的详细分站数据（正赛 + 冲刺赛）
-  let raceBreakdown = [];
-  let totalWins = 0;
-  let totalPodiums = 0;
-
-  if (team && data?.allRaces) {
-    // 将冲刺赛数据按 round 索引
-    const sprintByRound = {};
-    (data.allSprintRaces || []).forEach(sr => {
-      sprintByRound[sr.round] = sr.SprintResults || [];
-    });
-
-    raceBreakdown = data.allRaces.map(race => {
-      const round = race.round;
-      const raceName = race.raceName;
-      const sprintResults = sprintByRound[round] || [];
-      const hasSprint = sprintResults.length > 0;
-
-      // 提取两位车手在正赛中的成绩
-      const driversRace = teamDrivers.map(td => {
-        const raceRes = race.Results?.find(r => r.Driver?.driverId === td.id);
-        const sprintRes = sprintResults.find(r => r.Driver?.driverId === td.id);
-        
-        const racePos = raceRes ? parseInt(raceRes.position, 10) : null;
-        const racePts = raceRes ? parseFloat(raceRes.points) || 0 : 0;
-        const sprintPos = sprintRes ? parseInt(sprintRes.position, 10) : null;
-        const sprintPts = sprintRes ? parseFloat(sprintRes.points) || 0 : 0;
-
-        return {
-          id: td.id,
-          code: td.code || td.lastName.substring(0, 3).toUpperCase(),
-          lastName: td.lastName,
-          racePos,
-          racePts,
-          sprintPos,
-          sprintPts,
-          totalPts: racePts + sprintPts
-        };
-      });
-
-      // 车队本站总分
-      const roundTotal = driversRace.reduce((s, d) => s + d.totalPts, 0);
-      const bestPos = Math.min(...driversRace.map(d => d.racePos).filter(Boolean), 99);
-      
-      if (bestPos === 1) totalWins++;
-      if (bestPos <= 3) totalPodiums++;
-
-      return { round, raceName, hasSprint, driversRace, roundTotal, bestPos };
-    });
-  }
-
-  const totalPoints = team?.points || 0;
+  const { isOpen, activeId, handleClose, isVisible, drawerProps } = useDrawer(teamId, onClose);
+  const team = data?.teamStandings?.find((entry) => entry.id === activeId);
+  const drivers = data?.driverStandings?.filter((driver) => driver.constructorId === team?.id) || [];
+  const season = getTeamSeason(team, drivers, data);
 
   if (!data) return null;
 
   return (
-    <div className={`fixed inset-0 z-[100] ${isVisible ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-      
-      <div 
-        className={`absolute inset-0 bg-black/36 transition-opacity duration-300 ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
-        onClick={handleClose}
-      />
-
-      <div 
-        className={`absolute top-0 right-0 w-full max-w-[480px] h-full transition-opacity duration-300 ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
-        style={{ 
-          backdropFilter: 'blur(14px) saturate(135%)',
-          WebkitBackdropFilter: 'blur(14px) saturate(135%)',
-        }}
-      />
-
-      <div 
-        className={`absolute top-0 right-0 w-full max-w-[480px] h-full flex flex-col transform-gpu transition-transform duration-300 ease-out will-change-transform ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
-        style={{ 
-          backgroundColor: 'rgba(255,255,255,0.88)',
-          borderLeft: '1px solid rgba(255,255,255,0.5)',
-          boxShadow: '0 0 36px rgba(0,0,0,0.10)',
-        }}
-      >
+    <div className={`fixed inset-0 z-[100] ${isVisible ? "pointer-events-auto" : "pointer-events-none"}`}>
+      <button type="button" aria-label="关闭车队详情" className={`absolute inset-0 bg-black/30 transition-opacity duration-[220ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${isOpen ? "opacity-100" : "opacity-0"}`} onClick={handleClose} />
+      <section {...drawerProps} aria-label="车队详情" className={`detail-drawer absolute inset-y-0 right-0 flex transform-gpu flex-col overflow-hidden border-l border-f1-text bg-f1-bg transition-transform duration-[260ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform ${isOpen ? "translate-x-0" : "translate-x-full"}`}>
         {team && (
-          <div className="flex flex-col h-full">
-            {/* 环境光晕 */}
-            <div className="absolute top-0 left-0 w-full h-[400px] pointer-events-none overflow-hidden">
-               <div className="absolute -top-[80px] -right-[30px] w-[300px] h-[300px] rounded-full opacity-[0.25]" style={{ backgroundColor: team.teamColor, filter: 'blur(80px)' }}></div>
-               <div className="absolute -top-[60px] -left-[30px] w-[200px] h-[200px] rounded-full opacity-[0.1]" style={{ backgroundColor: team.teamColor, filter: 'blur(60px)' }}></div>
-            </div>
+          <>
+            <header className="relative z-20 flex shrink-0 items-center justify-between px-5 pb-3 pt-[calc(var(--app-safe-top)+14px)]">
+              <button type="button" onClick={handleClose} className="pressable flex h-9 w-9 items-center justify-center rounded-[10px] border border-f1-text" aria-label="返回"><ArrowLeft size={17} /></button>
+              <span className="race-mono text-[9px] font-extrabold tracking-[0.14em] text-f1-text-muted">TEAM DOSSIER</span>
+              <span className="h-10 w-10" aria-hidden="true" />
+            </header>
 
-            {/* 标题栏 */}
-            <div className="flex-shrink-0 flex items-center justify-between px-8 py-6 relative z-20 border-b border-black/[0.06]" style={{ backgroundColor: 'rgba(255,255,255,0.5)' }}>
-              <div className="flex items-center space-x-3 cursor-pointer group" onClick={handleClose}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-black/40 group-hover:text-f1-text transition-colors"><path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                <span className="text-[14px] font-bold text-f1-text-muted tracking-tight group-hover:text-f1-text transition-colors">返回</span>
-              </div>
-              <div className="flex items-center space-x-2.5">
-                 <span className="text-[11px] font-bold text-f1-text-muted uppercase tracking-[0.1em]">车队详情</span>
-                 <div className="w-2.5 h-2.5 rounded-full ring-2 ring-white/60 shadow-sm" style={{ backgroundColor: team.teamColor }}></div>
-              </div>
-            </div>
+            <div className="custom-scrollbar flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(var(--app-safe-bottom)+28px)]">
+              <section className="surface-card relative min-h-[250px] border-l-[5px] p-6" style={{ borderLeftColor: team.teamColor }}>
+                <span className="race-mono absolute bottom-4 right-5 text-[88px] font-black leading-none text-[#dedbd2]">{getTeamAbbr(team.id)}</span>
+                <div className="relative z-10 max-w-[76%] pt-2">
+                  <p className="race-mono text-[9px] font-extrabold tracking-[0.12em] text-f1-text-muted">CONSTRUCTORS P{team.rank}</p>
+                  <h1 className="mt-4 text-[39px] font-black leading-[0.98] tracking-[-0.055em]">{team.name}</h1>
+                  <div className="race-mono mt-6 inline-flex border-b border-f1-text py-1 text-[11px] font-extrabold">{season.points} PTS</div>
+                </div>
+              </section>
 
-            {/* 正文滚动区 */}
-            <div className="flex-1 overflow-y-auto px-8 py-10 overscroll-contain relative z-10 custom-scrollbar">
-              
-              {/* 车队名称与排名 */}
-               <div className="mb-10 relative">
-                <h1 className="text-[42px] sm:text-[52px] font-black text-f1-text tracking-tighter leading-[0.9] mb-4 uppercase" style={{ maxWidth: 'calc(100% - 120px)' }}>
-                   {team.name}
-                 </h1>
-                 <div className="flex flex-wrap items-center gap-3 text-[14px] font-bold mt-6">
-                   <span className="px-3.5 py-1.5 rounded-md uppercase tracking-[0.05em] cursor-default text-white shadow-sm" style={{ backgroundColor: team.teamColor }}>
-                     第 {team.rank} 名
-                   </span>
-                   <span className="text-[16px] text-f1-text/80 cursor-default">{totalPoints} PTS</span>
-                 </div>
+              <section className="surface-card mt-4 grid grid-cols-3 divide-x divide-black/[0.07] p-5">
+                {[["积分", season.points], ["胜场", season.wins], ["领奖台", season.podiums]].map(([label, value]) => <div key={label} className="text-center"><div className="metric-value text-[25px] font-extrabold">{value}</div><div className="mt-1 text-[9px] font-semibold text-f1-text-muted">{label}</div></div>)}
+              </section>
 
-                 <div className="absolute right-0 top-0 w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] flex items-center justify-center pointer-events-none">
-                   <div 
-                     className="w-full h-full rounded-2xl flex items-center justify-center rotate-3 shadow-lg"
-                     style={{ backgroundColor: team.teamColor, opacity: 0.12 }}
-                   />
-                   <span 
-                     className="absolute text-[28px] sm:text-[32px] font-black tracking-tighter uppercase"
-                     style={{ color: team.teamColor, opacity: 0.7 }}
-                   >
-                     {getTeamAbbr(team.id)}
-                   </span>
-                 </div>
-               </div>
-
-              {/* 赛季摘要 */}
-              <div className="grid grid-cols-3 gap-3 mb-10">
-                 <div className="rounded-2xl p-4 border border-white/70 relative overflow-hidden hover:bg-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
-                    <div className="text-[12px] font-bold text-f1-text-muted uppercase tracking-wider mb-2">胜场</div>
-                    <div className="text-[32px] font-bold text-f1-text tracking-tighter leading-none">{totalWins}</div>
-                 </div>
-                 <div className="rounded-2xl p-4 border border-white/70 relative overflow-hidden hover:bg-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
-                    <div className="text-[12px] font-bold text-f1-gold uppercase tracking-wider mb-2">领奖台</div>
-                    <div className="text-[32px] font-bold text-f1-text tracking-tighter leading-none">{totalPodiums}</div>
-                 </div>
-                 <div className="rounded-2xl p-4 border border-white/70 relative overflow-hidden hover:bg-white/30 transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }}>
-                    <div className="text-[12px] font-bold text-f1-cyan uppercase tracking-wider mb-2">总积分</div>
-                    <div className="text-[32px] font-bold text-f1-text tracking-tighter leading-none">{totalPoints}</div>
-                 </div>
-              </div>
-
-              {/* 旗下车手 */}
-              <div className="mb-10">
-                <h3 className="text-[16px] font-bold text-f1-text tracking-tight mb-5 px-1">旗下车手</h3>
-                <div className="space-y-3">
-                  {teamDrivers.map(td => (
-                    <div key={td.id} className="flex items-center p-4 rounded-2xl border border-white/70 transition-colors hover:bg-white/30" style={{ backgroundColor: 'rgba(255,255,255,0.4)' }}>
-                      <div className="w-[56px] h-[56px] flex-shrink-0 mr-4 rounded-xl overflow-hidden" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.15))' }}>
-                        <img 
-                          src={getDriverImage(td.id) || `https://api.dicebear.com/9.x/micah/svg?seed=${td.id}&flip=true&backgroundColor=transparent`} 
-                          alt={td.lastName} 
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[16px] font-bold text-f1-text truncate">{td.firstName} {td.lastName}</div>
-                        <div className="text-[13px] text-f1-text-muted font-medium">#{td.number} · {td.points} PTS · 第 {td.rank} 名</div>
-                      </div>
+              <section className="surface-card mt-4 overflow-hidden">
+                <div className="flex items-end justify-between border-b border-f1-text px-4 py-3"><h2 className="text-[13px] font-black">车手阵容</h2><span className="race-mono text-[8px] font-bold tracking-[0.12em] text-f1-text-muted">LINE-UP / 02</span></div>
+                <div className="grid grid-cols-2 divide-x divide-[#dedbd2]">
+                  {drivers.map((driver) => (
+                    <div key={driver.id} className="relative min-h-[166px] overflow-hidden p-4">
+                      <div className="relative z-10 max-w-[65%]"><div className="text-[12px] font-extrabold leading-snug">{driver.firstName} {driver.lastName}</div><div className="race-mono mt-2 border-t border-f1-text pt-1 text-[8px] font-black text-f1-text-muted">P{driver.rank} / {driver.points} PTS</div></div>
+                      <img src={getDriverImage(driver.id)} alt={`${driver.firstName} ${driver.lastName}`} className="absolute bottom-0 right-0 h-[132px] w-[98px] object-contain object-bottom" />
                     </div>
                   ))}
                 </div>
-              </div>
+              </section>
 
-              {/* 分站得分明细 */}
-              <div className="mb-12">
-                <h3 className="text-[16px] font-bold text-f1-text tracking-tight mb-6 px-1">分站得分明细</h3>
-                
-                {/* 表头 */}
-                <div className="flex items-center text-[11px] font-bold text-f1-text-muted uppercase tracking-wider px-4 mb-3">
-                  <div className="flex-1">比赛</div>
-                  {teamDrivers.map(td => (
-                    <div key={td.id} className="w-[70px] text-center">{td.code || td.lastName.substring(0, 3).toUpperCase()}</div>
-                  ))}
-                  <div className="w-[50px] text-right">合计</div>
-                </div>
-
-                {/* 每站数据 */}
-                <div className="space-y-2">
-                  {raceBreakdown.map((rb) => (
-                    <div key={rb.round} className="rounded-xl border border-white/70 overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.4)' }}>
-                      {/* 比赛名 */}
-                      <div className="flex items-center px-4 py-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[13px] font-bold text-f1-text truncate">
-                            {getRaceNameCN(rb.raceName) || rb.raceName}
-                          </div>
-                          <div className="text-[10px] text-f1-text-muted font-medium mt-0.5">
-                            RND {String(rb.round).padStart(2, '0')}
-                            {rb.hasSprint && <span className="ml-1.5 text-f1-gold">冲刺周末</span>}
-                          </div>
-                        </div>
-                        {/* 两位车手得分 */}
-                        {rb.driversRace.map(dr => (
-                          <div key={dr.id} className="w-[70px] text-center">
-                            {dr.racePos ? (
-                              <div>
-                                <span className={`text-[13px] font-bold ${dr.racePos <= 3 ? 'text-f1-gold/90' : dr.racePos <= 10 ? 'text-f1-cyan' : 'text-f1-text'}`}>
-                                  P{dr.racePos}
-                                </span>
-                                <span className="text-[11px] text-f1-text-muted ml-1">+{dr.racePts}</span>
-                              </div>
-                            ) : (
-                              <span className="text-[12px] text-f1-text-muted">—</span>
-                            )}
-                          </div>
-                        ))}
-                        <div className="w-[50px] text-right">
-                          <span className={`text-[14px] font-bold ${rb.roundTotal > 0 ? 'text-f1-text' : 'text-f1-text-muted'}`}>
-                            {rb.roundTotal > 0 ? `+${rb.roundTotal}` : '0'}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {/* 冲刺赛行（如果有） */}
-                      {rb.hasSprint && rb.driversRace.some(d => d.sprintPos) && (
-                        <div className="flex items-center px-4 py-2 bg-black/[0.02] border-t border-black/[0.04]">
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[11px] text-f1-gold font-bold">↳ 冲刺赛</div>
-                          </div>
-                          {rb.driversRace.map(dr => (
-                            <div key={dr.id} className="w-[70px] text-center">
-                              {dr.sprintPos ? (
-                                <div>
-                                  <span className={`text-[12px] font-bold ${dr.sprintPos <= 3 ? 'text-f1-gold/90' : 'text-f1-text/70'}`}>
-                                    P{dr.sprintPos}
-                                  </span>
-                                  <span className="text-[10px] text-f1-text-muted ml-1">+{dr.sprintPts}</span>
-                                </div>
-                              ) : (
-                                <span className="text-[11px] text-f1-text-muted">—</span>
-                              )}
-                            </div>
-                          ))}
-                          <div className="w-[50px]"></div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
+              {season.rounds.length > 0 && (
+                <section className="surface-card mt-4 p-3">
+                  <h2 className="px-3 pb-2 pt-1 text-[12px] font-bold">最近分站</h2>
+                  <div className="divide-y divide-black/[0.07]">{season.rounds.map((round) => <div key={round.round} className="grid grid-cols-[34px_1fr_auto] items-center gap-3 px-3 py-3"><span className="metric-value text-[13px] font-bold text-f1-text-muted">{String(round.round).padStart(2, "0")}</span><span className="text-[12px] font-bold">{round.name}</span><span className="text-[10px] font-bold">P{round.best} · +{round.points}</span></div>)}</div>
+                </section>
+              )}
             </div>
-          </div>
+          </>
         )}
-      </div>
+      </section>
     </div>
   );
 }

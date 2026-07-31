@@ -1,20 +1,19 @@
-import { lazy, Suspense, useState, useEffect, useCallback } from "react";
+import { lazy, Suspense, useState, useEffect, useCallback, useRef } from "react";
+import { Capacitor } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
 import { getSavedScrollY, forceUnlockScroll } from "./utils/scrollLock";
-import Header from "./components/Header"
-import Footer from "./components/Footer"
+import AppDock from "./components/AppDock"
 import Home from "./pages/Home"
 import { fetchAllData, getCachedAllData } from "./services/f1api"
-import { LOADING_QUOTES } from "./data/f1Fun"
 
 const Schedule = lazy(() => import("./pages/Schedule"));
 const Standings = lazy(() => import("./pages/Standings"));
 const F1Hot = lazy(() => import("./pages/F1Hot"));
-const F1Chat = lazy(() => import("./pages/F1Chat"));
 const DriverDrawer = lazy(() => import("./components/DriverDrawer"));
 const TeamDrawer = lazy(() => import("./components/TeamDrawer"));
 const RaceDrawer = lazy(() => import("./components/RaceDrawer"));
 
-const APP_VIEWS = new Set(["home", "f1hot", "chat", "schedule", "standings"]);
+const APP_VIEWS = new Set(["home", "f1hot", "schedule", "standings"]);
 const LIVE_REFRESH_INTERVAL = 60 * 1000;
 const RACE_WEEK_REFRESH_INTERVAL = 2 * 60 * 1000;
 const DEFAULT_REFRESH_INTERVAL = 15 * 60 * 1000;
@@ -61,14 +60,15 @@ function getDataRefreshInterval(data) {
   return isRaceWeekWindow ? RACE_WEEK_REFRESH_INTERVAL : DEFAULT_REFRESH_INTERVAL;
 }
 
-// 加载页随机无线电台词
-function LoadingQuote() {
-  const [q] = useState(() => LOADING_QUOTES[Math.floor(Math.random() * LOADING_QUOTES.length)]);
+function SystemState({ code, title, detail }) {
   return (
-    <div className="text-center max-w-xs animate-in fade-in duration-700">
-      <div className="w-8 h-[2px] bg-f1-red/40 mx-auto mb-6 rounded-full"></div>
-      <p className="text-[15px] font-medium text-f1-text/60 italic leading-relaxed mb-1.5">📻 {q.text}</p>
-      <p className="text-[11px] text-f1-text-muted mt-1.5">{q.sub}</p>
+    <div className="w-full max-w-[320px] border-y border-f1-text py-6 text-left animate-in fade-in">
+      <div className="flex items-center justify-between">
+        <span className="race-mono text-[10px] font-black tracking-[0.16em] text-f1-red">{code}</span>
+        <span className="h-2 w-2 border border-f1-text bg-f1-lime" aria-hidden="true" />
+      </div>
+      <h2 className="mt-4 text-[24px] font-black tracking-[-0.04em]">{title}</h2>
+      <p className="mt-2 text-[12px] font-semibold leading-relaxed text-f1-text-muted">{detail}</p>
     </div>
   );
 }
@@ -86,6 +86,40 @@ function App() {
   const [selectedDriverId, setSelectedDriverId] = useState(null);
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   const [selectedRaceRound, setSelectedRaceRound] = useState(null);
+  const nativeBackState = useRef({ currentView, hasOverlay: false });
+
+  useEffect(() => {
+    nativeBackState.current = {
+      currentView,
+      hasOverlay: Boolean(selectedDriverId || selectedTeamId || selectedRaceRound),
+    };
+  }, [currentView, selectedDriverId, selectedTeamId, selectedRaceRound]);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return undefined;
+
+    let disposed = false;
+    let listenerHandle;
+
+    void CapacitorApp.addListener('backButton', () => {
+      const { currentView: activeView, hasOverlay } = nativeBackState.current;
+      if (hasOverlay || activeView !== 'home') {
+        window.history.back();
+      }
+      // Keep the app open when Android back is invoked on the home view.
+    }).then((handle) => {
+      if (disposed) {
+        void handle.remove();
+      } else {
+        listenerHandle = handle;
+      }
+    });
+
+    return () => {
+      disposed = true;
+      if (listenerHandle) void listenerHandle.remove();
+    };
+  }, []);
 
   // 封装 setCurrentView：切换页面时保存当前滚动位置 + 滚回顶部 + 推入浏览器历史
   const setCurrentView = useCallback((view, scrollTarget) => {
@@ -232,48 +266,36 @@ function App() {
   }, [data]);
 
   return (
-    <div className="min-h-screen flex flex-col relative bg-f1-bg z-0 text-f1-text font-sans antialiased overflow-x-hidden">
+    <div className="app-shell min-h-screen overflow-x-hidden text-f1-text">
       {/* 极弱的光影层次，营造网页空气感 */}
-      <div className="absolute inset-0 timing-grid opacity-50 pointer-events-none"></div>
-      <div className="hidden sm:block absolute top-20 right-0 w-[36vw] h-3 bg-f1-red -skew-x-12 opacity-90 pointer-events-none"></div>
-      <div className="hidden sm:block absolute top-24 right-0 w-[24vw] h-1 bg-f1-lime -skew-x-12 opacity-90 pointer-events-none"></div>
 
       <div className="relative z-10 flex flex-col min-h-screen">
-        <Header currentView={currentView} setCurrentView={setCurrentView} />
-        <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-14">
+        <main className="app-main mx-auto w-full max-w-7xl flex-1 px-3 sm:px-6 lg:px-8">
           {/* 数据过期提醒 */}
           {stale && data && (
-            <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-amber-300/40 bg-amber-50/80 px-4 py-2.5 text-[13px] font-bold text-amber-700 animate-in fade-in duration-500">
-              <span>⚠️ 数据同步异常，当前展示的可能不是最新数据{lastUpdated ? `（上次更新：${new Date(lastUpdated).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}）` : ''}</span>
+            <div className="mb-4 flex items-center justify-between gap-3 border-y border-f1-text bg-f1-card px-3 py-3 text-[12px] font-bold animate-in fade-in">
+              <span><span className="race-mono mr-2 text-[9px] font-black tracking-[0.12em] text-f1-red">STALE</span>数据同步异常，当前展示缓存数据{lastUpdated ? ` · ${new Date(lastUpdated).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}` : ''}</span>
               <button
                 onClick={async () => { setStale(false); const res = await fetchAllData(); if (res) { setData(res); setLastUpdated(Date.now()); } else { setStale(true); } }}
-                className="flex-shrink-0 rounded bg-amber-600 px-3 py-1 text-[12px] font-black text-white hover:bg-amber-700"
+                className="pressable flex-shrink-0 border border-f1-text bg-f1-red px-3 py-1.5 text-[10px] font-black text-white"
               >重试</button>
             </div>
           )}
           {loading ? (
-             <div className="h-96 flex flex-col items-center justify-center animate-pulse">
-                <span className="text-[14px] font-semibold tracking-widest uppercase text-f1-text-muted mb-3">数据同步中</span>
-                <LoadingQuote />
+             <div className="flex h-96 items-center justify-center px-5">
+                <SystemState code="SYNC / 01" title="正在同步赛事数据" detail="正在读取赛程、积分与围场动态，请稍候。" />
              </div>
           ) : data === null ? (
-             <div className="h-96 flex flex-col items-center justify-center">
-                <span className="text-[22px] mb-2">📡</span>
-                <span className="text-[14px] font-medium text-f1-red">无线电故障！请检查网络连接</span>
+             <div className="flex h-96 items-center justify-center px-5">
+                <SystemState code="OFFLINE / 00" title="数据链路中断" detail="请检查网络连接后重新进入应用。已缓存的数据不会被清除。" />
              </div>
           ) : (
-            <div className="animate-in fade-in duration-700">
+            <div key={currentView} className="app-view-transition">
               {currentView === "home" && <Home setCurrentView={setCurrentView} data={data} onDriverClick={openDriver} onTeamClick={openTeam} onRaceClick={openRace} />}
               <Suspense fallback={<ViewFallback />}>
                 {currentView === "f1hot" && (
                   <F1Hot
                     onBack={() => setCurrentView("home")}
-                  />
-                )}
-                {currentView === "chat" && (
-                  <F1Chat
-                    onBack={() => setCurrentView("home")}
-                    f1Data={data}
                   />
                 )}
                 {currentView === "schedule" && (
@@ -297,7 +319,7 @@ function App() {
             </div>
           )}
         </main>
-        <Footer lastUpdated={lastUpdated} />
+        <AppDock currentView={currentView} setCurrentView={setCurrentView} />
       </div>
       <Suspense fallback={null}>
         {selectedDriverId && <DriverDrawer driverId={selectedDriverId} data={data} onClose={closeDriver} />}

@@ -1,198 +1,51 @@
 import { useState } from "react";
-import { ChevronDown, RotateCcw, Star } from "lucide-react";
-import { getDriverImage } from "../services/f1api";
+import { ChevronDown } from "lucide-react";
 
 const FAVORITE_DRIVER_KEY = "barley-grid:favorite-driver";
 
-function getDriverShortName(driver) {
-  if (!driver) return "";
-  return `${driver.firstName?.[0] || ""}. ${driver.lastName}`;
-}
-
-function getDriverSeasonStats(driverId, data) {
-  const races = data?.allRaces || [];
-  const finishes = races
-    .map((race) => {
-      const result = race.Results?.find((item) => item.Driver.driverId === driverId);
-      if (!result) return null;
-      const position = Number.parseInt(result.position, 10);
-      return {
-        round: race.round,
-        name: race.raceName,
-        position,
-        points: Number.parseFloat(result.points) || 0,
-        status: result.status,
-      };
-    })
-    .filter(Boolean);
-
-  const wins = finishes.filter((race) => race.position === 1).length;
-  const podiums = finishes.filter((race) => race.position <= 3).length;
-  const dnfs = finishes.filter((race) => race.status !== "Finished" && !race.status?.includes("Lap")).length;
-
-  return {
-    wins,
-    podiums,
-    dnfs,
-    recent: finishes.slice(-5).reverse(),
-    lastRace: finishes.at(-1),
-  };
-}
-
-function getTeammateDelta(driver, standings) {
-  if (!driver) return 0;
-  const teammate = standings.find((item) => item.id !== driver.id && item.team === driver.team);
-  return Math.round((driver.points || 0) - (teammate?.points || 0));
+function getPodiums(driverId, data) {
+  return (data?.allRaces || []).reduce((total, race) => {
+    const result = race.Results?.find((item) => item.Driver.driverId === driverId);
+    return total + (result && Number(result.position) <= 3 ? 1 : 0);
+  }, 0);
 }
 
 export default function FavoriteDriverCard({ data, onDriverClick }) {
   const drivers = data?.driverStandings || [];
   const [selectorOpen, setSelectorOpen] = useState(false);
-  const [favoriteId, setFavoriteId] = useState(() => {
-    if (typeof window === "undefined") return null;
-    return window.localStorage.getItem(FAVORITE_DRIVER_KEY);
-  });
+  const [favoriteId, setFavoriteId] = useState(() => typeof window === "undefined" ? null : window.localStorage.getItem(FAVORITE_DRIVER_KEY));
+  const driver = drivers.find((item) => item.id === favoriteId) || drivers[0];
+  if (!driver) return null;
 
-  const selectedDriver = drivers.find((driver) => driver.id === favoriteId) || drivers[0];
-  const stats = getDriverSeasonStats(selectedDriver?.id, data);
-  const teammateDelta = getTeammateDelta(selectedDriver, drivers);
-  const driverImage = getDriverImage(selectedDriver?.id);
-
-  if (!selectedDriver) return null;
-
-  const handleSelect = (driverId) => {
-    setFavoriteId(driverId);
+  const choose = (id) => {
+    setFavoriteId(id);
     setSelectorOpen(false);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(FAVORITE_DRIVER_KEY, driverId);
-    }
+    window.localStorage.setItem(FAVORITE_DRIVER_KEY, id);
   };
 
-  const statTiles = [
-    ["排名", `P${selectedDriver.rank}`],
-    ["积分", selectedDriver.points],
-    ["最近一站", stats.lastRace ? `P${stats.lastRace.position}` : "--"],
-    ["队友差", `${teammateDelta >= 0 ? "+" : ""}${teammateDelta}`],
-  ];
-
   return (
-    <section className="apple-card overflow-hidden">
-      <div className="grid grid-cols-1 lg:grid-cols-[0.95fr_1fr_0.9fr]">
-        <button
-          onClick={() => onDriverClick?.(selectedDriver.id)}
-          className="relative min-h-[285px] overflow-hidden bg-f1-graphite p-5 text-left text-white sm:min-h-[230px] sm:p-7 race-cut"
-        >
-          <div className="absolute inset-0 timing-grid opacity-[0.03]"></div>
-          <div className="absolute bottom-0 left-0 h-0.5 w-full bg-f1-red/60"></div>
-          <div className="absolute right-4 top-5 font-data-numeric text-[96px] text-white/[0.04] sm:right-5 sm:text-[108px] leading-none select-none">
-            {selectedDriver.number || selectedDriver.code}
-          </div>
-          {driverImage && (
-            <img
-              src={driverImage}
-              alt={`${selectedDriver.firstName} ${selectedDriver.lastName}`}
-              className="absolute bottom-5 right-6 h-[112px] w-auto object-contain drop-shadow-[0_18px_28px_rgba(0,0,0,0.25)] sm:bottom-3 sm:right-5 sm:h-[170px]"
-              loading="lazy"
-            />
-          )}
-          <div className="relative z-10 max-w-[62%] sm:max-w-[68%]">
-            <div className="mb-4 flex items-center gap-2 font-label-caps text-f1-lime sm:text-[11px]">
-              <Star size={12} fill="currentColor" />
-              MY FAVORITE DRIVER
-            </div>
-            <div className="font-sans text-[13px] font-semibold text-white/50">{selectedDriver.firstName}</div>
-            <h2 className="mt-1 font-headline-lg text-[30px] sm:text-[38px] uppercase leading-tight tracking-tight">
-              {selectedDriver.lastName}
-            </h2>
-            <div className="mt-4 inline-flex items-center gap-3 rounded-md bg-white/10 px-3 py-2 text-[13px] font-black sm:mt-5">
-              <span className="h-6 w-1.5 rounded-full" style={{ backgroundColor: selectedDriver.teamColor }}></span>
-              {selectedDriver.team}
-            </div>
-          </div>
+    <section className="surface-card !overflow-visible mt-6 border-l-[5px] p-4" style={{ borderLeftColor: driver.teamColor || "#173f8f" }}>
+      <div className="flex items-start justify-between gap-4">
+        <button type="button" onClick={() => onDriverClick?.(driver.id)} className="pressable min-w-0 flex-1 text-left">
+          <p className="race-mono text-[11px] font-extrabold tracking-[0.14em]">DRIVER WATCH</p>
+          <h2 className="mt-2 truncate text-[19px] font-black tracking-[-0.04em]">{driver.firstName} {driver.lastName}</h2>
+          <p className="race-mono mt-0.5 truncate text-[10px] font-bold tracking-[0.12em] text-f1-text-muted">{driver.team}</p>
         </button>
-
-        <div className="min-w-0 p-5 sm:p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="text-[12px] font-black uppercase tracking-[0.18em] text-f1-text-muted">Favorite Driver</div>
-              <h3 className="mt-1 text-[22px] font-black text-f1-text">{getDriverShortName(selectedDriver)}</h3>
-            </div>
-            <button
-              onClick={() => setSelectorOpen((open) => !open)}
-              className="inline-flex items-center gap-2 rounded-lg border border-black/10 bg-white px-3 py-2 text-[13px] font-black text-f1-text hover:border-f1-red/40"
-            >
-              <RotateCcw size={15} />
-              更换
-              <ChevronDown size={15} className={selectorOpen ? "rotate-180 transition-transform" : "transition-transform"} />
-            </button>
-          </div>
-
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            {statTiles.map(([label, value]) => (
-              <div key={label} className="rounded-xl border border-black/[0.04] bg-f1-bg/20 px-4 py-3">
-                <div className="font-label-caps text-[10px] text-f1-text-muted">{label}</div>
-                <div className="mt-1 font-data-numeric text-[24px] text-f1-text tabular-nums">{value}</div>
-              </div>
-            ))}
-          </div>
-
+        <div className="race-mono pointer-events-none absolute right-4 top-2 text-[62px] font-black leading-none text-[#dedbd2]">#{driver.number || driver.code}</div>
+        <div className="relative z-10">
+          <button onClick={() => setSelectorOpen((value) => !value)} aria-expanded={selectorOpen} className="pressable flex items-center gap-1 border-b border-f1-text px-1 py-1 text-[11px] font-bold">更换 <ChevronDown size={11} /></button>
           {selectorOpen && (
-            <div className="mt-4 max-h-[320px] overflow-y-auto rounded-lg border border-black/10 bg-white p-2 shadow-[0_12px_30px_rgba(16,16,16,0.08)] custom-scrollbar">
-              <div className="px-3 pb-2 pt-1 text-[11px] font-black uppercase tracking-[0.16em] text-f1-text-muted">
-                选择关注车手 · {drivers.length}
-              </div>
-              {drivers.map((driver) => (
-                <button
-                  key={driver.id}
-                  onClick={() => handleSelect(driver.id)}
-                  className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left hover:bg-black/[0.04] ${
-                    driver.id === selectedDriver.id ? "bg-f1-lime/25" : ""
-                  }`}
-                >
-                  <span className="flex min-w-0 items-center gap-3">
-                    <span className="h-7 w-1.5 rounded-full" style={{ backgroundColor: driver.teamColor }}></span>
-                    <span className="truncate text-[14px] font-black text-f1-text">{getDriverShortName(driver)}</span>
-                  </span>
-                  <span className="ml-3 whitespace-nowrap text-[13px] font-black text-f1-text-muted">{driver.points} pts</span>
-                </button>
-              ))}
+            <div className="driver-selector-popover popover-enter absolute bottom-[calc(100%+8px)] right-0 z-30 max-h-[320px] w-[238px] overflow-y-auto rounded-[12px] border border-f1-text bg-f1-card p-1 custom-scrollbar sm:bottom-auto sm:top-[calc(100%+8px)]">
+              {drivers.map((item) => <button key={item.id} onClick={() => choose(item.id)} className={`pressable flex w-full items-center justify-between rounded-[8px] px-3 py-2.5 text-left text-[13px] font-bold ${item.id === driver.id ? "bg-f1-text text-white" : "hover:bg-black/[0.04]"}`}><span className="min-w-0 truncate">{item.firstName} {item.lastName}</span><span className="shrink-0">P{item.rank}</span></button>)}
             </div>
           )}
-        </div>
-
-        <div className="min-w-0 border-t border-black/10 p-5 sm:p-6 lg:border-l lg:border-t-0">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-[15px] font-black text-f1-text">最近表现</h3>
-            <span className="rounded bg-black/[0.05] px-2 py-1 text-[11px] font-black text-f1-text-muted">
-              {stats.wins} 胜 · {stats.podiums} 登台
-            </span>
-          </div>
-          <div className="space-y-3">
-            {stats.recent.length > 0 ? stats.recent.map((race) => (
-              <button
-                key={race.round}
-                className="grid w-full grid-cols-[1fr_auto] items-center gap-3 rounded-lg bg-black/[0.025] px-3 py-3 text-left"
-              >
-                <span className="min-w-0">
-                  <span className="block truncate text-[13px] font-black text-f1-text">{race.name}</span>
-                  <span className="font-label-caps text-[9px] text-f1-text-muted leading-none">R{String(race.round).padStart(2, "0")} · +{race.points} PTS</span>
-                </span>
-                <span
-                  className="rounded-lg px-2.5 py-1 font-data-numeric text-[13px] text-f1-text"
-                  style={{ backgroundColor: race.position <= 3 ? selectedDriver.teamColor + "15" : "rgba(0,0,0,0.03)", color: race.position <= 3 ? selectedDriver.teamColor : "inherit" }}
-                >
-                  P{race.position}
-                </span>
-              </button>
-            )) : (
-              <div className="rounded-lg bg-black/[0.025] px-3 py-6 text-[13px] font-bold text-f1-text-muted">
-                暂无已完成分站数据
-              </div>
-            )}
-          </div>
-          <div className="mt-4 text-[12px] font-bold text-f1-text-muted">已保存到本机，下次打开自动显示</div>
         </div>
       </div>
+      <button type="button" onClick={() => onDriverClick?.(driver.id)} className="pressable mt-4 grid w-full grid-cols-3 divide-x divide-[#dedbd2] text-left">
+        {[["排名", `P${driver.rank}`], ["积分", driver.points], ["领奖台", getPodiums(driver.id, data)]].map(([label, value]) => (
+          <span key={label} className="pl-3 first:pl-0"><strong className="race-mono block text-[18px] font-black leading-none">{value}</strong><small className="mt-1 block text-[10px] font-semibold text-f1-text-muted">{label}</small></span>
+        ))}
+      </button>
     </section>
   );
 }

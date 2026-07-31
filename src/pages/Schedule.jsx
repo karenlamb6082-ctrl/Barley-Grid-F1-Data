@@ -1,113 +1,153 @@
+import { useState } from "react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { ArrowLeft } from "lucide-react";
-import { getRaceNameCN, getCountryNameCN, getCircuitNameCN } from '../services/f1api';
+import { ArrowRight } from "lucide-react";
+import { getCountryNameCN, getCircuitNameCN } from "../services/f1api";
 
-export default function Schedule({ scheduleData = [], allRaces = [], onRaceClick, onBack }) {
-  if (!scheduleData || scheduleData.length === 0) return null;
+const SESSION_LABELS = {
+  fp1: ["FP1", "第一节练习赛"],
+  fp2: ["FP2", "第二节练习赛"],
+  fp3: ["FP3", "第三节练习赛"],
+  sprintQualifying: ["SQ", "冲刺排位"],
+  sprint: ["SPRINT", "冲刺赛"],
+  qualifying: ["Q", "排位赛"],
+  race: ["RACE", "正赛"],
+};
 
-  // 哪些轮次有完整结果（统一转数字比较）
-  const completedRoundNums = new Set(allRaces.map(r => parseInt(r.round, 10)));
+function sessionDate(value) {
+  return new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", month: "numeric", day: "numeric", weekday: "long" }).format(new Date(value));
+}
+
+function sessionTime(value) {
+  return new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(value));
+}
+
+function getNextSession(sessions) {
+  const now = Date.now();
+  return sessions.find(([, value]) => new Date(value).getTime() > now)?.[0] || sessions.at(-1)?.[0];
+}
+
+function getRaceResult(race, allRaces) {
+  const resultRace = allRaces.find((item) => String(item.round) === String(race.round));
+  const results = resultRace?.Results || [];
+  if (!results.length) return null;
+  const winner = results[0];
+  return {
+    winner: `${winner.Driver?.givenName || ""} ${winner.Driver?.familyName || ""}`.trim(),
+    team: winner.Constructor?.name || "",
+    time: winner.Time?.time || winner.status || "Finished",
+    podium: results.slice(0, 3).map((item) => item.Driver?.familyName).filter(Boolean),
+  };
+}
+
+export default function Schedule({ scheduleData = [], allRaces = [], onRaceClick }) {
+  const [activeView, setActiveView] = useState("upcoming");
+  if (!scheduleData.length) return null;
+  const nextRace = scheduleData.find((race) => race.status === "upcoming");
+  const upcoming = scheduleData.filter((race) => race.status === "upcoming" && race.id !== nextRace?.id);
+  const completed = scheduleData.filter((race) => race.status === "completed").reverse();
+  const view = !nextRace && activeView === "upcoming" ? "completed" : activeView;
+  const sessions = Object.entries(nextRace?.sessions || {}).filter(([, value]) => value).sort((a, b) => new Date(a[1]) - new Date(b[1]));
+  const nextSessionKey = getNextSession(sessions);
+  const country = nextRace ? getCountryNameCN(nextRace.country) : "";
 
   return (
-    <div className="space-y-12 animate-in fade-in duration-500 max-w-5xl mx-auto px-4 pb-20 pt-20">
-      
-      {/* 头部导航与切换 */}
-      <div className="flex justify-between items-center border-b border-black/[0.05] pb-6">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-2 rounded-lg border border-black/[0.05] bg-white px-4 py-2 text-[13px] font-bold text-f1-text hover:bg-f1-bg transition-colors"
-        >
-          <ArrowLeft size={15} />
-          返回概览
-        </button>
-      </div>
+    <div className="app-page-top mx-auto max-w-3xl pb-4">
+      <header className="mb-5 flex items-end justify-between border-b border-f1-text pb-3">
+        <div>
+          <p className="race-mono text-[11px] font-extrabold tracking-[0.14em] text-f1-text-muted">2026 CALENDAR</p>
+          <h1 className="mt-1 text-[38px] font-black leading-none tracking-[-0.06em]">赛程</h1>
+        </div>
+        <span className="race-mono whitespace-nowrap text-[11px] font-bold tracking-[0.12em]">{nextRace ? `ROUND ${String(nextRace.round).padStart(2, "0")}` : "SEASON RESULTS"}</span>
+      </header>
 
-      {/* 社论级页面标题 */}
-      <div className="text-center">
-        <p className="font-label-caps text-[10px] text-f1-text-muted tracking-[0.2em] mb-3">2026 RACE CALENDAR</p>
-        <h1 className="font-display-hero text-[40px] sm:text-[60px] text-f1-text leading-none uppercase">
-          赛程追踪
-        </h1>
-        <p className="font-sans text-[15px] text-f1-text-muted max-w-2xl mx-auto mt-4 leading-relaxed">
-          从揭幕战的初发到收官之夜的对决。全年 24 场顶级大奖赛的日程追踪，每一次引擎轰鸣都精确记录于此。
-        </p>
-      </div>
+      <nav className="mb-5 flex gap-7 border-b border-f1-text" aria-label="赛程视图">
+        {[["upcoming", "接下来", "UPCOMING"], ["completed", "已完赛", "RESULTS"]].map(([id, label, code]) => (
+          <button key={id} type="button" onClick={() => setActiveView(id)} className={`pressable relative pb-3 text-left ${view === id ? "text-f1-text after:absolute after:inset-x-0 after:-bottom-px after:h-[3px] after:bg-f1-red" : "text-f1-text-muted"}`}>
+            <span className="block text-[14px] font-extrabold">{label}</span><span className="race-mono mt-0.5 block text-[9px] font-bold tracking-[0.12em]">{code}</span>
+          </button>
+        ))}
+      </nav>
 
-      {/* 赛程列表区域 */}
-      <div className="grid gap-6">
-        {scheduleData.map((race) => {
-          const raceDate = new Date(race.date);
-          const isCompleted = race.status === 'completed';
-          const hasResults = completedRoundNums.has(parseInt(race.round, 10));
-          
-          return (
-            <div 
-              key={race.id} 
-              className={`apple-card p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all duration-300 cursor-pointer ${
-                isCompleted ? 'opacity-85 hover:opacity-100' : ''
-              }`}
-              onClick={() => onRaceClick && onRaceClick(race.round)}
-            >
-              <div className="flex items-center space-x-6 sm:space-x-8 min-w-0">
-                {/* 质感日期列 */}
-                <div className="text-center min-w-[56px] border-r border-black/[0.05] pr-5 sm:pr-8">
-                  <div className={`font-label-caps text-[10px] tracking-[0.16em] mb-1 ${isCompleted ? 'text-black/35' : 'text-f1-lime'}`}>
-                    {format(raceDate, "MMM", { locale: zhCN })}
-                  </div>
-                  <div className={`font-data-numeric text-[30px] sm:text-[34px] leading-none ${isCompleted ? 'text-black/30' : 'text-f1-text'}`}>
-                    {format(raceDate, "dd")}
-                  </div>
-                </div>
-                
-                <div className="min-w-0">
-                  <div className="flex items-center space-x-3 mb-2.5">
-                    <span className="font-label-caps text-[9px] tracking-[0.12em] bg-black/[0.04] px-2.5 py-0.5 rounded text-f1-text-muted font-bold">
-                      Round {String(race.round).padStart(2, '0')}
-                    </span>
-                    {isCompleted && (
-                      <span className="font-label-caps text-[9px] tracking-[0.1em] text-f1-text-muted font-bold">
-                        · COMPLETED
-                      </span>
-                    )}
-                  </div>
-                  
-                  <h3 className="font-headline-md text-[20px] sm:text-[23px] text-f1-text leading-tight group-hover:text-f1-red transition-colors">
-                    {race.name}
-                  </h3>
-                  
-                  {getRaceNameCN(race.name) && (
-                    <div className="text-[13px] text-f1-text-muted/70 font-semibold mt-1">
-                      {getRaceNameCN(race.name)}
-                    </div>
-                  )}
-                  
-                  <p className="font-sans text-[13px] text-f1-text-muted mt-2">
-                    {getCircuitNameCN(race.circuit)} <span className="mx-2 text-black/10">|</span> {getCountryNameCN(race.country)}
-                  </p>
-                </div>
-              </div>
-               
-               {/* 右侧交互标签按钮 (圆角16px以保持理性架构) */}
-               <div className="md:ml-8 flex-shrink-0 flex items-center">
-                 {hasResults ? (
-                   <span className="btn-bounce inline-flex items-center px-5 py-2.5 rounded-lg bg-f1-lime/10 text-[13px] font-bold text-f1-lime border border-f1-lime/25 hover:bg-f1-lime/20 transition-all">
-                     查看结果 →
-                   </span>
-                 ) : isCompleted ? (
-                   <span className="inline-flex items-center px-5 py-2.5 rounded-lg bg-black/[0.03] text-[13px] font-semibold text-f1-text-muted border border-black/5">
-                     已完赛
-                   </span>
-                 ) : (
-                   <span className="inline-flex items-center px-5 py-2.5 rounded-lg bg-f1-graphite text-white text-[13px] font-semibold hover:bg-f1-text transition-colors">
-                     即将到来
-                   </span>
-                 )}
-               </div>
+      {view === "upcoming" && nextRace && <>
+      <section className="surface-card border-l-[5px] p-5 sm:p-6">
+        <button type="button" onClick={() => onRaceClick?.(nextRace.round)} className="pressable w-full text-left">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="race-mono text-[11px] font-extrabold tracking-[0.14em] text-f1-red">NEXT RACE</p>
+              <h2 className="mt-2 text-[31px] font-black leading-none tracking-[-0.055em]">{country ? `${country}大奖赛` : nextRace.name}</h2>
+              <p className="mt-2 truncate text-[13px] font-semibold text-f1-text-muted">{getCircuitNameCN(nextRace.circuit)}</p>
             </div>
-          )
-        })}
-      </div>
+            <span className="race-mono text-[28px] font-black text-[#b2afa7]">R{String(nextRace.round).padStart(2, "0")}</span>
+          </div>
+          <div className="mt-5 flex items-center justify-between border-t border-[#dedbd2] pt-3">
+            <span className="text-[14px] font-extrabold">{format(new Date(nextRace.date), "M月d日 EEE HH:mm", { locale: zhCN })}</span>
+            <ArrowRight size={15} />
+          </div>
+        </button>
+      </section>
+
+      <section className="mt-6">
+        <div className="flex items-end justify-between border-b border-f1-text pb-2">
+          <h2 className="text-[18px] font-black tracking-[-0.04em]">比赛周末</h2>
+          <span className="race-mono whitespace-nowrap text-[10px] font-bold tracking-[0.14em] text-f1-text-muted">BEIJING TIME · UTC+8</span>
+        </div>
+        <div className="relative pl-5">
+          <span className="absolute bottom-0 left-[7px] top-0 w-px bg-f1-text" aria-hidden="true" />
+          {sessions.map(([key, value]) => {
+            const [code, label] = SESSION_LABELS[key] || [key.toUpperCase(), key];
+            const next = key === nextSessionKey;
+            return (
+              <div key={key} className="relative grid min-h-[72px] grid-cols-[72px_1fr_auto] items-center gap-2 border-b border-[#dedbd2] py-3">
+                <span className={`absolute -left-[17px] h-2 w-2 rounded-full border border-f1-text ${next ? "bg-f1-lime" : "bg-f1-bg"}`} />
+                <div><p className={`race-mono text-[17px] font-black ${next ? "text-f1-red" : ""}`}>{code}</p>{next && <p className="race-mono text-[10px] font-black tracking-[0.12em]">NEXT</p>}</div>
+                <div className="min-w-0"><p className="truncate text-[15px] font-extrabold">{label}</p><p className="mt-1 whitespace-nowrap text-[11px] font-semibold text-f1-text-muted">{sessionDate(value)}</p></div>
+                <time className="race-mono text-[18px] font-black">{sessionTime(value)}</time>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="mt-7">
+        <div className="flex items-end justify-between border-b border-f1-text pb-2"><h2 className="text-[18px] font-black tracking-[-0.04em]">接下来</h2><span className="race-mono whitespace-nowrap text-[10px] font-bold tracking-[0.14em] text-f1-text-muted">UPCOMING ROUNDS</span></div>
+        <div>
+          {upcoming.map((race) => {
+            const date = new Date(race.date);
+            const raceCountry = getCountryNameCN(race.country);
+            return (
+              <button key={race.id} type="button" onClick={() => onRaceClick?.(race.round)} className="tap-row grid w-full grid-cols-[40px_52px_1fr_14px] items-center gap-2 border-b border-[#dedbd2] py-3.5 text-left">
+                <span className="race-mono text-[17px] font-black text-[#aaa79f]">{String(race.round).padStart(2, "0")}</span>
+                <span><span className="race-mono block text-[17px] font-black leading-none">{format(date, "dd")}</span><span className="mt-1 block text-[10px] font-bold text-f1-text-muted">{format(date, "MMM", { locale: zhCN })}</span></span>
+                <span className="min-w-0"><span className="block truncate text-[15px] font-extrabold">{raceCountry ? `${raceCountry}大奖赛` : race.name}</span><span className="race-mono mt-0.5 block truncate text-[10px] font-bold tracking-[0.08em] text-f1-text-muted">{getCircuitNameCN(race.circuit)}</span></span>
+                <ArrowRight size={13} className="text-f1-text-muted" />
+              </button>
+            );
+          })}
+        </div>
+      </section>
+      </>}
+
+      {view === "completed" && (
+        <section>
+          <div className="flex items-end justify-between border-b border-f1-text pb-2"><h2 className="text-[18px] font-black tracking-[-0.04em]">赛季结果</h2><span className="race-mono whitespace-nowrap text-[10px] font-bold tracking-[0.14em] text-f1-text-muted">{String(completed.length).padStart(2, "0")} RACES</span></div>
+          {completed.length === 0 ? <p className="py-16 text-center text-[14px] font-bold text-f1-text-muted">本赛季尚无已完赛分站</p> : completed.map((race) => {
+            const result = getRaceResult(race, allRaces);
+            return (
+              <button key={race.id} type="button" onClick={() => onRaceClick?.(race.round)} className="tap-row w-full border-b border-[#dedbd2] py-4 text-left">
+                <div className="grid grid-cols-[42px_1fr_auto] items-start gap-3">
+                  <span className="race-mono text-[22px] font-black text-[#aaa79f]">{String(race.round).padStart(2, "0")}</span>
+                  <span className="min-w-0"><strong className="block truncate text-[16px] font-black">{getCountryNameCN(race.country)}大奖赛</strong><small className="race-mono mt-1 block truncate text-[10px] font-bold tracking-[0.08em] text-f1-text-muted">{getCircuitNameCN(race.circuit)}</small></span>
+                  <span className="race-mono whitespace-nowrap text-right text-[11px] font-bold text-f1-text-muted">{format(new Date(race.date), "MM.dd")}</span>
+                </div>
+                <div className="ml-[55px] mt-3 border-l-[3px] border-f1-red pl-3">
+                  {result ? <><span className="race-mono text-[10px] font-extrabold tracking-[0.12em] text-f1-text-muted">WINNER</span><div className="mt-1 flex items-end justify-between gap-4"><span className="min-w-0"><strong className="block truncate text-[15px] font-extrabold">{result.winner}</strong><small className="mt-0.5 block truncate text-[11px] font-semibold text-f1-text-muted">{result.team}</small></span><span className="race-mono shrink-0 text-[12px] font-bold">{result.time}</span></div><p className="race-mono mt-2 truncate text-[10px] font-bold tracking-[0.08em] text-f1-text-muted">PODIUM · {result.podium.join(" / ")}</p></> : <p className="text-[12px] font-semibold text-f1-text-muted">结果正在同步，点击查看分站详情</p>}
+                </div>
+              </button>
+            );
+          })}
+        </section>
+      )}
     </div>
   );
 }
