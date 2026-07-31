@@ -2,7 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { getEvaluationHash, restorePreviousEditorialEvaluations } from '../api/hot-topics.js';
-import { mapDeepSeekModel } from '../api/lib/deepseek-model.js';
+import { F1HOT_EDITOR_MODEL, mapDeepSeekModel } from '../api/lib/deepseek-model.js';
+
+test('F1HOT editorial evaluation is pinned to the official V4 Flash API model', () => {
+  assert.equal(F1HOT_EDITOR_MODEL, 'deepseek-v4-flash');
+});
 
 test('legacy and missing model names safely use DeepSeek V4 Flash', () => {
   assert.equal(mapDeepSeekModel(), 'deepseek-v4-flash');

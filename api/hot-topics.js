@@ -4,7 +4,7 @@
 
 import { fetchAllRSSWithHealth } from './lib/rss-simple.js';
 import { detectHotTopics } from './lib/hotspot-engine.js';
-import { DEEPSEEK_FLASH_MODEL, mapDeepSeekModel } from './lib/deepseek-model.js';
+import { F1HOT_EDITOR_MODEL } from './lib/deepseek-model.js';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import {
   consumeAiBudget,
@@ -309,7 +309,7 @@ export default async function handler(req, res) {
       : false;
     if (apiKey && pendingIndices.length > 0 && aiBudgetAvailable) {
       try {
-        console.log(`[DeepSeek] 正在评估 ${pendingIndices.length} 个新增或变化事件...`);
+        console.log(`[DeepSeek] 正在通过 ${F1HOT_EDITOR_MODEL} 评估 ${pendingIndices.length} 个新增或变化事件...`);
         
         const payload = {
           events: pendingIndices.map(index => buildEvidencePackage(evaluatedEvents[index], String(index))),
@@ -327,7 +327,7 @@ export default async function handler(req, res) {
               'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-              model: mapDeepSeekModel(process.env.DEEPSEEK_MODEL || DEEPSEEK_FLASH_MODEL),
+              model: F1HOT_EDITOR_MODEL,
               messages: [
                 {
                   role: 'system',
@@ -431,6 +431,7 @@ export default async function handler(req, res) {
       generatedAt: Date.now(),
       lastCollectedAt: Date.now(),
       processingMode: evaluatedEvents.some(event => event.titleCN) ? 'ai-assisted' : 'local',
+      aiModel: F1HOT_EDITOR_MODEL,
       aiStatus,
       aiEvaluationStats: {
         cached: cachedEvaluationCount,
